@@ -1,5 +1,5 @@
 import { Text, View, TouchableOpacity, Image } from 'react-native';
-import { Link } from "expo-router";
+import { router } from 'expo-router';
 
 export default function Index() {
   return (
@@ -28,13 +28,14 @@ export default function Index() {
       </Text>
 
       {/* Button */}
-      <Link href="../(auth)/signin">
-      <TouchableOpacity className="min-w-[200px] w-72 mx-4 content-center  mt-5 bg-accent px-20 py-4 rounded-full ">
-        <Text className="justify-center text-center text-white text-lg font-semibold">
+      <TouchableOpacity
+        onPress={() => router.push('../(auth)/signin')}
+        className="min-w-[200px] w-72 mx-4 mt-5 bg-accent px-20 py-4 rounded-full items-center"
+      >
+        <Text className="text-white text-lg font-semibold text-center">
           Let’s login
         </Text>
       </TouchableOpacity>
-      </Link>
     </View>
   );
 }
