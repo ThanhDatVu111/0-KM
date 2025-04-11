@@ -11,7 +11,7 @@ export default function Index() {
         />
       </View>
 
-      <View className="border ">
+      <View className="border-0 ">
         <Image
           source={require('../assets/images/polaroid.png')}
           style={{ width: 400, height: 400 }}
