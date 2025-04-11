@@ -13,7 +13,7 @@ export default function Index() {
 
       <View className="border ">
         <Image
-          source={require('../assets/images/polaroid frame.png')}
+          source={require('../assets/images/polaroid.png')}
           style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />
