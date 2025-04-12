@@ -8,6 +8,12 @@ module.exports = {
         primary: "#F5CDDE",
         accent: "#F5829B",
       },
+      fontFamily: {
+        'poppins': ['Poppins-Regular'],
+        'poppins-bold': ['Poppins-Bold'],
+        'poppins-medium': ['Poppins-Medium'],
+        'poppins-light': ['Poppins-Light'],
+      }
     },
   },
   plugins: [],

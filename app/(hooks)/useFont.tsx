@@ -1,7 +1,5 @@
-import { View, Text } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as Font from 'expo-font';
-import React from 'react';
 
 const useFont = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
