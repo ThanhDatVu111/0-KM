@@ -56,7 +56,7 @@ export default function Page() {
         secureTextEntry={true}
         onChangeText={(password) => setPassword(password)
         }></FormInput></View>
-        <TouchableOpacity onPress={()=> router.push('/(auth)/forgot-password')} style ={{marginBottom:15}}>
+        <TouchableOpacity onPress={()=> router.push('../forgot-password')} style ={{marginBottom:15}}>
                 <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline', fontFamily:"Poppins-Medium"}}>Forget Password?</Text>
               </TouchableOpacity>
 
