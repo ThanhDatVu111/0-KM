@@ -3,7 +3,8 @@ import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 interface AuthLayoutProps{
     children: React.ReactNode;
     activeTab: 'sign-in' | 'sign-up';
-    onTabChange: (tab: 'sign-in' | 'sign-up') => void;
+    onTabChange: (tab: 'sign-in' | 'sign-up' | 'forgot-password'
+    ) => void;
 }
 
 export default function AuthLayout({children, activeTab, onTabChange}: AuthLayoutProps) {

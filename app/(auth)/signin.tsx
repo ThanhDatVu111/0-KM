@@ -40,6 +40,7 @@ export default function Page() {
     }
   };
 
+
   return (
     <AuthLayout activeTab = "sign-in" onTabChange = {(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
       <View style={{ width: 300 }}>
@@ -54,7 +55,7 @@ export default function Page() {
         placeholder="Sample@domain.com"
         onChangeText={(password) => setPassword(password)
         }></FormInput></View>
-        <TouchableOpacity onPress={onSignInPress} style ={{marginBottom:15}}>
+        <TouchableOpacity onPress={()=> router.push('/(auth)/forgot-password')} style ={{marginBottom:15}}>
                 <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline', fontFamily:"Poppins-Medium"}}>Forget Password?</Text>
               </TouchableOpacity>
 
