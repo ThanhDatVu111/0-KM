@@ -53,6 +53,7 @@ export default function Page() {
       <FormInput label="Password"borderColor="#DDDDDD" autoCapitalize="none"
         value={password}
         placeholder="Sample@domain.com"
+        secureTextEntry={true}
         onChangeText={(password) => setPassword(password)
         }></FormInput></View>
         <TouchableOpacity onPress={()=> router.push('/(auth)/forgot-password')} style ={{marginBottom:15}}>

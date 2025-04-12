@@ -98,6 +98,7 @@ export default function SignUpScreen() {
               <FormInput label="Password" borderColor= "#F5829B"autoCapitalize="none"
                 value={password}
                 placeholder="Sample@domain.com"
+                secureTextEntry={true}
                 onChangeText={(password) => setPassword(password)
                 }></FormInput></View>
         <TouchableOpacity onPress={onSignUpPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBlock:10}}>
