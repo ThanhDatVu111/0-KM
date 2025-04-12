@@ -12,5 +12,6 @@ export default function AuthRoutesLayout() {
     ); // home screen when land in
   }
 
-  return <Stack />
+  return <Stack screenOptions={{
+    headerShown: false,}}></Stack>
 }

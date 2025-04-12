@@ -2,6 +2,8 @@ import * as React from 'react'
 import { Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { useSignUp } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
+import AuthLayout from '@/components/AuthLayout'
+import FormInput from '@/components/FormInput'
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp()
@@ -82,23 +84,24 @@ export default function SignUpScreen() {
   }
 
   return (
-    <View>
+    <AuthLayout activeTab = 'sign-up' onTabChange = {(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
       <>
-        <Text>Sign up</Text>
-        <TextInput
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder="Enter email"
-          onChangeText={(email) => setEmailAddress(email)}
-        />
-        <TextInput
-          value={password}
-          placeholder="Enter password"
-          secureTextEntry={true}
-          onChangeText={(password) => setPassword(password)}
-        />
-        <TouchableOpacity onPress={onSignUpPress}>
-          <Text>Continue</Text>
+        <View style={{ width: 300 }}>
+                <FormInput label="Email Address" borderColor= "#F5829B"autoCapitalize="none"
+                value={emailAddress}
+                placeholder="Sample@domain.com"
+                onChangeText={(emailAddress) => setEmailAddress(emailAddress)
+                }>
+
+                </FormInput>
+              
+              <FormInput label="Password" borderColor= "#F5829B"autoCapitalize="none"
+                value={password}
+                placeholder="Sample@domain.com"
+                onChangeText={(password) => setPassword(password)
+                }></FormInput></View>
+        <TouchableOpacity onPress={onSignUpPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBlock:10}}>
+          <Text style={{color: 'white', fontSize: 16}}>Next</Text>
         </TouchableOpacity>
         <View style={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
           <Text>Already have an account?</Text>
@@ -107,6 +110,6 @@ export default function SignUpScreen() {
           </Link>
         </View>
       </>
-    </View>
+    </AuthLayout>
   )
 }

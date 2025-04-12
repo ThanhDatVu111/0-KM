@@ -1,6 +1,8 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AuthLayout from '@/components/AuthLayout';
+import FormInput from '@/components/FormInput';
 import React from 'react';
 
 export default function Page() {
@@ -39,29 +41,33 @@ export default function Page() {
   };
 
   return (
-    <View>
-      <Text>Sign in</Text>
-      <TextInput
-        autoCapitalize="none"
+    <AuthLayout activeTab = "sign-in" onTabChange = {(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
+      <View style={{ width: 300 }}>
+        <FormInput label="Email Address" borderColor="#DDDDDD" autoCapitalize="none"
         value={emailAddress}
-        placeholder="Enter email"
-        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-      />
-      <TextInput
+        placeholder="Sample@domain.com"
+        onChangeText={(emailAddress) => setEmailAddress(emailAddress)
+        }></FormInput>
+      
+      <FormInput label="Password"borderColor="#DDDDDD" autoCapitalize="none"
         value={password}
-        placeholder="Enter password"
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
-      />
-      <TouchableOpacity onPress={onSignInPress}>
-        <Text>Continue</Text>
-      </TouchableOpacity>
+        placeholder="Sample@domain.com"
+        onChangeText={(password) => setPassword(password)
+        }></FormInput></View>
+        <TouchableOpacity onPress={onSignInPress} style ={{marginBottom:15}}>
+                <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline'}}>Forget Password?</Text>
+              </TouchableOpacity>
+
+      <TouchableOpacity onPress={onSignInPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBottom:10}}>
+                <Text style={{color: 'white', fontSize: 16}}>Login</Text>
+              </TouchableOpacity>
+      
       <View style={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
         <Text>Don't have an account?</Text>
         <Link href="/signup">
           <Text>Sign up</Text>
         </Link>
       </View>
-    </View>
+    </AuthLayout>
   );
 }
