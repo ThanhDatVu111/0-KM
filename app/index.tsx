@@ -28,7 +28,7 @@ export default function Index() {
       <View className="w-full items-center mb-4">
         <Image
           source={require('../assets/images/0km_polaroid.png')}
-          className="w-[320px] h-[320px]"
+          className="w-[60px] h-[60px]"
           resizeMode="contain"
         />
       </View>
