@@ -1,3 +1,4 @@
+import React from 'react';
 import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { router } from 'expo-router';
 import * as Font from 'expo-font';
@@ -38,10 +39,9 @@ export default function Index() {
         />
       </View>
 
-      {/* Polaroid */}
-      <View className="border">
+      <View className="border-0 ">
         <Image
-          source={require('../assets/images/polaroid frame.png')} //pr create new branch for polaroid: quyen
+          source={require('../assets/images/polaroid.png')}
           style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />
