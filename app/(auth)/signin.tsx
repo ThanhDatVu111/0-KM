@@ -55,15 +55,15 @@ export default function Page() {
         onChangeText={(password) => setPassword(password)
         }></FormInput></View>
         <TouchableOpacity onPress={onSignInPress} style ={{marginBottom:15}}>
-                <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline'}}>Forget Password?</Text>
+                <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline', fontFamily:"Poppins-Medium"}}>Forget Password?</Text>
               </TouchableOpacity>
 
       <TouchableOpacity onPress={onSignInPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBottom:10}}>
-                <Text style={{color: 'white', fontSize: 16}}>Login</Text>
+                <Text style={{color: 'white', fontSize: 16, fontFamily:"Poppins-Regular"}}>Login</Text>
               </TouchableOpacity>
       
       <View style={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
-        <Text>Don't have an account?</Text>
+        <Text style={{fontFamily:"Poppins-Regular"}}>Don't have an account?</Text>
         <Link href="/signup">
           <Text>Sign up</Text>
         </Link>

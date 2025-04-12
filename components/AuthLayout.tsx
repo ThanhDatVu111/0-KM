@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     },
 
     tagline :{
-        fontFamily: 'Poppins',
+        fontFamily: 'Poppins-Light',
         fontSize: 18,
         fontWeight: 'light',
         color: '000000',

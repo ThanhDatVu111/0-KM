@@ -101,10 +101,10 @@ export default function SignUpScreen() {
                 onChangeText={(password) => setPassword(password)
                 }></FormInput></View>
         <TouchableOpacity onPress={onSignUpPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBlock:10}}>
-          <Text style={{color: 'white', fontSize: 16}}>Next</Text>
+          <Text style={{color: 'white', fontSize: 16, fontFamily:"Poppins-Regular"}}>Next</Text>
         </TouchableOpacity>
         <View style={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
-          <Text>Already have an account?</Text>
+          <Text style={{fontFamily:"Poppins-Regular"}} >Already have an account?</Text>
           <Link href="/signin">
             <Text>Sign in</Text>
           </Link>
