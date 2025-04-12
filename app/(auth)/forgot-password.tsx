@@ -22,8 +22,14 @@ export default function ForgotPasswordScreen() {
       });
       setIsCodeSent(true);
       setError('');
-    } catch (err) {
-      setError('Failed to send reset code.');
+    } catch (err: any) {
+      if (err.errors) {
+        console.error('Clerk error:', JSON.stringify(err.errors, null, 2));
+        setError(err.errors[0]?.longMessage || 'Something went wrong');
+      } else {
+        console.error('Unexpected error:', err);
+        setError('Unexpected error occurred');
+      }
     }
   };
 
@@ -42,8 +48,14 @@ export default function ForgotPasswordScreen() {
       } else {
         setError('Password reset incomplete.');
       }
-    } catch (err) {
-      setError('Failed to reset password.');
+    } catch (err: any) {
+      if (err.errors) {
+        console.error('Clerk error:', JSON.stringify(err.errors, null, 2));
+        setError(err.errors[0]?.longMessage || 'Something went wrong');
+      } else {
+        console.error('Unexpected error:', err);
+        setError('Unexpected error occurred');
+      }
     }
   };
 
