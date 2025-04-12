@@ -1,38 +1,55 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, Image } from 'react-native';
+import { Text, View, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import useFont from './(hooks)/useFont'; 
 
 export default function Index() {
+  const fontsLoaded = useFont();
+
+  if (!fontsLoaded) {
+    return (
+      <View className="flex-1 items-center justify-center bg-primary">
+        <Text className="text-lg text-white">Loading...</Text>
+      </View>
+    );
+  }
   return (
-    <View className="flex-1 items-center justify-center bg-primary">
+    <View className="flex-1 items-center justify-center bg-primary px-6">
       {/* Logo */}
-      <View className="mt-10">
+      <View className="mt-20 mb-6 w-full items-center">
         <Image
           source={require('../assets/images/logo.png')}
-          style={{ width: 150, height: 150 }}
+          className="w-28 h-28"
           resizeMode="contain"
         />
       </View>
 
-      <View className="border-0 ">
+      {/* Polaroid Image */}
+      <View className="w-full items-center mb-4">
         <Image
-          source={require('../assets/images/polaroid.png')}
-          style={{ width: 400, height: 400 }}
+          source={require('../assets/images/0km_polaroid.png')}
+          className="w-[60px] h-[60px]"
           resizeMode="contain"
         />
       </View>
 
       {/* Subtitle */}
-      <Text className="text-lg text-[#CF5771] mt-10">
+      <Text
+        className="text-center text-base text-accent mt-2"
+        style={{ fontFamily: 'Poppins-Regular' }}
+      >
         One journey, two hearts, zero distance
       </Text>
 
-      {/* Button */}
+      {/* Login Button */}
       <TouchableOpacity
         onPress={() => router.push('../(auth)/signin')}
-        className="min-w-[200px] w-72 mx-4 mt-5 bg-accent px-20 py-4 rounded-full items-center"
+        className="w-72 mt-8 bg-accent px-6 py-4 rounded-full"
       >
-        <Text className="text-white text-lg font-semibold text-center">
+        <Text
+          className="text-white text-lg text-center"
+          style={{ fontFamily: 'Poppins-Bold' }}
+        >
           Let’s login
         </Text>
       </TouchableOpacity>
