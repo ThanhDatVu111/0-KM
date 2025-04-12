@@ -1,8 +1,11 @@
+import React from 'react';
 import { Text, View, TouchableOpacity, Image } from 'react-native';
+import { router } from 'expo-router';
 
 export default function Index() {
   return (
     <View className="flex-1 items-center justify-center bg-primary">
+      {/* Logo */}
       <View className="mt-10">
         <Image
           source={require('../assets/images/logo.png')}
@@ -25,8 +28,13 @@ export default function Index() {
       </Text>
 
       {/* Button */}
-      <TouchableOpacity className="mt-5 bg-accent px-20 py-4 rounded-full">
-        <Text className="text-white text-lg font-semibold">Let’s login</Text>
+      <TouchableOpacity
+        onPress={() => router.push('../(auth)/signin')}
+        className="min-w-[200px] w-72 mx-4 mt-5 bg-accent px-20 py-4 rounded-full items-center"
+      >
+        <Text className="text-white text-lg font-semibold text-center">
+          Let’s login
+        </Text>
       </TouchableOpacity>
     </View>
   );
