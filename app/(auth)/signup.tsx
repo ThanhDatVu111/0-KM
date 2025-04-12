@@ -70,16 +70,19 @@ export default function SignUpScreen() {
   if (pendingVerification) {
     return (
       <>
-        <Text>Verify your email</Text>
-        <TextInput
+      
+      <AuthLayout activeTab = 'sign-up' onTabChange = {(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
+        <View style={{ width: 300 }}><FormInput label="Verify your email" borderColor= "#F5829B"autoCapitalize="none"
           value={code}
-          placeholder="Enter your verification code"
+          placeholder="Enter verification code"
           onChangeText={(code) => setCode(code)}
-        />
-        <TouchableOpacity onPress={onVerifyPress}>
-          <Text>Verify</Text>
+        /></View>
+        <TouchableOpacity onPress={onVerifyPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBlock:10}}>
+          <Text style={{color: 'white', fontSize: 16, fontFamily:"Poppins-Regular"}}>Verify</Text>
         </TouchableOpacity>
-      </>
+        </AuthLayout> 
+       </>
+      
     )
   }
 

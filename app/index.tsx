@@ -41,7 +41,7 @@ export default function Index() {
 
       <View className="border-0 ">
         <Image
-          source={require('../assets/images/polaroid.png')}
+          source={require('../assets/images/polaroid frame.png')}
           style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />

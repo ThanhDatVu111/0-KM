@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-
+import AuthLayout from '@/components/AuthLayout';
+import FormInput from '@/components/FormInput';
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
@@ -60,20 +61,19 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    
+    <View style={styles.container}><AuthLayout activeTab="sign-in" onTabChange={(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
       {!isCodeSent ? (
         <>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.input}
+        <View style={{ width: 300 }}>
+          <FormInput label="Email Address" borderColor="#DDDDDD" autoCapitalize="none"
             placeholder="Enter your email"
             value={email}
             onChangeText={setEmail}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity style={styles.button} onPress={sendResetCode}>
-            <Text style={styles.buttonText}>Send Reset Code</Text>
-          </TouchableOpacity>
+          /></View>
+          <TouchableOpacity onPress={sendResetCode} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBottom:10}}>
+                          <Text style={{color: 'white', fontSize: 16, fontFamily:"Poppins-Regular"}}>Send reset code</Text>
+                        </TouchableOpacity>
         </>
       ) : (
         <>
@@ -98,7 +98,8 @@ export default function ForgotPasswordScreen() {
         </>
       )}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
+    </AuthLayout></View>
+    
   );
 }
 
