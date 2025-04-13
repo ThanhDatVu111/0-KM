@@ -12,12 +12,24 @@ export default function FormInput({
   ...props
 }: FormInputProps) {
   return (
-    <View className="mb-2.5">
-      <Text className="text-left mb-2.5">{label}</Text>
+    <View className="mb-2.5 w-full">
+      <Text
+        className="text-left mb-2.5 text-base text-black"
+        style={{ fontFamily: 'Poppins-Regular' }}
+      >
+        {label}
+      </Text>
       <TextInput
         {...props}
-        className="text-base border-2 p-2.5 rounded mb-2.5 text-[#7D7E83]"
-        style={[props.style, borderColor ? { borderColor } : {}]}
+        className="text-base border-2 p-2.5 rounded mb-2.5 text-[#7D7E83] bg-transparent"
+        style={[
+          {
+            borderColor: borderColor || '#D1D5DB',
+            fontFamily: 'Poppins-Regular',
+          },
+          props.style,
+        ]}
+        placeholderTextColor="#A1A1AA"
       />
     </View>
   );

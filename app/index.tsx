@@ -14,28 +14,28 @@ export default function Index() {
     );
   }
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-6">
+    <View className="flex-1 items-center bg-primary px-6">
       {/* Logo */}
-      <View className="mt-20 mb-6 w-full items-center">
+      <View className="mt-10">
         <Image
           source={require('../assets/images/logo.png')}
-          className="w-28 h-28"
+          className="w-[200px] h-[200px]"
           resizeMode="contain"
         />
       </View>
 
       {/* Polaroid Image */}
-      <View className="w-full items-center mb-4">
+      <View className="">
         <Image
           source={require('../assets/images/0km_polaroid.png')}
-          className="w-[60px] h-[60px]"
+          className="w-[450px] h-[450px]"
           resizeMode="contain"
         />
       </View>
-
+      
       {/* Subtitle */}
       <Text
-        className="text-center text-base text-accent mt-2"
+        className="text-center text-base text-accent mt-2 text-lg"
         style={{ fontFamily: 'Poppins-Regular' }}
       >
         One journey, two hearts, zero distance
