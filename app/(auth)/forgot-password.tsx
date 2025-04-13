@@ -1,18 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [error, setError] = useState('');
 
+  const handleError = (err: any) => {
+    console.error('Clerk error:', JSON.stringify(err, null, 2));
+
+    let message = 'Something went wrong. Please try again.';
+
+    if (Array.isArray(err?.errors)) {
+      for (const error of err.errors) {
+        const code = error?.code;
+        const param = error?.meta?.paramName;
+
+        if (code === 'form_identifier_not_found') {
+          message = 'No account is associated with this email. Please sign up.';
+        } else if (
+          code === 'form_param_format_invalid' &&
+          param === 'email_address'
+        ) {
+          message = 'Please enter a valid email.';
+        } else if (code === 'form_code_incorrect') {
+          message = 'The verification code is incorrect.';
+        } else if (code === 'form_code_expired') {
+          message = 'The code has expired. Please request a new one.';
+        } else if (code === 'form_param_nil' && param === 'password') {
+          message = 'Password is required.';
+        } else if (code === 'form_password_pwned') {
+          message = 'This password is too common. Please choose another.';
+        }
+      }
+    } else if (err?.message) {
+      // Handle raw fallback message if Clerk error format changes
+      message = err.message;
+    }
+
+    setError(message);
+  };
+
+  // Handle sending the reset code to the user's email
   const sendResetCode = async () => {
     if (!isLoaded) return;
     try {
@@ -22,14 +57,8 @@ export default function ForgotPasswordScreen() {
       });
       setIsCodeSent(true);
       setError('');
-    } catch (err: any) {
-      if (err.errors) {
-        console.error('Clerk error:', JSON.stringify(err.errors, null, 2));
-        setError(err.errors[0]?.longMessage || 'Something went wrong');
-      } else {
-        console.error('Unexpected error:', err);
-        setError('Unexpected error occurred');
-      }
+    } catch (err) {
+      handleError(err);
     }
   };
 
@@ -44,99 +73,104 @@ export default function ForgotPasswordScreen() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.replace('/');
+        router.replace('../(auth)/signin');
       } else {
         setError('Password reset incomplete.');
       }
-    } catch (err: any) {
-      if (err.errors) {
-        console.error('Clerk error:', JSON.stringify(err.errors, null, 2));
-        setError(err.errors[0]?.longMessage || 'Something went wrong');
-      } else {
-        console.error('Unexpected error:', err);
-        setError('Unexpected error occurred');
-      }
+    } catch (err) {
+      handleError(err);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 justify-center bg-primary px-5">
       {!isCodeSent ? (
+        //if code is not sent yet
         <>
-          <Text style={styles.label}>Email Address</Text>
+          <Text
+            className="mb-1 text-base text-black"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            Email
+          </Text>
           <TextInput
-            style={styles.input}
+            className="w-full h-[50px] border border-accent rounded-lg px-3 mb-5"
             placeholder="Enter your email"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            style={{ fontFamily: 'Poppins-Regular' }}
           />
-          <TouchableOpacity style={styles.button} onPress={sendResetCode}>
-            <Text style={styles.buttonText}>Send Reset Code</Text>
+          {/*Button to send reset code*/}
+          <TouchableOpacity
+            className="bg-accent py-4 rounded-lg items-center mb-3"
+            onPress={sendResetCode}
+          >
+            <Text className="text-white" style={{ fontFamily: 'Poppins-Bold' }}>
+              Send Reset Code
+            </Text>
           </TouchableOpacity>
         </>
       ) : (
         <>
-          <Text style={styles.label}>Verification Code</Text>
+          <Text
+            className="mb-1 text-base text-black"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            Verification Code
+          </Text>
           <TextInput
-            style={styles.input}
+            className="w-full h-[50px] border border-gray-300 rounded-lg px-3 mb-5"
             placeholder="Enter verification code"
             value={code}
             onChangeText={setCode}
+            style={{ fontFamily: 'Poppins-Regular' }}
           />
-          <Text style={styles.label}>New Password</Text>
+          <Text
+            className="mb-1 text-base text-black"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            New Password
+          </Text>
           <TextInput
-            style={styles.input}
+            className="w-full h-[50px] border border-gray-300 rounded-lg px-3 mb-5"
             placeholder="Enter new password"
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
+            style={{ fontFamily: 'Poppins-Regular' }}
           />
-          <TouchableOpacity style={styles.button} onPress={resetPassword}>
-            <Text style={styles.buttonText}>Reset Password</Text>
+          <TouchableOpacity
+            className="bg-accent py-4 rounded-lg items-center mb-3"
+            onPress={resetPassword}
+          >
+            <Text className="text-white" style={{ fontFamily: 'Poppins-Bold' }}>
+              Reset Password
+            </Text>
           </TouchableOpacity>
         </>
       )}
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text
+          className="text-red-600 mt-2 text-center"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          {error}
+        </Text>
+      ) : null}
+
+      //* Back to Sign In */
+      <TouchableOpacity
+        onPress={() => router.push('../(auth)/signin')}
+        className="mb-4 items-center"
+      >
+        <Text
+          className="text-[16px] underline text-accent"
+          style={{ fontFamily: 'Poppins-Medium' }}
+        >
+          I remember my password
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#F5CDDE',
-    justifyContent: 'center',
-  },
-  label: {
-    marginBottom: 5,
-    fontFamily: 'Poppins-Regular',
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderColor: '#DDDDDD',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-    fontFamily: 'Poppins-Regular',
-  },
-  button: {
-    backgroundColor: '#F5829B',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontFamily: 'Poppins-Bold',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: 10,
-    fontFamily: 'Poppins-Regular',
-  },
-});

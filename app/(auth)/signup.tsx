@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 
@@ -13,60 +13,82 @@ export default function SignUpScreen() {
   const [password, setPassword] = React.useState('');
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState('');
+  const [error, setError] = React.useState('');
 
-  // Handle submission of sign-up form
+  //current bug: 
+
+  // ✅ Sign up with email & password
   const onSignUpPress = async () => {
     if (!isLoaded) return;
+    console.log('📩 Sign-up input:', { emailAddress, password });
 
-    console.log(emailAddress, password);
-
-    // Start sign-up process using email and password provided
     try {
       await signUp.create({
         emailAddress,
         password,
       });
-
-      // Send user an email with verification code
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-
-      // Set 'pendingVerification' to true to display second form
-      // and capture OTP code
       setPendingVerification(true);
-    } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+
+    } catch (err: any) {
+      let message = 'Something went wrong. Please try again.';
+
+      if (Array.isArray(err?.errors)) {
+        for (const error of err.errors) {
+          const code = error?.code;
+          const param = error?.meta?.paramName;
+
+          if (code === 'form_identifier_exists') {
+            message = 'This email is already in use. Try signing in.';
+          } else if (code === 'form_password_strength_fail') {
+            message = 'Your password is too weak. Try a stronger one.';
+          } else if (
+            code === 'form_param_format_invalid' &&
+            param === 'email_address'
+          ) {
+            message = 'Please enter a valid email address.';
+          } else if (code === 'form_param_nil' && param === 'password') {
+            message = 'Password is required.';
+          } else if (
+            code === 'form_param_unknown' &&
+            param === 'email_address'
+          ) {
+            message = 'Email address is not recognized as a valid field.';
+          }
+        }
+      }
+
+      console.error('Signup error:', JSON.stringify(err, null, 2));
+      setError(message);
     }
   };
 
-  // Handle submission of verification form
+  // ✅ Verify code
   const onVerifyPress = async () => {
     if (!isLoaded) return;
 
     try {
-      // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
       });
 
-      // If verification was completed, set the session to active
-      // and redirect the user
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace('/');
+        router.replace('../(onboard)/page');
       } else {
-        // If the status is not complete, check why. User may need to
-        // complete further steps.
         console.error(JSON.stringify(signUpAttempt, null, 2));
       }
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
       console.error(JSON.stringify(err, null, 2));
     }
   };
 
+  // ✅ Sign up with Google (OAuth)
+  const onGoogleSignUpPress = async () => {
+    //need help here
+  };
+
+  // ✅ OTP Verification UI
   if (pendingVerification) {
     return (
       <View className="flex-1 items-center justify-center bg-primary px-6">
@@ -79,7 +101,7 @@ export default function SignUpScreen() {
         <TextInput
           value={code}
           placeholder="Enter your verification code"
-          onChangeText={(code) => setCode(code)}
+          onChangeText={setCode}
           className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
         />
         <TouchableOpacity
@@ -97,6 +119,7 @@ export default function SignUpScreen() {
     );
   }
 
+  // ✅ Sign-up form UI
   return (
     <AuthLayout
       activeTab="sign-up"
@@ -106,7 +129,7 @@ export default function SignUpScreen() {
     >
       <View className="w-[300px]">
         <FormInput
-          label="Email Address"
+          label="Email"
           borderColor="#F5829B"
           autoCapitalize="none"
           value={emailAddress}
@@ -124,6 +147,15 @@ export default function SignUpScreen() {
         />
       </View>
 
+      {error ? (
+        <Text
+          className="text-red-600 text-center mb-2 w-[300px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          {error}
+        </Text>
+      ) : null}
+
       <TouchableOpacity
         onPress={onSignUpPress}
         className="bg-accent py-3 rounded-lg w-[300px] items-center my-3"
@@ -133,6 +165,19 @@ export default function SignUpScreen() {
           style={{ fontFamily: 'Poppins-Regular' }}
         >
           Next
+        </Text>
+      </TouchableOpacity>
+
+      {/* Google sign-up button */}
+      <TouchableOpacity
+        onPress={onGoogleSignUpPress}
+        className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
+      >
+        <Text
+          className="text-accent text-[16px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          Sign up with Google
         </Text>
       </TouchableOpacity>
     </AuthLayout>
