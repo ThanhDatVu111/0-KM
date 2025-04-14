@@ -1,55 +1,63 @@
 import React from 'react';
-import { Text, View, Image, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { router } from 'expo-router';
-import useFont from './(hooks)/useFont'; 
+import * as Font from 'expo-font';
+import { useEffect, useState } from 'react';
 
 export default function Index() {
-  const fontsLoaded = useFont();
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      await Font.loadAsync({
+        'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
+        'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
+        'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
+        'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'),
+      });
+      setFontsLoaded(true);
+    }
+    loadFonts();
+  }, []);
 
   if (!fontsLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-primary">
-        <Text className="text-lg text-white">Loading...</Text>
+        <Text>Loading...</Text>
       </View>
     );
   }
+
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-6">
+    <View className="flex-1 items-center justify-center bg-primary">
       {/* Logo */}
-      <View className="mt-20 mb-6 w-full items-center">
+      <View className="mt-10">
         <Image
           source={require('../assets/images/logo.png')}
-          className="w-28 h-28"
+          style={{ width: 150, height: 150 }}
           resizeMode="contain"
         />
       </View>
 
-      {/* Polaroid Image */}
-      <View className="w-full items-center mb-4">
+      <View className="border-0 ">
         <Image
-          source={require('../assets/images/0km_polaroid.png')}
-          className="w-[60px] h-[60px]"
+          source={require('../assets/images/polaroid frame.png')}
+          style={{ width: 400, height: 400 }}
           resizeMode="contain"
         />
       </View>
 
       {/* Subtitle */}
-      <Text
-        className="text-center text-base text-accent mt-2"
-        style={{ fontFamily: 'Poppins-Regular' }}
-      >
+      <Text style={{ fontFamily: 'Poppins-Regular', fontSize: 16, color: '#CF5771', marginTop: 10 }}>
         One journey, two hearts, zero distance
       </Text>
 
-      {/* Login Button */}
+      {/* Button */}
       <TouchableOpacity
         onPress={() => router.push('../(auth)/signin')}
-        className="w-72 mt-8 bg-accent px-6 py-4 rounded-full"
+        className="min-w-[200px] w-72 mx-4 mt-5 bg-accent px-20 py-4 rounded-full items-center"
       >
-        <Text
-          className="text-white text-lg text-center"
-          style={{ fontFamily: 'Poppins-Bold' }}
-        >
+        <Text style={{ fontFamily: 'Poppins-Bold', fontSize: 18, color: 'white', textAlign: 'center' }}>
           Let’s login
         </Text>
       </TouchableOpacity>

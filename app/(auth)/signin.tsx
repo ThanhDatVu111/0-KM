@@ -1,6 +1,6 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
@@ -42,59 +42,34 @@ export default function Page() {
 
 
   return (
-    <AuthLayout
-      activeTab="sign-in"
-      onTabChange={(tab) =>
-        router.replace(tab === 'sign-in' ? '/signin' : '/signup')
-      }
-    >
-      {/* Input Fields */}
-      <View className="w-[300px]">
-        <FormInput
-          label="Email Address"
-          borderColor="#DDDDDD"
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder="Sample@domain.com"
-          onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-        />
+    <AuthLayout activeTab = "sign-in" onTabChange = {(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}>
+      <View style={{ width: 300 }}>
+        <FormInput label="Email Address" borderColor="#DDDDDD" autoCapitalize="none"
+        value={emailAddress}
+        placeholder="Sample@domain.com"
+        onChangeText={(emailAddress) => setEmailAddress(emailAddress)
+        }></FormInput>
+      
+      <FormInput label="Password"borderColor="#DDDDDD" autoCapitalize="none"
+        value={password}
+        placeholder="Sample@domain.com"
+        secureTextEntry={true}
+        onChangeText={(password) => setPassword(password)
+        }></FormInput></View>
+        <TouchableOpacity onPress={()=> router.push('../forgot-password')} style ={{marginBottom:15}}>
+                <Text style={{color: '#CF5771', fontSize: 16, textDecorationLine: 'underline', fontFamily:"Poppins-Medium"}}>Forget Password?</Text>
+              </TouchableOpacity>
 
-        <FormInput
-          label="Password"
-          borderColor="#DDDDDD"
-          autoCapitalize="none"
-          value={password}
-          placeholder="••••••••"
-          secureTextEntry={true}
-          onChangeText={(password) => setPassword(password)}
-        />
+      <TouchableOpacity onPress={onSignInPress} style ={{backgroundColor: '#F5829B', padding: 10, borderRadius: 10, width: 300, alignItems: 'center', marginBottom:10}}>
+                <Text style={{color: 'white', fontSize: 16, fontFamily:"Poppins-Regular"}}>Login</Text>
+              </TouchableOpacity>
+      
+      <View style={{ display: 'flex', flexDirection: 'row', gap: 3 }}>
+        <Text style={{fontFamily:"Poppins-Regular"}}>Don't have an account?</Text>
+        <Link href="/signup">
+          <Text>Sign up</Text>
+        </Link>
       </View>
-
-      {/* Login Button */}
-      <TouchableOpacity
-        onPress={onSignInPress}
-        className="bg-accent py-3 rounded-lg w-[300px] items-center mb-3"
-      >
-        <Text
-          className="text-white text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Login
-        </Text>
-      </TouchableOpacity>
-
-      {/* Forgot Password */}
-      <TouchableOpacity
-        onPress={() => router.push('../forgot-password')}
-        className="mb-4"
-      >
-        <Text
-          className="text-[16px] underline text-accent"
-          style={{ fontFamily: 'Poppins-Medium' }}
-        >
-          Forget Password?
-        </Text>
-      </TouchableOpacity>
     </AuthLayout>
   );
 }
