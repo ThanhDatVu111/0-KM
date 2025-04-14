@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
+import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -10,41 +11,10 @@ export default function ForgotPasswordScreen() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const [error, setError] = useState('');
+  const { error, setError, handleClerkError } = useClerkErrorHandler();
 
   const handleError = (err: any) => {
-    console.error('Clerk error:', JSON.stringify(err, null, 2));
-
-    let message = 'Something went wrong. Please try again.';
-
-    if (Array.isArray(err?.errors)) {
-      for (const error of err.errors) {
-        const code = error?.code;
-        const param = error?.meta?.paramName;
-
-        if (code === 'form_identifier_not_found') {
-          message = 'No account is associated with this email. Please sign up.';
-        } else if (
-          code === 'form_param_format_invalid' &&
-          param === 'email_address'
-        ) {
-          message = 'Please enter a valid email.';
-        } else if (code === 'form_code_incorrect') {
-          message = 'The verification code is incorrect.';
-        } else if (code === 'form_code_expired') {
-          message = 'The code has expired. Please request a new one.';
-        } else if (code === 'form_param_nil' && param === 'password') {
-          message = 'Password is required.';
-        } else if (code === 'form_password_pwned') {
-          message = 'This password is too common. Please choose another.';
-        }
-      }
-    } else if (err?.message) {
-      // Handle raw fallback message if Clerk error format changes
-      message = err.message;
-    }
-
-    setError(message);
+    handleClerkError(err);
   };
 
   // Handle sending the reset code to the user's email
@@ -101,7 +71,7 @@ export default function ForgotPasswordScreen() {
             autoCapitalize="none"
             style={{ fontFamily: 'Poppins-Regular' }}
           />
-          {/*Button to send reset code*/}
+          {/*Button to send reset code  - this can be change by using the button component*/}
           <TouchableOpacity
             className="bg-accent py-4 rounded-lg items-center mb-3"
             onPress={sendResetCode}
@@ -140,6 +110,7 @@ export default function ForgotPasswordScreen() {
             secureTextEntry
             style={{ fontFamily: 'Poppins-Regular' }}
           />
+          {/*Button to send reset password  - this can be change by using the button component*/}
           <TouchableOpacity
             className="bg-accent py-4 rounded-lg items-center mb-3"
             onPress={resetPassword}
@@ -158,7 +129,6 @@ export default function ForgotPasswordScreen() {
           {error}
         </Text>
       ) : null}
-
       //* Back to Sign In */
       <TouchableOpacity
         onPress={() => router.push('../(auth)/signin')}

@@ -1,67 +1,36 @@
 import { useSignIn } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
+import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const { error, setError, handleClerkError } = useClerkErrorHandler();
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
     if (!isLoaded) return;
-    // Start the sign-in process using the email and password provided
+
     try {
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
       });
 
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace('/');
+        router.replace('../(onboard)/page');
       } else {
-        // If the status isn't complete, check why. User might need to
-        // complete further steps.
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
-    } catch (err: any) {
-      let message = 'Something went wrong. Please try again.';
-
-      if (Array.isArray(err?.errors)) {
-        for (const error of err.errors) {
-          const code = error?.code;
-          const param = error?.meta?.paramName;
-
-          if (code === 'form_identifier_not_found') {
-            message = 'No account found with this email. Please sign up.';
-          } else if (code === 'form_password_incorrect') {
-            message = 'Incorrect password. Please try again.';
-          } else if (
-            code === 'form_param_format_invalid' &&
-            param === 'email_address'
-          ) {
-            message = 'Please enter a valid email address.';
-          } else if (code === 'form_param_nil' && param === 'password') {
-            message = 'Password is required.';
-          } else if (
-            code === 'form_param_unknown' &&
-            param === 'email_address'
-          ) {
-            message = 'Email address is not recognized as a valid field.';
-          }
-        }
-      }
-
-      console.error('Sign-in error:', JSON.stringify(err, null, 2));
-      setError(message);
+    } catch (err) {
+      handleClerkError(err);
     }
   };
 
@@ -99,7 +68,7 @@ export default function Page() {
         />
       </View>
 
-      {/* Login Button */}
+      {/*Button to login  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={onSignInPress}
         className="bg-accent py-3 rounded-lg w-[300px] items-center mb-3"
@@ -122,7 +91,7 @@ export default function Page() {
         </Text>
       ) : null}
 
-      {/* Google sign-up button */}
+      {/*Button to use google to signin  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={onGoogleSignInPress}
         className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
@@ -135,7 +104,7 @@ export default function Page() {
         </Text>
       </TouchableOpacity>
 
-      {/* Forgot Password */}
+      {/*Button to forgot password  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={() => router.push('../forgot-password')}
         className="mb-4"

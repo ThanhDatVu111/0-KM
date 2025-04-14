@@ -4,6 +4,7 @@ import { useSignUp } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
+import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -13,9 +14,9 @@ export default function SignUpScreen() {
   const [password, setPassword] = React.useState('');
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState('');
-  const [error, setError] = React.useState('');
+  const { error, setError, handleClerkError } = useClerkErrorHandler();
 
-  //current bug: 
+  //current bug:
 
   // ✅ Sign up with email & password
   const onSignUpPress = async () => {
@@ -29,37 +30,8 @@ export default function SignUpScreen() {
       });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-
     } catch (err: any) {
-      let message = 'Something went wrong. Please try again.';
-
-      if (Array.isArray(err?.errors)) {
-        for (const error of err.errors) {
-          const code = error?.code;
-          const param = error?.meta?.paramName;
-
-          if (code === 'form_identifier_exists') {
-            message = 'This email is already in use. Try signing in.';
-          } else if (code === 'form_password_strength_fail') {
-            message = 'Your password is too weak. Try a stronger one.';
-          } else if (
-            code === 'form_param_format_invalid' &&
-            param === 'email_address'
-          ) {
-            message = 'Please enter a valid email address.';
-          } else if (code === 'form_param_nil' && param === 'password') {
-            message = 'Password is required.';
-          } else if (
-            code === 'form_param_unknown' &&
-            param === 'email_address'
-          ) {
-            message = 'Email address is not recognized as a valid field.';
-          }
-        }
-      }
-
-      console.error('Signup error:', JSON.stringify(err, null, 2));
-      setError(message);
+      handleClerkError(err);
     }
   };
 
@@ -104,6 +76,8 @@ export default function SignUpScreen() {
           onChangeText={setCode}
           className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
         />
+
+        {/*Button to verify  - this can be change by using the button component*/}
         <TouchableOpacity
           onPress={onVerifyPress}
           className="bg-accent py-3 rounded-lg w-[300px] items-center"
@@ -156,6 +130,7 @@ export default function SignUpScreen() {
         </Text>
       ) : null}
 
+      {/*Button to sign up  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={onSignUpPress}
         className="bg-accent py-3 rounded-lg w-[300px] items-center my-3"
@@ -168,7 +143,7 @@ export default function SignUpScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Google sign-up button */}
+      {/*Button to use google to signup  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={onGoogleSignUpPress}
         className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
