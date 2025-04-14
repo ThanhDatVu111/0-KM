@@ -1,45 +1,43 @@
 import { useSignIn } from '@clerk/clerk-expo';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
+import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
-
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const { error, setError, handleClerkError } = useClerkErrorHandler();
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
     if (!isLoaded) return;
 
-    // Start the sign-in process using the email and password provided
     try {
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
       });
 
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace('/');
+        router.replace('../(onboard)/page');
       } else {
-        // If the status isn't complete, check why. User might need to
-        // complete further steps.
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      handleClerkError(err);
     }
   };
 
+  // ✅ Sign up with Google (OAuth)
+  const onGoogleSignInPress = async () => {
+    //need help here
+  };
 
   return (
     <AuthLayout
@@ -51,8 +49,8 @@ export default function Page() {
       {/* Input Fields */}
       <View className="w-[300px]">
         <FormInput
-          label="Email Address"
-          borderColor="#DDDDDD"
+          label="Email"
+          borderColor="#F5829B"
           autoCapitalize="none"
           value={emailAddress}
           placeholder="Sample@domain.com"
@@ -61,7 +59,7 @@ export default function Page() {
 
         <FormInput
           label="Password"
-          borderColor="#DDDDDD"
+          borderColor="#F5829B"
           autoCapitalize="none"
           value={password}
           placeholder="••••••••"
@@ -70,7 +68,7 @@ export default function Page() {
         />
       </View>
 
-      {/* Login Button */}
+      {/*Button to login  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={onSignInPress}
         className="bg-accent py-3 rounded-lg w-[300px] items-center mb-3"
@@ -83,7 +81,30 @@ export default function Page() {
         </Text>
       </TouchableOpacity>
 
-      {/* Forgot Password */}
+      {/* Display the error message using error state */}
+      {error ? (
+        <Text
+          className="text-red-600 text-center mb-2 w-[300px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          {error}
+        </Text>
+      ) : null}
+
+      {/*Button to use google to signin  - this can be change by using the button component*/}
+      <TouchableOpacity
+        onPress={onGoogleSignInPress}
+        className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
+      >
+        <Text
+          className="text-accent text-[16px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          Sign in with Google
+        </Text>
+      </TouchableOpacity>
+
+      {/*Button to forgot password  - this can be change by using the button component*/}
       <TouchableOpacity
         onPress={() => router.push('../forgot-password')}
         className="mb-4"
