@@ -4,17 +4,15 @@ import { useSignUp } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
-import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
-
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState('');
-  const { error, setError, handleClerkError } = useClerkErrorHandler();
+  const [error, setError] = React.useState<string | null>(null);
 
   //current bug:
 
@@ -31,7 +29,12 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      handleClerkError(err);
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 

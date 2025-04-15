@@ -4,14 +4,13 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
-import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const { error, setError, handleClerkError } = useClerkErrorHandler();
+  const [error, setError] = React.useState<string | null>(null);
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
@@ -29,8 +28,13 @@ export default function Page() {
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
-    } catch (err) {
-      handleClerkError(err);
+    } catch (err:any) {
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 
