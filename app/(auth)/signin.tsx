@@ -5,6 +5,10 @@ import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
 
+//constants
+import images from '@/constants/images';
+import icons from '@/constants/icons';
+
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();

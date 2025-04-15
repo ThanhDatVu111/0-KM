@@ -5,6 +5,10 @@ import { Link, useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 
+//constants
+import images from '@/constants/images';
+import icons from '@/constants/icons';
+
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();

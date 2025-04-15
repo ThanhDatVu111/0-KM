@@ -3,6 +3,10 @@ import { Text, View, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import useFont from './(hooks)/useFont'; 
 
+//constants
+import images from '@/constants/images';
+import icons from '@/constants/icons';
+
 export default function Index() {
   const fontsLoaded = useFont();
 
@@ -18,7 +22,7 @@ export default function Index() {
       {/* Logo */}
       <View className="mt-20 mb-6 w-full items-center">
         <Image
-          source={require('../assets/images/logo.png')}
+          source={images.logo}
           className="w-28 h-28"
           resizeMode="contain"
         />
@@ -27,7 +31,7 @@ export default function Index() {
       {/* Polaroid Image */}
       <View className="w-full items-center mb-4">
         <Image
-          source={require('../assets/images/0km_polaroid.png')}
+          source={images.polaroid}
           className="w-[60px] h-[60px]"
           resizeMode="contain"
         />
