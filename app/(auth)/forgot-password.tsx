@@ -12,15 +12,6 @@ export default function ForgotPasswordScreen() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const handleError = (err: any) => {
-    const readableMessage =
-      err?.errors?.[0]?.shortMessage ||
-      err?.errors?.[0]?.longMessage ||
-      err?.message ||
-      'Something went wrong. Please try again.';
-    setError(readableMessage);
-  };
-
   // Handle sending the reset code to the user's email
   const sendResetCode = async () => {
     if (!isLoaded) return;
@@ -31,8 +22,13 @@ export default function ForgotPasswordScreen() {
       });
       setIsCodeSent(true);
       setError('');
-    } catch (err) {
-      handleError(err);
+    } catch (err: any) {
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 
@@ -51,8 +47,13 @@ export default function ForgotPasswordScreen() {
       } else {
         setError('Password reset incomplete.');
       }
-    } catch (err) {
-      handleError(err);
+    } catch (err: any) {
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 
