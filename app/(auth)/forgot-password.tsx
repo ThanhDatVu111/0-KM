@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import useClerkErrorHandler from '@/app/(hooks)/useClerkErrorHandler';
 
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -11,11 +10,7 @@ export default function ForgotPasswordScreen() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const { error, setError, handleClerkError } = useClerkErrorHandler();
-
-  const handleError = (err: any) => {
-    handleClerkError(err);
-  };
+  const [error, setError] = React.useState<string | null>(null);
 
   // Handle sending the reset code to the user's email
   const sendResetCode = async () => {
@@ -27,8 +22,13 @@ export default function ForgotPasswordScreen() {
       });
       setIsCodeSent(true);
       setError('');
-    } catch (err) {
-      handleError(err);
+    } catch (err: any) {
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 
@@ -47,8 +47,13 @@ export default function ForgotPasswordScreen() {
       } else {
         setError('Password reset incomplete.');
       }
-    } catch (err) {
-      handleError(err);
+    } catch (err: any) {
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong. Please try again.';
+      setError(readableMessage);
     }
   };
 
