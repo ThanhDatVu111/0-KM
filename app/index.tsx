@@ -19,18 +19,17 @@ export default function Index() {
   }
   return (
     <SafeAreaView className="flex h-full bg-primary items-center justify-between">
-      <View className="flex-1 items-center justify-center bg-primary px-6">
+      <View className="flex-1 items-center justify-center bg-primary">
       {/* Logo */}
-        <View className="w-full items-center mb-6">
+        <View className="w-full items-center">
           <Image
             source={images.logo}
-            className="w-full max-h-28"
+            className="w-40 h-28"
             resizeMode="contain"
           />
       </View>
 
       <View className="w-full h-3/4 items-center">
-        {/* Polaroid Image */}
         <Image
           source={images.polaroid}
           className="justify-center h-2/3"
