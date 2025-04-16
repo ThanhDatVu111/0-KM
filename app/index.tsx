@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Image, TouchableOpacity } from 'react-native';
+import { Text, View, Image, TouchableOpacity, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import useFont from './(hooks)/useFont'; 
 
@@ -18,45 +18,47 @@ export default function Index() {
     );
   }
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-6">
+    <SafeAreaView className="flex h-full bg-primary items-center justify-between">
+      <View className="flex-1 items-center justify-center bg-primary px-6">
       {/* Logo */}
-      <View className="mt-20 mb-6 w-full items-center">
-        <Image
-          source={images.logo}
-          className="w-28 h-28"
-          resizeMode="contain"
-        />
+        <View className="w-full items-center mb-6">
+          <Image
+            source={images.logo}
+            className="w-full max-h-28"
+            resizeMode="contain"
+          />
       </View>
 
-      {/* Polaroid Image */}
-      <View className="w-full items-center mb-4">
+      <View className="w-full h-3/4 items-center">
+        {/* Polaroid Image */}
         <Image
           source={images.polaroid}
-          className="w-[60px] h-[60px]"
+          className="justify-center h-2/3"
           resizeMode="contain"
         />
-      </View>
 
-      {/* Subtitle */}
-      <Text
-        className="text-center text-base text-accent mt-2"
-        style={{ fontFamily: 'Poppins-Regular' }}
-      >
-        One journey, two hearts, zero distance
-      </Text>
-
-      {/* Login Button */}
-      <TouchableOpacity
+        {/* Login Button */}
+        <TouchableOpacity
         onPress={() => router.push('../(auth)/signin')}
         className="w-72 mt-8 bg-accent px-6 py-4 rounded-full"
       >
+          <Text
+            className="text-white text-lg text-center"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            Let’s login
+          </Text>    
+        </TouchableOpacity>
+
+        {/* Subtitle */}
         <Text
-          className="text-white text-lg text-center"
-          style={{ fontFamily: 'Poppins-Bold' }}
+          className="text-center text-base text-accent mt-2"
+          style={{ fontFamily: 'Poppins-Regular' }}
         >
-          Let’s login
+          One journey, two hearts, zero distance
         </Text>
-      </TouchableOpacity>
+      </View>
     </View>
+    </SafeAreaView>
   );
 }
