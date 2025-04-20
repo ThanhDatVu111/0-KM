@@ -21,6 +21,7 @@
     "@react-native-community/datetimepicker": "^8.3.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@supabase/supabase-js": "^2.49.4",
     "expo": "^52.0.44",
     "expo-auth-session": "~6.0.3",
     "expo-blur": "~14.0.3",
