@@ -14,8 +14,6 @@ export default function SignUpScreen() {
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
-  //current bug:
-
   // ✅ Sign up with email & password
   const onSignUpPress = async () => {
     if (!isLoaded) return;
@@ -49,7 +47,13 @@ export default function SignUpScreen() {
 
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace('../(onboard)/name');
+        router.replace({
+            pathname: '../(onboard)/onboardingFlow',     
+            params: {
+            email:     emailAddress,                    
+            sessionId: signUpAttempt.createdSessionId,  
+            },
+          });
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
       }

@@ -6,14 +6,14 @@ import { useAuth } from '@clerk/clerk-expo';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-// const supabase = createClient(supabaseUrl, supabaseKey, {
-//     auth:{
-//         storage: AsyncStorage,
-//         autoRefreshToken: true,
-//         persistSession: true,
-//         detectSessionInUrl: false,
-//     }
-// });
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth:{
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+    }
+});
 
 // export default supabase;
 
