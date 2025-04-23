@@ -11,8 +11,8 @@ interface ButtonProps extends TouchableOpacityProps {
 
 export default function Button({
   label,
-  size = 'py-3 px-6',
-  color = 'bg-accent text-white',
+  size = '',
+  color = '',
   className = '',
   textClassName = '',
   ...props

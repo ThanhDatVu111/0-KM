@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
+import { useSignUp, useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
@@ -13,6 +13,7 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const { userId } = useAuth();
 
   // ✅ Sign up with email & password
   const onSignUpPress = async () => {
@@ -48,12 +49,12 @@ export default function SignUpScreen() {
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace({
-            pathname: '../(onboard)/onboardingFlow',     
-            params: {
-            email:     emailAddress,                    
-            sessionId: signUpAttempt.createdSessionId,  
-            },
-          });
+          pathname: '../(onboard)/onboardingFlow',
+          params: {
+            email: emailAddress,
+            userId: userId,
+          },
+        });
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
       }
