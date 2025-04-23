@@ -6,9 +6,6 @@ import AuthLayout from '@/components/AuthLayout';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 
-import { useAuth, useUser } from '@clerk/clerk-expo';
-
-
 const onboardingFlow = () => {
   const { email, sessionId } = useLocalSearchParams();
   const router = useRouter();
