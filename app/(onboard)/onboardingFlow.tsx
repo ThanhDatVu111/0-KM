@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -11,6 +12,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import { useLocalSearchParams } from 'expo-router';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/config/db';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -59,8 +62,7 @@ function BirthdayStep({
   setShowPicker: (b: boolean) => void;
   onNext: () => void;
 }) {
-
-  // Hides the Android date-picker once user pick (or cancel) and, if 
+  // Hides the Android date-picker once user pick (or cancel) and, if
   // user actually picked a date, updates your birthdate state.
   const handleChange = (_: any, selected?: Date) => {
     if (Platform.OS === 'android') setShowPicker(false);
@@ -102,9 +104,9 @@ function BirthdayStep({
 
 /** --- Step 3: PhotoEntry --- */
 
-// That launchImageLibraryAsync call itself returns a Promise that only settles once the user 
-// either picks an image or cancels. By using await, you pause execution until that happens. 
-// Once the user has made their choice, your function continues, calls setPhoto(...), then 
+// That launchImageLibraryAsync call itself returns a Promise that only settles once the user
+// either picks an image or cancels. By using await, you pause execution until that happens.
+// Once the user has made their choice, your function continues, calls setPhoto(...), then
 // finishes—resolving its returned promise.
 
 async function pickImage(setPhoto: (uri: string) => void) {
@@ -168,17 +170,42 @@ const OnboardingFlow = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const { userId, email } = useLocalSearchParams();
+  const router = useRouter();
 
   //Testing purposes
-  const handleFinish = () => {
-    console.log({
+  const handleFinish = async () => {
+    const dt = {
       email,
       userId,
       name,
       birthdate,
       photo,
       completed_at: new Date().toISOString(),
-    });
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            email: dt.email,
+            user_id: dt.userId,
+            username: dt.name,
+            birthdate: dt.birthdate,
+            photo_url: dt.photo,
+            created_at: dt.completed_at,
+          },
+        ])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+      console.log('User saved successfully:', data);
+      router.push('/page');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const steps = [
