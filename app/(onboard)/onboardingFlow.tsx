@@ -114,6 +114,7 @@ async function pickImage(setPhoto: (uri: string) => void) {
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     quality: 0.8,
   });
+  //if canceled is true, assets will be an empty array, and if assets has items then canceled will be false.
   if (!result.canceled && result.assets.length > 0) {
     setPhoto(result.assets[0].uri);
   }
@@ -172,31 +173,21 @@ const OnboardingFlow = () => {
   const { userId, email } = useLocalSearchParams();
   const router = useRouter();
 
-  //Testing purposes
   const handleFinish = async () => {
-    const dt = {
-      email,
-      userId,
-      name,
-      birthdate,
-      photo,
-      completed_at: new Date().toISOString(),
-    };
-
     try {
       const { data, error } = await supabase
         .from('users')
         .insert([
           {
-            email: dt.email,
-            user_id: dt.userId,
-            username: dt.name,
-            birthdate: dt.birthdate,
-            photo_url: dt.photo,
-            created_at: dt.completed_at,
+            email: email,
+            user_id: userId,
+            username: name,
+            birthdate: birthdate,
+            photo_url: photo,
+            created_at: new Date().toISOString(),
           },
         ])
-        .select();
+        .select(); // ← now `data` is the array of inserted rows
 
       if (error) {
         throw error;
