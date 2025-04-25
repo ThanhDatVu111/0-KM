@@ -55,12 +55,14 @@ function BirthdayStep({
   showPicker,
   setShowPicker,
   onNext,
+  onPrevious,
 }: {
   birthdate: Date;
   setBirthdate: (d: Date) => void;
   showPicker: boolean;
   setShowPicker: (b: boolean) => void;
   onNext: () => void;
+  onPrevious: () => void;
 }) {
   // Hides the Android date-picker once user pick (or cancel) and, if
   // user actually picked a date, updates your birthdate state.
@@ -90,14 +92,24 @@ function BirthdayStep({
           onChange={handleChange}
         />
       )}
-      <Button
-        label="Next"
-        onPress={onNext}
-        size="px-4 py-3"
-        color="bg-accent"
-        className="w-full"
-        textClassName="text-white text-base font-medium"
-      />
+      <View className="flex-row justify-between w-full">
+        <Button
+          label="Previous"
+          onPress={onPrevious}
+          size="px-4 py-3"
+          color="bg-gray-400"
+          className="w-1/2 mr-2"
+          textClassName="text-white text-base font-medium"
+        />
+        <Button
+          label="Next"
+          onPress={onNext}
+          size="px-4 py-3"
+          color="bg-accent"
+          className="w-1/2 ml-2"
+          textClassName="text-white text-base font-medium"
+        />
+      </View>
     </View>
   );
 }
@@ -124,10 +136,12 @@ function PhotoStep({
   photo,
   setPhoto,
   onFinish,
+  onPrevious,
 }: {
   photo: string | null;
   setPhoto: (uri: string) => void;
   onFinish: () => void;
+  onPrevious?: () => void;
 }) {
   return (
     <View className="w-full max-w-xs items-center">
@@ -146,6 +160,16 @@ function PhotoStep({
           size="px-4 py-3"
           color="bg-accent"
           className="w-full"
+          textClassName="text-white text-base font-medium"
+        />
+      )}
+      {onPrevious && (
+        <Button
+          label="Previous"
+          onPress={onPrevious}
+          size="px-4 py-3"
+          color="bg-gray-400"
+          className="w-full mb-4"
           textClassName="text-white text-base font-medium"
         />
       )}
@@ -212,16 +236,18 @@ const OnboardingFlow = () => {
       setBirthdate={setBirthdate}
       showPicker={showPicker}
       setShowPicker={setShowPicker}
+      onPrevious={() => setStep(0)}
       onNext={() => setStep(2)}
     />,
     <PhotoStep
       key="3"
       photo={photo}
       setPhoto={setPhoto}
+      onPrevious={() => setStep(1)}
       onFinish={handleFinish}
     />,
   ];
-
+  
   return (
     <View className="flex-1 items-center justify-center bg-primary px-4">
       {steps[step]}
