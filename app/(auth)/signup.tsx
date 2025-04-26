@@ -40,6 +40,7 @@ export default function SignUpScreen() {
 
   // ✅ Verify code
   const onVerifyPress = async () => {
+    setError(null);
     if (!isLoaded) return;
 
     try {
@@ -51,12 +52,11 @@ export default function SignUpScreen() {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace('../(onboard)/name');
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        setError('Invalid code. Please try again.');
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
-      const readableMessage = 'Invalid code. Please try again.';
-      setError(readableMessage);
+      setError('Invalid code. Please try again.');
     }
   };
 
@@ -94,6 +94,15 @@ export default function SignUpScreen() {
             Verify
           </Text>
         </TouchableOpacity>
+        
+        {error ? (
+        <Text
+          className="text-red-600 text-center mb-2 w-[300px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        > 
+          {error}
+        </Text>
+      ) : null}
       </View>
     );
   }
