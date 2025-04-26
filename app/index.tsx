@@ -5,7 +5,6 @@ import useFont from './(hooks)/useFont';
 
 //constants
 import images from '@/constants/images';
-import icons from '@/constants/icons';
 
 export default function Index() {
   const fontsLoaded = useFont();

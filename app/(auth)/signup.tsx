@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSignUp, useAuth, useUser } from '@clerk/clerk-expo';
+import { useSignUp} from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
