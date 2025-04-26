@@ -3,16 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import images from '@/constants/images';
 import icons from '@/constants/icons';
 
-// import { AuthStrategy, ModalType } from '@/types/enums';
-// import { useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
-
-// const LOGIN_OPTIONS = [
-//   {
-//     text: 'Continue with Google',
-//     icon: icons.google,
-//     strategy: AuthStrategy.Google,
-//   }
-// ]
 
 interface AuthLayoutProps {
   children: React.ReactNode;

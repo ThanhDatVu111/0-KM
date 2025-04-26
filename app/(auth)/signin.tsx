@@ -5,6 +5,7 @@ import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
 import Button from '@/components/Button';
+import SocialLoginButton from '@/components/SocialLoginButton';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -40,9 +41,7 @@ export default function Page() {
   };
 
   // ✅ Sign up with Google (OAuth)
-  const onGoogleSignInPress = async () => {
-    //need help here
-  };
+  const onGoogleSignInPress = async () => {};
 
   return (
     <AuthLayout
@@ -95,15 +94,7 @@ export default function Page() {
       ) : null}
 
       {/* Sign in with Google Button */}
-      <Button
-        label="Sign in with Google"
-        onPress={onGoogleSignInPress}
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+      <SocialLoginButton label="Sign in with Google" strategy="oauth_google" />
 
       {/* Forgot Password Link */}
       <Button
