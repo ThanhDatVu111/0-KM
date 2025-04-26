@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import images from '@/constants/images';
 import icons from '@/constants/icons';
 
+
 interface AuthLayoutProps {
   children: React.ReactNode;
   activeTab: 'sign-in' | 'sign-up';

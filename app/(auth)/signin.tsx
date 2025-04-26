@@ -1,9 +1,11 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
+import Button from '@/components/Button';
+import SocialLoginButton from '@/components/SocialLoginButton';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -28,7 +30,7 @@ export default function Page() {
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
-    } catch (err:any) {
+    } catch (err: any) {
       const readableMessage =
         err?.errors?.[0]?.shortMessage ||
         err?.errors?.[0]?.longMessage ||
@@ -36,11 +38,6 @@ export default function Page() {
         'Something went wrong. Please try again.';
       setError(readableMessage);
     }
-  };
-
-  // ✅ Sign up with Google (OAuth)
-  const onGoogleSignInPress = async () => {
-    //need help here
   };
 
   return (
@@ -72,18 +69,15 @@ export default function Page() {
         />
       </View>
 
-      {/*Button to login  - this can be change by using the button component*/}
-      <TouchableOpacity
+      {/* Login Button */}
+      <Button
+        label="Login"
         onPress={onSignInPress}
-        className="bg-accent py-3 rounded-lg w-[300px] items-center mb-3"
-      >
-        <Text
-          className="text-white text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Login
-        </Text>
-      </TouchableOpacity>
+        size="py-3 px-4"
+        color="bg-accent"
+        className="w-[300px] mb-3"
+        textClassName="text-white text-[16px]"
+      />
 
       {/* Display the error message using error state */}
       {error ? (
@@ -95,31 +89,20 @@ export default function Page() {
         </Text>
       ) : null}
 
-      {/*Button to use google to signin  - this can be change by using the button component*/}
-      <TouchableOpacity
-        onPress={onGoogleSignInPress}
-        className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
-      >
-        <Text
-          className="text-accent text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Sign in with Google
-        </Text>
-      </TouchableOpacity>
+      {/* Sign in with Google Button */}
+      <SocialLoginButton label="Sign in with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Sign in with Apple" strategy="oauth_apple" />
 
-      {/*Button to forgot password  - this can be change by using the button component*/}
-      <TouchableOpacity
+      {/* Forgot Password Link */}
+      <Button
+        label="Forget Password?"
         onPress={() => router.push('../forgot-password')}
+        size=""
+        color=""
         className="mb-4"
-      >
-        <Text
-          className="text-[16px] underline text-accent"
-          style={{ fontFamily: 'Poppins-Medium' }}
-        >
-          Forget Password?
-        </Text>
-      </TouchableOpacity>
+        textClassName="text-[16px] underline text-accent"
+        textStyle={{ fontFamily: 'Poppins-Medium' }}
+      />
     </AuthLayout>
   );
 }
