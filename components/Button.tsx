@@ -45,7 +45,10 @@ export default function Button({
 
         <Text
           className={`text-base ${textClassName}`}
-          style={{ fontFamily: 'Poppins-Bold' }}
+          style={[
+            { fontFamily: textStyle?.fontFamily ?? 'poppins-bold' }, // default bold unless overridden
+            textStyle,
+          ]}
         >
           {label}
         </Text>

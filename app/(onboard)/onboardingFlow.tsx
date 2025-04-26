@@ -1,17 +1,12 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import {
-  View,
-  Text,
-  Platform,
-  Image,
-  TextInput,
-} from 'react-native';
+import { View, Text, Platform, Image, TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/config/db';
+import { useUser } from '@clerk/clerk-expo';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -192,17 +187,19 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
-  const { userId, email } = useLocalSearchParams();
+  const { user } = useUser();
   const router = useRouter();
 
   const handleFinish = async () => {
     try {
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('users')
         .insert([
           {
-            email: email,
-            user_id: userId,
+            email: user.primaryEmailAddress?.emailAddress,
+            user_id: user.id,
             username: name,
             birthdate: birthdate,
             photo_url: photo,
@@ -245,7 +242,7 @@ const OnboardingFlow = () => {
       onFinish={handleFinish}
     />,
   ];
-  
+
   return (
     <View className="flex-1 items-center justify-center bg-primary px-4">
       {steps[step]}

@@ -40,9 +40,6 @@ export default function Page() {
     }
   };
 
-  // ✅ Sign up with Google (OAuth)
-  const onGoogleSignInPress = async () => {};
-
   return (
     <AuthLayout
       activeTab="sign-in"
@@ -80,7 +77,6 @@ export default function Page() {
         color="bg-accent"
         className="w-[300px] mb-3"
         textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
       />
 
       {/* Display the error message using error state */}
@@ -95,6 +91,7 @@ export default function Page() {
 
       {/* Sign in with Google Button */}
       <SocialLoginButton label="Sign in with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Sign in with Apple" strategy="oauth_apple" />
 
       {/* Forgot Password Link */}
       <Button

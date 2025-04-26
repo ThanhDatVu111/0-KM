@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Text, TextInput, TouchableOpacity, View, Image } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
-import icons from '@/constants/icons';
 import SocialLoginButton from '@/components/SocialLoginButton';
+import Button from '@/components/Button';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -142,22 +142,21 @@ export default function SignUpScreen() {
       ) : null}
 
       {/*Button to sign up  - this can be change by using the button component*/}
-      <TouchableOpacity
+      <Button
+        label="Next"
         onPress={onSignUpPress}
-        className="bg-accent py-3 rounded-lg w-[300px] items-center my-3"
-      >
-        <Text
-          className="text-white text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Next
-        </Text>
-      </TouchableOpacity>
+        size="py-3 px-4"
+        color="bg-accent"
+        className="w-[300px] mb-3"
+        textClassName="text-white text-[16px]"
+      />
 
       {/*Button to use google to signup  - this can be change by using the button component*/}
-      <SocialLoginButton label="oauth_google" strategy="oauth_google" />
-      {/* <SocialLoginButton label="oauth_facebook" strategy="oauth_facebook" />
-      <SocialLoginButton label="oauth_apple" strategy="oauth_apple" /> */}
+      <SocialLoginButton label="Sign up with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Sign up with Apple" strategy="oauth_apple" />
+
+      {/* In case we want to use Facebook OAuth
+      <SocialLoginButton label="oauth_facebook" strategy="oauth_facebook" /> */}
     </AuthLayout>
   );
 }

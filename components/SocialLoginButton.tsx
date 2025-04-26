@@ -1,18 +1,10 @@
-import { useSSO, useUser } from '@clerk/clerk-expo';
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import * as Linking from 'expo-linking';
-import React, { useState, useEffect, useCallback } from 'react';
-import { Image } from 'react-native';
+import { useSSO } from '@clerk/clerk-expo';
+import React, { useEffect, useCallback } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import Button from './Button';
 import icons from '@/constants/icons';
+import { useRouter } from 'expo-router';
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
@@ -34,12 +26,6 @@ type SocialLoginButtonProps = {
   strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_apple';
 };
 
-const strategyLabels = {
-  oauth_google: 'Sign in with Google',
-  oauth_facebook: 'Sign in with Facebook',
-  oauth_apple: 'Sign in with Apple',
-};
-
 const strategyIcons = {
   oauth_google: icons.google,
   oauth_facebook: icons.facebook,
@@ -47,8 +33,10 @@ const strategyIcons = {
 };
 
 export default function SocialLoginButton({
+  label,
   strategy,
 }: SocialLoginButtonProps) {
+  const router = useRouter();
   useWarmUpBrowser();
 
   // Use the `useSSO()` hook to access the `startSSOFlow()` method
@@ -69,6 +57,7 @@ export default function SocialLoginButton({
       // If sign in was successful, set the active session
       if (createdSessionId) {
         setActive!({ session: createdSessionId });
+        router.replace('/(onboard)/onboardingFlow');
       } else {
         // If there is no `createdSessionId`,
         // there are missing requirements, such as MFA
@@ -84,13 +73,12 @@ export default function SocialLoginButton({
 
   return (
     <Button
+      label={label}
       onPress={onPress}
       imgSrc={strategyIcons[strategy]}
-      label={strategyLabels[strategy]}
       size="py-3 px-4"
-      color="bg-accent"
-      className="w-[300px] mb-3"
-      textClassName="text-white text-16px]"
+      className="w-[300px] mb-3 bg-white"
+      textClassName="text-black text-[14px]"
       textStyle={{ fontFamily: 'Poppins-Light' }}
     />
   );
