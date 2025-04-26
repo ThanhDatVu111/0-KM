@@ -55,6 +55,8 @@ export default function SignUpScreen() {
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
+      const readableMessage = 'Invalid code. Please try again.';
+      setError(readableMessage);
     }
   };
 
