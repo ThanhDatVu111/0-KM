@@ -29,7 +29,7 @@ export default function Page() {
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
-    } catch (err:any) {
+    } catch (err: any) {
       const readableMessage =
         err?.errors?.[0]?.shortMessage ||
         err?.errors?.[0]?.longMessage ||
@@ -73,49 +73,48 @@ export default function Page() {
         />
       </View>
 
-   {/* Login Button */}
-<Button
-  label="Login"
-  onPress={onSignInPress}
-  size="py-3 px-4"
-  color="bg-accent"
-  className="w-[300px] mb-3"
-  textClassName="text-white text-[16px]"
-  textStyle={{ fontFamily: 'Poppins-Regular' }}
-/>
+      {/* Login Button */}
+      <Button
+        label="Login"
+        onPress={onSignInPress}
+        size="py-3 px-4"
+        color="bg-accent"
+        className="w-[300px] mb-3"
+        textClassName="text-white text-[16px]"
+        textStyle={{ fontFamily: 'Poppins-Regular' }}
+      />
 
-{/* Display the error message using error state */}
-{error ? (
-  <Text
-    className="text-red-600 text-center mb-2 w-[300px]"
-    style={{ fontFamily: 'Poppins-Regular' }}
-  >
-    {error}
-  </Text>
-) : null}
+      {/* Display the error message using error state */}
+      {error ? (
+        <Text
+          className="text-red-600 text-center mb-2 w-[300px]"
+          style={{ fontFamily: 'Poppins-Regular' }}
+        >
+          {error}
+        </Text>
+      ) : null}
 
-{/* Sign in with Google Button */}
-<Button
-  label="Sign in with Google"
-  onPress={onGoogleSignInPress}
-  size="py-3 px-4"
-  color="border border-accent"
-  className="w-[300px] mb-3"
-  textClassName="text-accent text-[16px]"
-  textStyle={{ fontFamily: 'Poppins-Regular' }}
-/>
+      {/* Sign in with Google Button */}
+      <Button
+        label="Sign in with Google"
+        onPress={onGoogleSignInPress}
+        size="py-3 px-4"
+        color="border border-accent"
+        className="w-[300px] mb-3"
+        textClassName="text-accent text-[16px]"
+        textStyle={{ fontFamily: 'Poppins-Regular' }}
+      />
 
-{/* Forgot Password Link */}
-<Button
-  label="Forget Password?"
-  onPress={() => router.push('../forgot-password')}
-  size=""
-  color=""
-  className="mb-4"
-  textClassName="text-[16px] underline text-accent"
-  textStyle={{ fontFamily: 'Poppins-Medium' }}
-/>
-
+      {/* Forgot Password Link */}
+      <Button
+        label="Forget Password?"
+        onPress={() => router.push('../forgot-password')}
+        size=""
+        color=""
+        className="mb-4"
+        textClassName="text-[16px] underline text-accent"
+        textStyle={{ fontFamily: 'Poppins-Medium' }}
+      />
     </AuthLayout>
   );
 }

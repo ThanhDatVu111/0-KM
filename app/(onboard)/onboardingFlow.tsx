@@ -11,7 +11,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import { useLocalSearchParams } from 'expo-router';
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/config/db';
 
 /** --- Step 1: NameEntry --- */
