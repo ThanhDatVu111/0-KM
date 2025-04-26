@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { useSignUp, useAuth, useUser } from '@clerk/clerk-expo';
+import Button from '@/components/Button'; // Adjust the path if necessary
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
@@ -85,19 +86,15 @@ export default function SignUpScreen() {
           onChangeText={setCode}
           className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
         />
-
-        {/*Button to verify  - this can be change by using the button component*/}
-        <TouchableOpacity
-          onPress={onVerifyPress}
-          className="bg-accent py-3 rounded-lg w-[300px] items-center"
-        >
-          <Text
-            className="text-white text-[16px]"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
-            Verify
-          </Text>
-        </TouchableOpacity>
+<Button
+  label="Verify"
+  onPress={onVerifyPress}
+  size="py-3 px-4"
+  color="bg-accent"
+  className="w-[300px] items-center"
+  textClassName="text-white text-[16px]"
+  textStyle={{ fontFamily: 'Poppins-Regular' }}
+/>
       </View>
     );
   }
@@ -139,31 +136,28 @@ export default function SignUpScreen() {
         </Text>
       ) : null}
 
-      {/*Button to sign up  - this can be change by using the button component*/}
-      <TouchableOpacity
-        onPress={onSignUpPress}
-        className="bg-accent py-3 rounded-lg w-[300px] items-center my-3"
-      >
-        <Text
-          className="text-white text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Next
-        </Text>
-      </TouchableOpacity>
+ {/* Button to Sign Up */}
+<Button
+  label="Next"
+  onPress={onSignUpPress}
+  size="py-3 px-4"
+  color="bg-accent"
+  className="w-[300px] items-center my-3"
+  textClassName="text-white text-[16px]"
+  textStyle={{ fontFamily: 'Poppins-Regular' }}
+/>
 
-      {/*Button to use google to signup  - this can be change by using the button component*/}
-      <TouchableOpacity
-        onPress={onGoogleSignUpPress}
-        className="border border-accent py-3 rounded-lg w-[300px] items-center mb-3"
-      >
-        <Text
-          className="text-accent text-[16px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          Sign up with Google
-        </Text>
-      </TouchableOpacity>
+{/* Button to Sign Up with Google */}
+<Button
+  label="Sign up with Google"
+  onPress={onGoogleSignUpPress}
+  size="py-3 px-4"
+  color="border border-accent"
+  className="w-[300px] items-center mb-3"
+  textClassName="text-accent text-[16px]"
+  textStyle={{ fontFamily: 'Poppins-Regular' }}
+/>
+
     </AuthLayout>
   );
 }

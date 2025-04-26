@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import {
   View,
   Text,
-  TouchableOpacity,
   Platform,
   Image,
   TextInput,

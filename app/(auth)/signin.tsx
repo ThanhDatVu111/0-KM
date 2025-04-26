@@ -1,6 +1,6 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
