@@ -1,7 +1,8 @@
 import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
-import { useSignUp, useAuth, useUser } from '@clerk/clerk-expo';
-import Button from '@/components/Button'; 
+import { useSignUp} from '@clerk/clerk-expo';
+import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
@@ -10,11 +11,26 @@ import FormInput from '@/components/FormInput';
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
-  const [emailAddress, setEmailAddress] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [code, setCode] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // This useEffect creates a real-time countdown for the resend button.
+  useEffect(() => {
+    let interval: any;
+
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000); // every 1 second (1000), minus 1 ((prev) => prev - 1)
+    }
+
+    return () => clearInterval(interval);
+    // clearInterval delete the interval when the value of resendTimer changes
+  }, [resendTimer]);
 
   // ✅ Sign up with email & password
   const onSignUpPress = async () => {
@@ -59,10 +75,36 @@ export default function SignUpScreen() {
           },
         });
       } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        setError(
+          'The verification code is incorrect or expired. Please try again.'
+        ); //what the user sees
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Something went wrong during verification. Please check your connection and try again.'; //what the user sees
+
+      setError(readableMessage);
+    }
+  };
+
+  // ✅ Resend verification code
+  const onResendCode = async () => {
+    if (!isLoaded) return; // Make sure Clerk is fully loaded before trying to resend the code.
+    try {
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' }); // Resend the verification code
+      setResendTimer(120); // set 2 minutes timer
+    } catch (err: any) {
+      console.error('Resend code error:', JSON.stringify(err, null, 2));
+      const readableMessage =
+        err?.errors?.[0]?.shortMessage ||
+        err?.errors?.[0]?.longMessage ||
+        err?.message ||
+        'Failed to resend verification code. Please try again.';
+      setError(readableMessage);
     }
   };
 
@@ -87,15 +129,46 @@ export default function SignUpScreen() {
           onChangeText={setCode}
           className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
         />
-<Button
-  label="Verify"
-  onPress={onVerifyPress}
-  size="py-3 px-4"
-  color="bg-accent"
-  className="w-[300px] items-center"
-  textClassName="text-white text-[16px]"
-  textStyle={{ fontFamily: 'Poppins-Regular' }}
-/>
+
+        {/* Show error if exists */}
+        {error ? (
+          <Text
+            className="text-red-600 text-center mb-2 w-[300px]"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            {error}
+          </Text>
+        ) : null}
+
+        <Button
+          label="Verify"
+          onPress={onVerifyPress}
+          size="py-3 px-4"
+          color="bg-accent"
+          className="w-[300px] items-center"
+          textClassName="text-white text-[16px]"
+          textStyle={{ fontFamily: 'Poppins-Regular' }}
+        />
+
+        {/* ✅ Resend button or Timer */}
+        {resendTimer > 0 ? (
+          <Text
+            className="text-accent mb-4"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            You can resend code in {resendTimer} seconds
+          </Text>
+        ) : (
+          <Button
+            label="Resend Code"
+            onPress={onResendCode}
+            size="py-3 px-4"
+            color="border border-accent"
+            className="w-[300px] items-center mb-4"
+            textClassName="text-accent text-[16px]"
+            textStyle={{ fontFamily: 'Poppins-Regular' }}
+          />
+        )}
       </View>
     );
   }
@@ -137,28 +210,27 @@ export default function SignUpScreen() {
         </Text>
       ) : null}
 
- {/* Button to Sign Up */}
-<Button
-  label="Next"
-  onPress={onSignUpPress}
-  size="py-3 px-4"
-  color="bg-accent"
-  className="w-[300px] items-center my-3"
-  textClassName="text-white text-[16px]"
-  textStyle={{ fontFamily: 'Poppins-Regular' }}
-/>
+      {/* Button to Sign Up */}
+      <Button
+        label="Next"
+        onPress={onSignUpPress}
+        size="py-3 px-4"
+        color="bg-accent"
+        className="w-[300px] items-center my-3"
+        textClassName="text-white text-[16px]"
+        textStyle={{ fontFamily: 'Poppins-Regular' }}
+      />
 
-{/* Button to Sign Up with Google */}
-<Button
-  label="Sign up with Google"
-  onPress={onGoogleSignUpPress}
-  size="py-3 px-4"
-  color="border border-accent"
-  className="w-[300px] items-center mb-3"
-  textClassName="text-accent text-[16px]"
-  textStyle={{ fontFamily: 'Poppins-Regular' }}
-/>
-
+      {/* Button to Sign Up with Google */}
+      <Button
+        label="Sign up with Google"
+        onPress={onGoogleSignUpPress}
+        size="py-3 px-4"
+        color="border border-accent"
+        className="w-[300px] items-center mb-3"
+        textClassName="text-accent text-[16px]"
+        textStyle={{ fontFamily: 'Poppins-Regular' }}
+      />
     </AuthLayout>
   );
 }

@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import {
-  View,
-  Text,
-  Platform,
-  Image,
-  TextInput,
-} from 'react-native';
+import { View, Text, Platform, Image, TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
@@ -245,7 +239,7 @@ const OnboardingFlow = () => {
       onFinish={handleFinish}
     />,
   ];
-  
+
   return (
     <View className="flex-1 items-center justify-center bg-primary px-4">
       {steps[step]}
