@@ -1,0 +1,16 @@
+//"Hey VSCode, these are two separate projects under one umbrella — treat each one separately."
+//this help prettier to format the code in both frontend and backend folders
+{
+  "folders": [
+    {
+      "path": "frontend"
+    },
+    {
+      "path": "backend"
+    }
+  ],
+  "settings": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  }
+}
