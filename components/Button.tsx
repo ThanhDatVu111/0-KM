@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import { Text, TouchableOpacity, TouchableOpacityProps, TextStyle } from 'react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
   label: string;
@@ -7,14 +7,16 @@ interface ButtonProps extends TouchableOpacityProps {
   color?: string; 
   className?: string;
   textClassName?: string;
+  textStyle?: TextStyle; 
 }
 
 export default function Button({
   label,
-  size = 'py-3 px-6',
-  color = 'bg-accent text-white',
+  size = '',
+  color = '',
   className = '',
   textClassName = '',
+  textStyle,
   ...props
 }: ButtonProps) {
   return (

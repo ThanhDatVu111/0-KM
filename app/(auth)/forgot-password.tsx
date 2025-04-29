@@ -10,7 +10,7 @@ export default function ForgotPasswordScreen() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Handle sending the reset code to the user's email
   const sendResetCode = async () => {
