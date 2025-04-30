@@ -5,9 +5,7 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     }
   },
   "include": [
@@ -19,5 +17,5 @@
     "config/db.js",
     "nativewind-env.d.ts",
     "expo-env.d.ts"
-  ]
+, "src/app/config/db.js"  ]
 }

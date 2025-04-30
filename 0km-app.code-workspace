@@ -3,14 +3,15 @@
 {
   "folders": [
     {
-      "path": "frontend"
+      "path": "frontend",
     },
     {
-      "path": "backend"
-    }
+      "path": "backend",
+    },
   ],
   "settings": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  }
+    "editor.formatOnSave": true,
+    "prettier.prettierPath": "./node_modules/prettier",
+  },
 }

@@ -5,7 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/app/components/Button';
 import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '@/app/config/db';
+import { supabase } from '../config/db';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
