@@ -6,11 +6,7 @@ interface FormInputProps extends TextInputProps {
   borderColor?: string;
 }
 
-export default function FormInput({
-  label,
-  borderColor,
-  ...props
-}: FormInputProps) {
+export default function FormInput({ label, borderColor, ...props }: FormInputProps) {
   return (
     <View className="mb-2.5 w-full">
       <Text

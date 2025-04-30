@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useClerk, useUser } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
-import {
-  TouchableOpacity,
-  Image,
-  Modal,
-  Text,
-  View,
-  Pressable,
-} from 'react-native';
+import { TouchableOpacity, Image, Modal, Text, View, Pressable } from 'react-native';
 
 export const SignOutButton = () => {
   const { signOut } = useClerk();

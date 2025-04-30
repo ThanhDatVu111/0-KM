@@ -1,6 +1,6 @@
-import { View, Text } from "react-native";
-import React from "react";
-import { SignOutButton } from "@/app/components/SignOutButton";
+import { View, Text } from 'react-native';
+import React from 'react';
+import { SignOutButton } from '@/app/components/SignOutButton';
 
 const page = () => {
   return (

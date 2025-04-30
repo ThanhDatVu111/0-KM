@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
-import { useSignUp} from '@clerk/clerk-expo';
+import { useSignUp } from '@clerk/clerk-expo';
 import Button from '@/app/components/Button';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/app/components/AuthLayout';
 import FormInput from '@/app/components/FormInput';
-
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -75,9 +74,7 @@ export default function SignUpScreen() {
           },
         });
       } else {
-        setError(
-          'The verification code is incorrect or expired. Please try again.'
-        ); //what the user sees
+        setError('The verification code is incorrect or expired. Please try again.'); //what the user sees
       }
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
@@ -117,10 +114,7 @@ export default function SignUpScreen() {
   if (pendingVerification) {
     return (
       <View className="flex-1 items-center justify-center bg-primary px-6">
-        <Text
-          className="text-xl mb-4 text-accent"
-          style={{ fontFamily: 'Poppins-Bold' }}
-        >
+        <Text className="text-xl mb-4 text-accent" style={{ fontFamily: 'Poppins-Bold' }}>
           Verify your email
         </Text>
         <TextInput
@@ -152,10 +146,7 @@ export default function SignUpScreen() {
 
         {/* ✅ Resend button or Timer */}
         {resendTimer > 0 ? (
-          <Text
-            className="text-accent mb-4"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
+          <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
             You can resend code in {resendTimer} seconds
           </Text>
         ) : (

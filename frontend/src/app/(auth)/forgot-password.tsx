@@ -62,10 +62,7 @@ export default function ForgotPasswordScreen() {
       {!isCodeSent ? (
         //if code is not sent yet
         <>
-          <Text
-            className="mb-1 text-base text-black"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
+          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
             Email
           </Text>
           <TextInput
@@ -88,10 +85,7 @@ export default function ForgotPasswordScreen() {
         </>
       ) : (
         <>
-          <Text
-            className="mb-1 text-base text-black"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
+          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
             Verification Code
           </Text>
           <TextInput
@@ -101,10 +95,7 @@ export default function ForgotPasswordScreen() {
             onChangeText={setCode}
             style={{ fontFamily: 'Poppins-Regular' }}
           />
-          <Text
-            className="mb-1 text-base text-black"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
+          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
             New Password
           </Text>
           <TextInput
@@ -127,10 +118,7 @@ export default function ForgotPasswordScreen() {
         </>
       )}
       {error ? (
-        <Text
-          className="text-red-600 mt-2 text-center"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
+        <Text className="text-red-600 mt-2 text-center" style={{ fontFamily: 'Poppins-Regular' }}>
           {error}
         </Text>
       ) : null}

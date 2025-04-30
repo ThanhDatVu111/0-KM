@@ -19,9 +19,7 @@ function NameStep({
 }) {
   return (
     <View className="w-full max-w-xs">
-      <Text className="text-2xl font-bold text-accent mb-4 text-center">
-        What’s your name?
-      </Text>
+      <Text className="text-2xl font-bold text-accent mb-4 text-center">What’s your name?</Text>
       <TextInput
         className="border border-accent rounded-lg px-4 py-2 mb-6"
         value={name}
@@ -141,10 +139,7 @@ function PhotoStep({
         Upload your profile picture
       </Text>
       {photo ? (
-        <Image
-          source={{ uri: photo }}
-          className="w-32 h-32 rounded-full mb-6"
-        />
+        <Image source={{ uri: photo }} className="w-32 h-32 rounded-full mb-6" />
       ) : (
         <Button
           label="Choose Photo"
@@ -216,12 +211,7 @@ const OnboardingFlow = () => {
   };
 
   const steps = [
-    <NameStep
-      key="1"
-      name={name}
-      setName={setName}
-      onNext={() => setStep(1)}
-    />,
+    <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
     <BirthdayStep
       key="2"
       birthdate={birthdate}
@@ -240,11 +230,7 @@ const OnboardingFlow = () => {
     />,
   ];
 
-  return (
-    <View className="flex-1 items-center justify-center bg-primary px-4">
-      {steps[step]}
-    </View>
-  );
+  return <View className="flex-1 items-center justify-center bg-primary px-4">{steps[step]}</View>;
 };
 
 export default OnboardingFlow;

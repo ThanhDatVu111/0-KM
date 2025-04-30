@@ -7,7 +7,6 @@ import React from 'react';
 import Button from '@/app/components/Button';
 import { useState } from 'react';
 
-
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();

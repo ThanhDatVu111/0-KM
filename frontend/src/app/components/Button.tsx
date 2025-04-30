@@ -3,11 +3,11 @@ import { Text, TouchableOpacity, TouchableOpacityProps, TextStyle } from 'react-
 
 interface ButtonProps extends TouchableOpacityProps {
   label: string;
-  size?: string; 
-  color?: string; 
+  size?: string;
+  color?: string;
   className?: string;
   textClassName?: string;
-  textStyle?: TextStyle; 
+  textStyle?: TextStyle;
 }
 
 export default function Button({
@@ -24,10 +24,7 @@ export default function Button({
       className={`rounded-lg items-center mb-3 ${size} ${color} ${className}`}
       {...props} // this includes onPress, disabled, etc.
     >
-      <Text
-        className={`text-base ${textClassName}`}
-        style={{ fontFamily: 'Poppins-Bold' }}
-      >
+      <Text className={`text-base ${textClassName}`} style={{ fontFamily: 'Poppins-Bold' }}>
         {label}
       </Text>
     </TouchableOpacity>

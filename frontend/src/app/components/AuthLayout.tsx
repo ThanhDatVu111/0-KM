@@ -20,19 +20,11 @@ interface AuthLayoutProps {
   onTabChange: (tab: 'sign-in' | 'sign-up' | 'forgot-password') => void;
 }
 
-export default function AuthLayout({
-  children,
-  activeTab,
-  onTabChange,
-}: AuthLayoutProps) {
+export default function AuthLayout({ children, activeTab, onTabChange }: AuthLayoutProps) {
   return (
     <View className="flex-1 items-center justify-center bg-primary">
       // logo
-      <Image
-        source={images.logo}
-        className="w-full max-h-28"
-        resizeMode="contain"
-      />
+      <Image source={images.logo} className="w-full max-h-28" resizeMode="contain" />
       // tagline
       <Text className="text-lg font-poppins-light text-black text-center mb-8">
         Love knows no distance

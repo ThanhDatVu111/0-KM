@@ -14,7 +14,7 @@ const useFont = () => {
       });
       setFontsLoaded(true);
     }
-    loadFonts(); 
+    loadFonts();
   }, []); //when component mounts, load fonts
   return fontsLoaded;
 };
