@@ -5,7 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/app/components/Button';
 import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '../config/db';
+//import { supabase } from '../config/db';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -186,27 +186,30 @@ const OnboardingFlow = () => {
 
   const handleFinish = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert([
-          {
-            email: email,
-            user_id: userId,
-            username: name,
-            birthdate: birthdate,
-            photo_url: photo,
-            created_at: new Date().toISOString(),
-          },
-        ])
-        .select(); // ← now `data` is the array of inserted rows
+      const response = await fetch('http://localhost:3001/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          userId,
+          name,
+          birthdate,
+          photo,
+        }),
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Something went wrong');
       }
-      console.log('User saved successfully:', data);
-      router.push('/page');
-    } catch (error) {
-      console.error(error);
+
+      console.log('✅ User created via backend:', result.data);
+      router.push('/page'); 
+    } catch (err) {
+      console.error('❌ Error saving user:', err);
     }
   };
 
