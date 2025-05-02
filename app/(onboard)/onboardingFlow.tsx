@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Platform, Image, TextInput } from 'react-native';
+import { View, Text, Platform, Image, TextInput, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/config/db';
 
@@ -127,12 +128,12 @@ async function pickImage(setPhoto: (uri: string) => void) {
 function PhotoStep({
   photo,
   setPhoto,
-  onFinish,
+  onNext,
   onPrevious,
 }: {
   photo: string | null;
   setPhoto: (uri: string) => void;
-  onFinish: () => void;
+  onNext: () => void;
   onPrevious?: () => void;
 }) {
   return (
@@ -166,13 +167,84 @@ function PhotoStep({
         />
       )}
       <Button
-        label="Finish"
-        onPress={onFinish}
+        label="Next"
+        onPress={onNext} // Still using `onFinish` to go to next step (setStep(3))
         size="px-4 py-3"
         color="bg-accent"
         className="w-full"
         textClassName="text-white text-base font-medium"
       />
+    </View>
+  );
+}
+function PairingStep({
+  myCode,
+  setPartnerCode,
+  partnerCode,
+  onPrevious,
+  onFinish,
+}: {
+  myCode: string;
+  partnerCode: string;
+  setPartnerCode: (s: string) => void;
+  onPrevious: () => void;
+  onFinish: () => void;
+}) {
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(myCode);
+    Alert.alert('Copied', 'Invite code copied to clipboard!');
+  };
+
+  return (
+    <View className="w-full max-w-xs items-center">
+      <Text className="text-2xl font-bold text-accent mb-4 text-center">
+        Pair with your partner
+      </Text>
+
+      <Text className="text-base font-medium text-white mb-2">Your code:</Text>
+      <View className="bg-white px-4 py-2 rounded-lg mb-3 w-full items-center">
+        <Text className="text-lg font-bold text-black tracking-widest">
+          {myCode}
+        </Text>
+      </View>
+      <Button
+        label="Copy code"
+        onPress={handleCopy}
+        size="py-2"
+        color="bg-gray-300"
+        className="w-full mb-4"
+        textClassName="text-black"
+      />
+
+      <Text className="text-base text-white mt-4 mb-1">
+        Enter partner's code
+      </Text>
+      <TextInput
+        value={partnerCode}
+        onChangeText={setPartnerCode}
+        placeholder="XXXXXX"
+        className="bg-white px-4 py-2 rounded-lg mb-4 w-full text-center text-lg tracking-widest"
+        autoCapitalize="characters"
+      />
+
+      <View className="flex-row w-full">
+        <Button
+          label="Previous"
+          onPress={onPrevious}
+          size="py-3"
+          color="bg-gray-400"
+          className="w-1/2 mr-2"
+          textClassName="text-white"
+        />
+        <Button
+          label="Pair now"
+          onPress={onFinish}
+          size="py-3"
+          color="bg-accent"
+          className="w-1/2 ml-2"
+          textClassName="text-white"
+        />
+      </View>
     </View>
   );
 }
@@ -188,57 +260,76 @@ const OnboardingFlow = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const { userId, email } = useLocalSearchParams();
   const router = useRouter();
+const [myCode] = useState('034FJ'); // You can generate dynamically later
+const [partnerCode, setPartnerCode] = useState('');
 
-  const handleFinish = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert([
-          {
-            email: email,
-            user_id: userId,
-            username: name,
-            birthdate: birthdate,
-            photo_url: photo,
-            created_at: new Date().toISOString(),
-          },
-        ])
-        .select(); // ← now `data` is the array of inserted rows
+const handleFinish = async () => {
+  try {
+    // 1. Save user to `users` table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert([
+        {
+          email: email,
+          user_id: userId,
+          username: name,
+          birthdate: birthdate,
+          photo_url: photo,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select();
 
-      if (error) {
-        throw error;
-      }
-      console.log('User saved successfully:', data);
-      router.push('/page');
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    if (userError) throw userError;
 
-  const steps = [
-    <NameStep
-      key="1"
-      name={name}
-      setName={setName}
-      onNext={() => setStep(1)}
-    />,
-    <BirthdayStep
-      key="2"
-      birthdate={birthdate}
-      setBirthdate={setBirthdate}
-      showPicker={showPicker}
-      setShowPicker={setShowPicker}
-      onPrevious={() => setStep(0)}
-      onNext={() => setStep(2)}
-    />,
-    <PhotoStep
-      key="3"
-      photo={photo}
-      setPhoto={setPhoto}
-      onPrevious={() => setStep(1)}
-      onFinish={handleFinish}
-    />,
-  ];
+    console.log('User saved successfully:', userData);
+
+    // 2. Update pairing in `couples` table
+    const { error: coupleError } = await supabase
+      .from('couples')
+      .update({ user2_id: userId }) // assumes the partner already created the code
+      .eq('invite_code', partnerCode)
+      .is('user2_id', null); // make sure not already paired
+
+    if (coupleError) throw coupleError;
+
+    console.log('Paired with partner successfully!');
+    router.push('/page'); // Redirect to app
+  } catch (error) {
+    console.error('Onboarding failed:', error);
+    Alert.alert('Error', 'Failed to complete onboarding.');
+  }
+};
+
+
+const steps = [
+  <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
+  <BirthdayStep
+    key="2"
+    birthdate={birthdate}
+    setBirthdate={setBirthdate}
+    showPicker={showPicker}
+    setShowPicker={setShowPicker}
+    onPrevious={() => setStep(0)}
+    onNext={() => setStep(2)}
+  />,
+  <PhotoStep
+    key="3"
+    photo={photo}
+    setPhoto={setPhoto}
+    onPrevious={() => setStep(1)}
+    onNext={() => setStep(3)}
+  />,
+  <PairingStep
+    key="4"
+    myCode={myCode}
+    partnerCode={partnerCode}
+    setPartnerCode={setPartnerCode}
+    onPrevious={() => setStep(2)}
+    onFinish={handleFinish}
+  />,
+];
+
 
   return (
     <View className="flex-1 items-center justify-center bg-primary px-4">
