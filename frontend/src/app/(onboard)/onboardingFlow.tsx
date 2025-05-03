@@ -5,6 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import { useLocalSearchParams } from 'expo-router';
+import { createUser } from '@/apis/user';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -185,28 +186,15 @@ const OnboardingFlow = () => {
 
   const handleFinish = async () => {
     try {
-      const response = await fetch('http://localhost:3001/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          userId,
-          name,
-          birthdate,
-          photo,
-        }),
+      const user = await createUser({
+        email: email as string, 
+        userId: userId as string, 
+        name: name,
+        birthdate: birthdate.toISOString(), 
+        photo: photo || '',
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Something went wrong');
-      }
-
-      console.log('✅ User created via backend:', result.data);
-      router.push('/page');
+      console.log('✅ User created via backend:', user);
+      router.push('/page'); // Navigate to the next page
     } catch (err) {
       console.error('❌ Error saving user:', err);
     }
