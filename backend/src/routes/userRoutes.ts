@@ -5,7 +5,7 @@ import { signUp } from '../controllers/userController';
 
 const router = Router();
 
-//Route to handle user sign-up, direct to the signUp controller
-router.post('/', signUp);
+//This defines a POST route for / within the UserRouter, which corresponds to /user in the full URL.
+router.post('/signup', signUp); 
 
 export default router;

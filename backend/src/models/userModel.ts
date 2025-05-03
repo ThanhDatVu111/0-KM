@@ -1,6 +1,6 @@
-import supabase from '../db';
+import supabase from '../../supabase/db';
 
-//ROLE: Database access layer 
+//ROLE: Database access layer
 
 export async function createUser(attrs: {
   email: string;

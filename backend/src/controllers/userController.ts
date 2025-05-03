@@ -1,6 +1,6 @@
 import * as userService from '../services/userService';
 
-//ROLE: validaete user input 
+//ROLE: validate user input 
 
 //Handle user registration
 export async function signUp(req: any, res: any) {
