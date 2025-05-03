@@ -1,33 +1,11 @@
 import { Router } from 'express';
-import supabase from '../db';
+import { signUp } from '../controllers/userController';
+
+//Role: API route for user-related operations
+
 const router = Router();
 
-router.post('/', async (req: any, res: any) => {
-  const { email, userId, name, birthdate, photo } = req.body;
-
-  if (!email || !userId || !name) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const { data, error } = await supabase
-    .from('users')
-    .insert([
-      {
-        email: email,
-        user_id: userId,
-        username: name,
-        birthdate: birthdate,
-        photo_url: photo,
-        created_at: new Date().toISOString(),
-      },
-    ])
-    .select();
-
-  if (error) {
-    console.error('❌ Supabase insert failed:', error.message);
-    return res.status(500).json({ error: error.message });
-  }
-  res.status(201).json({ message: '✅ User created', data });
-});
+//Route to handle user sign-up, direct to the signUp controller
+router.post('/', signUp);
 
 export default router;

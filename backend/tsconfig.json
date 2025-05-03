@@ -9,6 +9,6 @@
     "skipLibCheck": true, // Skip type checking for node_modules
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }
