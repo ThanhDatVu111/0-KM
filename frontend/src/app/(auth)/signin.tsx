@@ -1,10 +1,10 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import AuthLayout from '@/app/components/AuthLayout';
-import FormInput from '@/app/components/FormInput';
+import AuthLayout from '@/components/AuthLayout';
+import FormInput from '@/components/FormInput';
 import React from 'react';
-import Button from '@/app/components/Button';
+import Button from '@/components/Button';
 import { useState } from 'react';
 
 export default function Page() {

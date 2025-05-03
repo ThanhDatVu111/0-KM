@@ -21,7 +21,7 @@ export const SignOutButton = () => {
 
   return (
     <>
-      {/* Avatar Icon */}
+      {/* Avatar Icon - Note: currently this image is not being loaded, consider to fetch supabase for user photo */} 
       <TouchableOpacity onPress={() => setShowMenu(true)}>
         <Image
           source={{ uri: user.imageUrl }}

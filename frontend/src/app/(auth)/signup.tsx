@@ -2,10 +2,10 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
-import Button from '@/app/components/Button';
+import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
-import AuthLayout from '@/app/components/AuthLayout';
-import FormInput from '@/app/components/FormInput';
+import AuthLayout from '@/components/AuthLayout';
+import FormInput from '@/components/FormInput';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();

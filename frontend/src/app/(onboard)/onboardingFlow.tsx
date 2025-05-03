@@ -3,9 +3,8 @@ import { useRouter } from 'expo-router';
 import { View, Text, Platform, Image, TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import Button from '@/app/components/Button';
+import Button from '@/components/Button';
 import { useLocalSearchParams } from 'expo-router';
-//import { supabase } from '../config/db';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -207,7 +206,7 @@ const OnboardingFlow = () => {
       }
 
       console.log('✅ User created via backend:', result.data);
-      router.push('/page'); 
+      router.push('/page');
     } catch (err) {
       console.error('❌ Error saving user:', err);
     }

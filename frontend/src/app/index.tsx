@@ -1,11 +1,11 @@
 import React from 'react';
-import { Text, View, Image, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Text, View, Image, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
-import useFont from './(hooks)/useFont';
+import useFont from '../hooks/useFont';
 
 //constants
-import images from '@/app/constants/images';
-import Button from './components/Button';
+import images from '@/constants/images';
+import Button from '../components/Button';
 
 export default function Index() {
   const fontsLoaded = useFont();
