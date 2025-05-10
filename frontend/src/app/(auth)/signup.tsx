@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
+import SocialLoginButton from '@/components/SocialLoginButton';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -105,11 +106,6 @@ export default function SignUpScreen() {
     }
   };
 
-  // ✅ Sign up with Google (OAuth)
-  const onGoogleSignUpPress = async () => {
-    //need help here
-  };
-
   // ✅ OTP Verification UI
   if (pendingVerification) {
     return (
@@ -141,7 +137,6 @@ export default function SignUpScreen() {
           color="bg-accent"
           className="w-[300px] items-center"
           textClassName="text-white text-[16px]"
-          textStyle={{ fontFamily: 'Poppins-Regular' }}
         />
 
         {/* ✅ Resend button or Timer */}
@@ -157,7 +152,6 @@ export default function SignUpScreen() {
             color="border border-accent"
             className="w-[300px] items-center mb-4"
             textClassName="text-accent text-[16px]"
-            textStyle={{ fontFamily: 'Poppins-Regular' }}
           />
         )}
       </View>
@@ -207,19 +201,11 @@ export default function SignUpScreen() {
         color="bg-accent"
         className="w-[300px] items-center my-3"
         textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
       />
 
-      {/* Button to Sign Up with Google */}
-      <Button
-        label="Sign up with Google"
-        onPress={onGoogleSignUpPress}
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] items-center mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+      {/* Button to Sign Up with Google and Apple */}
+      <SocialLoginButton label="Continue with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Continue with Apple" strategy="oauth_apple" />
     </AuthLayout>
   );
 }

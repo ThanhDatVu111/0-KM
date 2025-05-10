@@ -5,14 +5,14 @@ import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
 import Button from '@/components/Button';
-import { useState } from 'react';
+import SocialLoginButton from '@/components/SocialLoginButton';
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
-  const [emailAddress, setEmailAddress] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [emailAddress, setEmailAddress] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
@@ -40,11 +40,6 @@ export default function Page() {
     }
   };
 
-  // ✅ Sign up with Google (OAuth)
-  const onGoogleSignInPress = async () => {
-    //need help here
-  };
-
   return (
     <AuthLayout
       activeTab="sign-in"
@@ -66,7 +61,7 @@ export default function Page() {
           borderColor="#F5829B"
           autoCapitalize="none"
           value={password}
-          placeholder="•••••••••••"
+          placeholder="••••••••"
           secureTextEntry={true}
           onChangeText={(password) => setPassword(password)}
         />
@@ -80,7 +75,6 @@ export default function Page() {
         color="bg-accent"
         className="w-[300px] mb-3"
         textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
       />
 
       {/* Display the error message using error state */}
@@ -94,15 +88,8 @@ export default function Page() {
       ) : null}
 
       {/* Sign in with Google Button */}
-      <Button
-        label="Sign in with Google"
-        onPress={onGoogleSignInPress}
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+      <SocialLoginButton label="Continue with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Continue with Apple" strategy="oauth_apple" />
 
       {/* Forgot Password Link */}
       <Button
