@@ -1,12 +1,12 @@
 import { View, Text } from "react-native";
 import React from "react";
 
-const library = () => {
+const Library = () => {
   return (
-    <View className = "flex-1 justify-center items-center bg-primary">
+    <View className="flex-1 justify-center items-center bg-white">
       <Text>library</Text>
     </View>
   );
 };
 
-export default library;
+export default Library;

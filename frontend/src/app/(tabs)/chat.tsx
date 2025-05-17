@@ -1,12 +1,12 @@
 import { View, Text } from "react-native";
 import React from "react";
 
-const chat = () => {
+const Chat = () => {
   return (
-    <View className = "flex-1 justify-center items-center bg-primary">
+    <View className="flex-1 justify-center items-center bg-white">
       <Text>chat</Text>
     </View>
   );
 };
 
-export default chat;
+export default Chat;

@@ -1,12 +1,12 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View, Text } from 'react-native';
+import React from 'react';
 
-const calendar = () => {
+const Calendar = () => {
   return (
-    <View className = "flex-1 justify-center items-center bg-primary">
-      <Text>calendar</Text>
+    <View className="flex-1 justify-center items-center bg-white">
+      <Text>hell no</Text>
     </View>
   );
 };
 
-export default calendar;
+export default Calendar;
