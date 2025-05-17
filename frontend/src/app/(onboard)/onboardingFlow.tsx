@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Platform, Image, TextInput } from 'react-native';
+import { View, Text, Platform, Image, TextInput, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 import { createUser } from '@/apis/user';
+import { createRoom } from '@/apis/room';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -161,8 +163,8 @@ function PhotoStep({
         />
       )}
       <Button
-        label="Finish"
-        onPress={onFinish}
+        label="Finish onboarding"
+        onPress={onFinish} // Still using `onFinish` to go to next step (setStep(3))
         size="px-4 py-3"
         color="bg-accent"
         className="w-full"
@@ -183,23 +185,39 @@ const OnboardingFlow = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const { userId, email } = useLocalSearchParams();
   const router = useRouter();
+  const roomId = crypto.randomUUID();
 
   const handleFinish = async () => {
     try {
       const user = await createUser({
-        email: email as string, 
-        userId: userId as string, 
+        email: email as string,
+        userId: userId as string,
         name: name,
-        birthdate: birthdate.toISOString(), 
+        birthdate: birthdate.toISOString(),
         photo: photo || '',
       });
-      console.log('✅ User created via backend:', user);
-      router.push('/page'); // Navigate to the next page
+
+      console.log('✅ User created:', user);
+
+      const room = await createRoom({
+        room_id: roomId as string,
+        user_1: userId as string,
+      });
+
+      console.log('✅ Room created:', room);
+
+      // Navigate only if both user and room creation are successful
+      router.push({
+        pathname: '/(onboard)/join-room',
+        params: {
+          userId: userId,
+          roomId: roomId,
+        },
+      });
     } catch (err) {
-      console.error('❌ Error saving user:', err);
+      console.error('❌ Error creating user or room:', err);
     }
   };
-
   const steps = [
     <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
     <BirthdayStep
@@ -216,7 +234,7 @@ const OnboardingFlow = () => {
       photo={photo}
       setPhoto={setPhoto}
       onPrevious={() => setStep(1)}
-      onFinish={handleFinish}
+      onFinish={() => handleFinish()}
     />,
   ];
 
