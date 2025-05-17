@@ -57,21 +57,14 @@ export async function createRoom(request: roomRequest): Promise<createdRoom> {
   }
 }
 
-export async function pairRoom(request: pairRequest): Promise<createdRoom> {
+export async function pairRoom(request: pairRequest): Promise<void> {
   try {
-    const response = await fetch(`${BASE_URL}/room/joinRoom`, {
+    await fetch(`${BASE_URL}/room/joinRoom`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to join room');
-    }
-
-    return result.data as createdRoom;
   } catch (err: any) {
     throw err;
   }

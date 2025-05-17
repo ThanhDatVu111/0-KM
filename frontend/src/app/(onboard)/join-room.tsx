@@ -92,6 +92,8 @@ const joinRoom = () => {
         user_2: Array.isArray(userId) ? userId[0] : userId,
       });
 
+      console.log('Deleting room with ID:', roomIdString);
+
       // Delete user2's room after pairing
       await deleteRoom({
         room_id: roomIdString,
