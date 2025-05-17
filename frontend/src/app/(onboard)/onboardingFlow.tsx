@@ -7,6 +7,7 @@ import Button from '@/components/Button';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
 import { createUser } from '@/apis/user';
+import { createRoom } from '@/apis/room';
 
 /** --- Step 1: NameEntry --- */
 function NameStep({
@@ -186,92 +187,37 @@ const OnboardingFlow = () => {
   const router = useRouter();
   const roomId = crypto.randomUUID();
 
-<<<<<<< HEAD:app/(onboard)/onboardingFlow.tsx
-const handleFinish = async () => {
-  try {
-    // 1. Save user to `users` table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          email: email,
-          user_id: userId,
-          username: name,
-          birthdate: birthdate,
-          photo_url: photo,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select();
-
-    //2. create room entry for the user
-    const {data: roomData, error: roomError} = await supabase 
-      .from('room')
-      .insert([
-        {
-          room_id: roomId,
-          user_1: userId,
-          user_2: null,
-          created_at: new Date().toISOString(),      
-        }
-      ])
-
-
-    if (userError) throw userError;
-
-    console.log('User saved successfully:', userData);
-
-    router.push({
-      pathname:'/(onboard)/create-room',
-      params:{
-        userId: userId,
-        roomId: roomId,
-      },
-  }); // Redirect to create room
-  } catch (error) {
-    console.error('Onboarding failed:', error);
-    Alert.alert('Error', 'Failed to complete onboarding.');
-  }
-};
-
-
-const steps = [
-  <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
-  <BirthdayStep
-    key="2"
-    birthdate={birthdate}
-    setBirthdate={setBirthdate}
-    showPicker={showPicker}
-    setShowPicker={setShowPicker}
-    onPrevious={() => setStep(0)}
-    onNext={() => setStep(2)}
-  />,
-  <PhotoStep
-    key="3"
-    photo={photo}
-    setPhoto={setPhoto}
-    onPrevious={() => setStep(1)}
-    onFinish={() => handleFinish()}
-  />,
-];
-
-=======
   const handleFinish = async () => {
     try {
       const user = await createUser({
-        email: email as string, 
-        userId: userId as string, 
+        email: email as string,
+        userId: userId as string,
         name: name,
-        birthdate: birthdate.toISOString(), 
+        birthdate: birthdate.toISOString(),
         photo: photo || '',
       });
-      console.log('✅ User created via backend:', user);
-      router.push('/page'); // Navigate to the next page
+
+      console.log('✅ User created:', user);
+
+      const room = await createRoom({
+        room_id: roomId as string,
+        user_1: userId as string,
+      });
+
+      console.log('✅ Room created:', room);
+
+      // Navigate only if both user and room creation are successful
+      router.push({
+        pathname: '/(onboard)/join-room',
+        params: {
+          userId: userId,
+          roomId: roomId,
+        },
+      });
     } catch (err) {
-      console.error('❌ Error saving user:', err);
+      console.error('❌ Error creating user or room:', err);
     }
   };
-
   const steps = [
     <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
     <BirthdayStep
@@ -288,10 +234,9 @@ const steps = [
       photo={photo}
       setPhoto={setPhoto}
       onPrevious={() => setStep(1)}
-      onFinish={handleFinish}
+      onFinish={() => handleFinish()}
     />,
   ];
->>>>>>> 52c4451653f96eae062212dba9c311d08a99f22d:frontend/src/app/(onboard)/onboardingFlow.tsx
 
   return <View className="flex-1 items-center justify-center bg-primary px-4">{steps[step]}</View>;
 };
