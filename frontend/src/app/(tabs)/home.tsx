@@ -3,8 +3,8 @@ import React from "react";
 
 const Home = () => {
   return (
-    <View className="flex-1 justify-center items-center bg-white">
-      <Text>home</Text>
+    <View className="tab-screen">
+      <Text>this is home</Text>
     </View>
   );
 };

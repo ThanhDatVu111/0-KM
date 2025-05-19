@@ -3,8 +3,8 @@ import React from 'react';
 
 const Calendar = () => {
   return (
-    <View className="flex-1 justify-center items-center bg-white">
-      <Text>hell no</Text>
+    <View className="tab-screen">
+      <Text>this is calendar</Text>
     </View>
   );
 };
