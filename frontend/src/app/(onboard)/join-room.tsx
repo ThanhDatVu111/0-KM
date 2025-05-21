@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import Button from '@/components/Button';
-import { View, Text, Platform, Image, TextInput, Alert } from 'react-native';
+import { View, Text, TextInput, Alert, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
 
@@ -29,44 +29,57 @@ function PairingStep({
   };
 
   return (
-    <View className="w-full max-w-xs items-center">
-      <Text className="text-2xl font-bold text-accent mb-4 text-center">
-        Pair with your partner
-      </Text>
+    <View className="w-full max-w-xs items-center px-6">
+      {/* Logo */}
+      <Image source={require('@/assets/images/logo.png')} className="w-20 h-20 mb-6" />
 
-      <Text className="text-base font-medium text-white mb-2">Your code:</Text>
-      <View className="bg-white px-4 py-2 rounded-lg mb-3 w-full items-center">
-        <Text className="text-lg font-bold text-black tracking-widest">{myCode}</Text>
+      <Text className="text-2xl font-semibold text-gray-800 mb-8">Pair with your partner</Text>
+
+      <View className="w-full bg-white/20 rounded-3xl p-6 mb-4">
+        <Text className="text-xl font-medium text-gray-800 mb-2 text-center">
+          Invite your partner
+        </Text>
+
+        <Text className="text-lg font-medium text-gray-700 text-center mb-2">
+          Your code: {myCode}
+        </Text>
+
+        <Button
+          label="Share your invite code"
+          onPress={handleCopy}
+          size="py-3"
+          color="bg-pink-400"
+          className="w-full rounded-xl"
+          textClassName="text-white text-base font-medium"
+        />
       </View>
-      <Button
-        label="Copy code"
-        onPress={handleCopy}
-        size="py-2"
-        color="bg-gray-300"
-        className="w-full mb-4"
-        textClassName="text-black"
-      />
 
-      <Text className="text-base text-white mt-4 mb-1">Enter partner's code</Text>
-      <TextInput
-        value={partnerCode}
-        onChangeText={setPartnerCode}
-        placeholder="XXXXXX"
-        className="bg-white px-4 py-2 rounded-lg mb-4 w-full text-center text-lg tracking-widest"
-      />
+      <Text className="text-base text-gray-600 mb-4">or</Text>
 
-      <View className="flex-row w-full">
+      <View className="w-full bg-white/20 rounded-3xl p-6">
+        <Text className="text-xl font-medium text-gray-800 mb-4 text-center">
+          Enter partner's code
+        </Text>
+
+        <TextInput
+          value={partnerCode}
+          onChangeText={setPartnerCode}
+          placeholder="_ _ _ _ _ _"
+          className="text-center text-2xl tracking-[1em] mb-4 py-2"
+          maxLength={6}
+        />
+
         <Button
           label="Pair now"
           onPress={onFinish}
           size="py-3"
-          color="bg-accent"
-          className="w-1/2 ml-2"
-          textClassName="text-white"
+          color="bg-pink-400"
+          className="w-full rounded-xl"
+          textClassName="text-white text-base font-medium"
         />
       </View>
 
-      {error && <Text className="text-red-500 text-center mb-4">{error}</Text>}
+      {error && <Text className="text-red-500 text-center mt-4">{error}</Text>}
     </View>
   );
 }
@@ -77,8 +90,6 @@ const joinRoom = () => {
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
-
-  console.log('roomIdString:', roomIdString);
 
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
@@ -102,7 +113,7 @@ const joinRoom = () => {
       // Success feedback and navigation
       console.log('Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
-      router.push('/(home)/home-page'); // Replace with your next route
+      router.push('/(home)/home-page');
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
@@ -110,14 +121,14 @@ const joinRoom = () => {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-4">
+    <View className="flex-1 items-center justify-center bg-pink-100">
       <PairingStep
         myCode={roomIdString}
         partnerCode={partnerCode}
         setPartnerCode={setPartnerCode}
         onFinish={connectRoom}
         error={error}
-      ></PairingStep>
+      />
     </View>
   );
 };
