@@ -1,23 +1,47 @@
-import React from 'react';
-import { Redirect, Stack } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
+import { fetchUser } from '@/apis/user';
+import { useRouter } from 'expo-router';
 
 export default function AuthRoutesLayout() {
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const router = useRouter();
 
-  if (isSignedIn) {
-    return (
-      <Redirect
-        href={'../(tabs)/home'} //onboarding page to help couple create one room together
-      />
-    ); // home screen when land in
-  }
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      router.replace('/signin');
+      return;
+    }
+
+    (async () => {
+      try {
+        const user = await fetchUser(userId);
+        console.log('Fetched user:', user.username, user.birthdate, user.photo_url);
+        if (user.username && user.birthdate && user.photo_url) {
+          router.replace('/(tabs)/home');
+        } else {
+          router.replace({
+            pathname: '/(onboard)/onboardingFlow',
+            params: { user_id: userId },
+          });
+        }
+      } catch (err) {
+        console.error('❌ Error fetching user data:', err);
+        return;
+      }
+    })();
+  }, [isLoaded, isSignedIn, userId]);
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
       }}
-    ></Stack>
+    >
+      <Stack.Screen name="signin" />
+      <Stack.Screen name="signup" />
+    </Stack>
   );
 }
