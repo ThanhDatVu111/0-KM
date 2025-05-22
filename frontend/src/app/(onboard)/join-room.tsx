@@ -40,12 +40,10 @@ function PairingStep({
           Invite your partner
         </Text>
 
-        <Text className="text-lg font-medium text-gray-700 text-center mb-2">
-          Your code: {myCode}
-        </Text>
+        <Text className="text-lg font-medium text-gray-700 text-center mb-2">{myCode}</Text>
 
         <Button
-          label="Share your invite code"
+          label="Copy invite code"
           onPress={handleCopy}
           size="py-3"
           color="bg-pink-400"
@@ -98,6 +96,8 @@ const joinRoom = () => {
     }
     try {
       // Pair with the partner's room
+      console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
+
       await pairRoom({
         room_id: partnerCode,
         user_2: Array.isArray(userId) ? userId[0] : userId,
