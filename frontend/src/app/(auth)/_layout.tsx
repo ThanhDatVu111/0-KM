@@ -17,6 +17,7 @@ export default function AuthRoutesLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: 'none',
       }}
     ></Stack>
   );
