@@ -21,11 +21,32 @@ export async function createRoom(req: any, res: any) {
   }
 }
 
+export async function checkRoom(req: any, res: any) {
+  try {
+    if (!req.body.room_id) {
+      return res.status(400).json({ error: 'missing room id' });
+    }
+
+    const response = await roomService.checkRoom(req.body);
+    return res.json({ response });
+    
+    return response;
+
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 export async function joinRoom(req: any, res: any) {
   try {
     //perform basic http request validation
     if (!req.body.room_id || !req.body.user_2) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const exists = await roomService.checkRoom({ room_id: req.body.room_id });
+    if (!exists){
+      return res.status(404).json({ error: '(join) room not found' });
     }
     //pass the request body to the userService
     await roomService.joinRoom(req.body);
@@ -43,6 +64,11 @@ export async function deleteRoom(req: any, res: any) {
 
     if (!room_id) {
       return res.status(400).json({ error: 'Missing required room_id parameter' });
+    }
+
+    const exists = await roomService.checkRoom({ room_id});
+    if (!exists) {
+      return res.status(404).json({ error: '(delete) room not found' });
     }
 
     await roomService.deleteRoom({ room_id });

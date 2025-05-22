@@ -12,6 +12,19 @@ export async function createRoom(attrs: { room_id: string; user_1: string }) {
   return data;
 }
 
+export async function checkRoom(attrs: { room_id: string; }) {
+  const { data, error } = await supabase
+    .from('room')
+    .select()
+    .eq('room_id', attrs.room_id)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
+  return !!data;
+}
+
 export async function joinRoom(attrs: { room_id: string; user_2: string }) {
   const { data, error } = await supabase
     .from('room')
