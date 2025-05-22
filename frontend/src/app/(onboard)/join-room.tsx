@@ -64,7 +64,7 @@ function PairingStep({
           onChangeText={setPartnerCode}
           placeholder="_ _ _ _ _ _"
           className="text-center text-2xl tracking-[1em] mb-4 py-2"
-          maxLength={6}
+          maxLength={40}
         />
 
         <Button
@@ -97,6 +97,7 @@ const joinRoom = () => {
     try {
       // Pair with the partner's room
       console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
+      console.log('Moving to room:', partnerCode);
 
       await pairRoom({
         room_id: partnerCode,
