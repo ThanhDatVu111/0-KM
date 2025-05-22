@@ -34,6 +34,7 @@ export async function joinRoom(attrs: { room_id: string; user_2: string }) {
     })
     .eq('room_id', attrs.room_id)
     .is('user_2', null)
+    .is('filled', false)
     .select()
     .single();
 

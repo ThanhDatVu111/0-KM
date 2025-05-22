@@ -17,6 +17,9 @@ export async function createRoom(req: any, res: any) {
       .status(201) // ← set status code to 201 Created
       .json({ data: room }); // ← send back JSON payload
   } catch (err: any) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'room already created' });
+    }
     res.status(500).json({ error: err.message });
   }
 }
@@ -51,7 +54,6 @@ export async function joinRoom(req: any, res: any) {
     //pass the request body to the userService
     await roomService.joinRoom(req.body);
 
-    //Send success back to the client
     res.status(204).send(); // ← set status code to 201 Created
   } catch (err: any) {
     res.status(500).json({ error: err.message });
