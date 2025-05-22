@@ -187,10 +187,10 @@ const OnboardingFlow = () => {
   const handleFinish = async () => {
     try {
       const user = await createUser({
-        email: email as string, 
-        userId: userId as string, 
+        email: email as string,
+        userId: userId as string,
         name: name,
-        birthdate: birthdate.toISOString(), 
+        birthdate: birthdate.toISOString(),
         photo: photo || '',
       });
       console.log('✅ User created via backend:', user);

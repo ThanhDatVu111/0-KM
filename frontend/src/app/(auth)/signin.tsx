@@ -88,8 +88,8 @@ export default function Page() {
       ) : null}
 
       {/* Sign in with Google Button */}
-      <SocialLoginButton label="Continue with Google" strategy="oauth_google" />
-      <SocialLoginButton label="Continue with Apple" strategy="oauth_apple" />
+      <SocialLoginButton label="Sign in with Google" strategy="oauth_google" />
+      <SocialLoginButton label="Sign in with Apple" strategy="oauth_apple" />
 
       {/* Forgot Password Link */}
       <Button
