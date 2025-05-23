@@ -8,7 +8,7 @@ export default function AuthRoutesLayout() {
   if (isSignedIn) {
     return (
       <Redirect
-        href={'../(onboard)/page'} //onboarding page to help couple create one room together
+        href={'../(tabs)/home'} //onboarding page to help couple create one room together
       />
     ); // home screen when land in
   }

@@ -32,9 +32,8 @@ export async function checkRoom(req: any, res: any) {
 
     const response = await roomService.checkRoom(req.body);
     return res.json({ response });
-    
-    return response;
 
+    return response;
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -48,7 +47,7 @@ export async function joinRoom(req: any, res: any) {
     }
 
     const exists = await roomService.checkRoom({ room_id: req.body.room_id });
-    if (!exists){
+    if (!exists) {
       return res.status(404).json({ error: '(join) room not found' });
     }
     //pass the request body to the userService
@@ -68,7 +67,7 @@ export async function deleteRoom(req: any, res: any) {
       return res.status(400).json({ error: 'Missing required room_id parameter' });
     }
 
-    const exists = await roomService.checkRoom({ room_id});
+    const exists = await roomService.checkRoom({ room_id });
     if (!exists) {
       return res.status(404).json({ error: '(delete) room not found' });
     }
