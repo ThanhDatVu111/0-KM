@@ -11,6 +11,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.aanh1009.0kmApp",
       "supportsTablet": true
     },
     "android": {
