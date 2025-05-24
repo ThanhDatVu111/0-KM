@@ -3,60 +3,50 @@ import { View, Text, Image } from 'react-native';
 import images from '@/constants/images';
 import Button from '@/components/Button';
 
-// import { AuthStrategy, ModalType } from '@/types/enums';
-// import { useSSO, useSignIn, useSignUp } from '@clerk/clerk-expo';
-
-// const LOGIN_OPTIONS = [
-//   {
-//     text: 'Continue with Google',
-//     icon: icons.google,
-//     strategy: AuthStrategy.Google,
-//   }
-// ]
-
-interface AuthLayoutProps {
-  children: React.ReactNode;
+interface Props {
   activeTab: 'sign-in' | 'sign-up';
-  onTabChange: (tab: 'sign-in' | 'sign-up' | 'forgot-password') => void;
+  onTabChange: (tab: 'sign-in' | 'sign-up') => void;
+  children: React.ReactNode;
 }
 
-export default function AuthLayout({ children, activeTab, onTabChange }: AuthLayoutProps) {
+export default function AuthLayout({ activeTab, onTabChange, children }: Props) {
   return (
-    <View className="flex-1 items-center justify-center bg-primary">
-      {/* logo */}
-      <Image source={images.logo} className="w-full max-h-28" resizeMode="contain" />
+    <View className="flex-1 items-center justify-center bg-primary px-6">
+      {/* Logo */}
+      <Image source={images.logo} className="w-full max-h-28 mt-10" resizeMode="contain" />
 
-      {/* tagline */}
+      {/* Tagline */}
       <Text className="text-lg font-poppins-light text-black text-center mb-8">
         Love knows no distance
       </Text>
 
-      {/* tabs */}
-      <View className="flex-row mb-5">
+      {/* Tabs */}
+      <View className="flex-row mb-2">
         <Button
           label="Login"
           onPress={() => onTabChange('sign-in')}
-          className="px-6 pb-1 mb-0" // spacing around
+          className={`px-6 pb-1 ${
+            activeTab === 'sign-in' ? 'border-b-2 border-b-accent' : 'border-b-transparent'
+          }`}
           textClassName={`text-[18px] ${
-            activeTab === 'sign-in'
-              ? 'font-bold border-b-2 border-b-accent text-accent'
-              : 'border-b-transparent text-accent'
+            activeTab === 'sign-in' ? 'font-bold text-accent' : 'text-accent'
           }`}
         />
 
         <Button
           label="Create Account"
           onPress={() => onTabChange('sign-up')}
-          className="px-6 pb-1 mb-0 ml-4"
+          className={`px-6 pb-1 ml-4 ${
+            activeTab === 'sign-up' ? 'border-b-2 border-b-accent' : 'border-b-transparent'
+          }`}
           textClassName={`text-[18px] ${
-            activeTab === 'sign-up'
-              ? 'font-bold border-b-2 border-b-accent text-accent'
-              : 'border-b-transparent text-accent'
+            activeTab === 'sign-up' ? 'font-bold text-accent' : 'text-accent'
           }`}
         />
       </View>
 
-      {children}
+      {/* Form */}
+      <View>{children}</View>
     </View>
   );
 }

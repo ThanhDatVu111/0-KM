@@ -8,7 +8,7 @@ import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import { createUser } from '@/apis/user';
 
-export default function SignUpScreen() {
+export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = useState('');
@@ -61,11 +61,8 @@ export default function SignUpScreen() {
 
     try {
       // 1) Attempt verification & grab the new user’s ID
-      const {
-        status,
-        createdSessionId,
-        createdUserId, 
-      } = await signUp.attemptEmailAddressVerification({ code });
+      const { status, createdSessionId, createdUserId } =
+        await signUp.attemptEmailAddressVerification({ code });
 
       // 2) Bail if verification didn’t complete
       if (status !== 'complete' || !createdUserId) {
@@ -177,10 +174,7 @@ export default function SignUpScreen() {
 
   // ✅ Sign-up form UI
   return (
-    <AuthLayout
-      activeTab="sign-up"
-      onTabChange={(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}
-    >
+    <View>
       <View className="w-[300px]">
         <FormInput
           label="Email"
@@ -231,6 +225,6 @@ export default function SignUpScreen() {
         textClassName="text-accent text-[16px]"
         textStyle={{ fontFamily: 'Poppins-Regular' }}
       />
-    </AuthLayout>
+    </View>
   );
 }
