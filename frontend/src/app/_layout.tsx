@@ -14,7 +14,7 @@ function AuthenticatedLayout() {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      router.replace('/'); // Redirect to sign-in if not signed in
+      router.replace('/'); // Redirect to home if not signed in
       return;
     }
 
