@@ -121,53 +121,55 @@ export default function SignUpForm() {
   // ✅ OTP Verification UI
   if (pendingVerification) {
     return (
-      <View className="flex-1 items-center justify-center bg-primary px-6">
-        <Text className="text-xl mb-4 text-accent" style={{ fontFamily: 'Poppins-Bold' }}>
-          Verify your email
-        </Text>
-        <TextInput
-          value={code}
-          placeholder="Enter your verification code"
-          onChangeText={setCode}
-          className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
-        />
-
-        {/* Show error if exists */}
-        {error ? (
-          <Text
-            className="text-red-600 text-center mb-2 w-[300px]"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
-            {error}
+      <View>
+        <View className="w-[300px]">
+          <Text className="text-xl mb-4 text-accent" style={{ fontFamily: 'Poppins-Bold' }}>
+            Verify your email
           </Text>
-        ) : null}
+          <TextInput
+            value={code}
+            placeholder="Enter your verification code"
+            onChangeText={setCode}
+            className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
+          />
 
-        <Button
-          label="Verify"
-          onPress={onVerifyPress}
-          size="py-3 px-4"
-          color="bg-accent"
-          className="w-[300px] items-center"
-          textClassName="text-white text-[16px]"
-          textStyle={{ fontFamily: 'Poppins-Regular' }}
-        />
+          {/* Show error if exists */}
+          {error ? (
+            <Text
+              className="text-red-600 text-center mb-2 w-[300px]"
+              style={{ fontFamily: 'Poppins-Regular' }}
+            >
+              {error}
+            </Text>
+          ) : null}
 
-        {/* ✅ Resend button or Timer */}
-        {resendTimer > 0 ? (
-          <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
-            You can resend code in {resendTimer} seconds
-          </Text>
-        ) : (
           <Button
-            label="Resend Code"
-            onPress={onResendCode}
+            label="Verify"
+            onPress={onVerifyPress}
             size="py-3 px-4"
-            color="border border-accent"
-            className="w-[300px] items-center mb-4"
-            textClassName="text-accent text-[16px]"
+            color="bg-accent"
+            className="w-[300px] items-center"
+            textClassName="text-white text-[16px]"
             textStyle={{ fontFamily: 'Poppins-Regular' }}
           />
-        )}
+
+          {/* ✅ Resend button or Timer */}
+          {resendTimer > 0 ? (
+            <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
+              You can resend code in {resendTimer} seconds
+            </Text>
+          ) : (
+            <Button
+              label="Resend Code"
+              onPress={onResendCode}
+              size="py-3 px-4"
+              color="border border-accent"
+              className="w-[300px] items-center mb-4"
+              textClassName="text-accent text-[16px]"
+              textStyle={{ fontFamily: 'Poppins-Regular' }}
+            />
+          )}
+        </View>
       </View>
     );
   }
