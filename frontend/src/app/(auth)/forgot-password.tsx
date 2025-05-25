@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
+import Button from '@/components/Button';
+import FormInput from '@/components/FormInput';
+import images from '@/constants/images'; 
 
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -21,7 +24,7 @@ export default function ForgotPasswordScreen() {
         identifier: email,
       });
       setIsCodeSent(true);
-      setError('');
+      setError(null);
     } catch (err: any) {
       const readableMessage =
         err?.errors?.[0]?.shortMessage ||
@@ -32,6 +35,7 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  // Handle resetting the password
   const resetPassword = async () => {
     if (!isLoaded) return;
     try {
@@ -43,7 +47,7 @@ export default function ForgotPasswordScreen() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.replace('../(auth)/signin');
+        router.replace('../(auth)/authscreen');
       } else {
         setError('Password reset incomplete.');
       }
@@ -58,82 +62,74 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View className="flex-1 justify-center bg-primary px-5">
-      {!isCodeSent ? (
-        //if code is not sent yet
-        <>
-          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
-            Email
+    <View className="flex-1 items-center justify-center bg-primary px-6">
+      <Image source={images.logo} className="w-full max-h-28" resizeMode="contain" />
+      <View className="w-[300px]">
+        {!isCodeSent ? (
+          <>
+            <FormInput
+              label=""
+              borderColor="#F5829B"
+              autoCapitalize="none"
+              value={email}
+              placeholder="Enter your email"
+              onChangeText={setEmail}
+            />
+            <Button
+              label="Send Reset Code"
+              onPress={sendResetCode}
+              size="py-3 px-4"
+              color="bg-accent"
+              className="w-full mb-3"
+              textClassName="text-white text-[16px]"
+              textStyle={{ fontFamily: 'Poppins-Regular' }}
+            />
+          </>
+        ) : (
+          <>
+            <FormInput
+              label="Verification Code"
+              borderColor="#F5829B"
+              value={code}
+              placeholder="Enter verification code"
+              onChangeText={setCode}
+            />
+            <FormInput
+              label="New Password"
+              borderColor="#F5829B"
+              value={newPassword}
+              placeholder="Enter new password"
+              secureTextEntry
+              onChangeText={setNewPassword}
+            />
+            <Button
+              label="Reset Password"
+              onPress={resetPassword}
+              size="py-3 px-4"
+              color="bg-accent"
+              className="w-full mb-3"
+              textClassName="text-white text-[16px]"
+              textStyle={{ fontFamily: 'Poppins-Regular' }}
+            />
+          </>
+        )}
+
+        {error && (
+          <Text className="text-red-600 text-center mb-2" style={{ fontFamily: 'Poppins-Regular' }}>
+            {error}
           </Text>
-          <TextInput
-            className="w-full h-[50px] border border-accent rounded-lg px-3 mb-5"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          />
-          {/*Button to send reset code  - this can be change by using the button component*/}
-          <TouchableOpacity
-            className="bg-accent py-4 rounded-lg items-center mb-3"
-            onPress={sendResetCode}
-          >
-            <Text className="text-white" style={{ fontFamily: 'Poppins-Bold' }}>
-              Send Reset Code
-            </Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
-            Verification Code
-          </Text>
-          <TextInput
-            className="w-full h-[50px] border border-gray-300 rounded-lg px-3 mb-5"
-            placeholder="Enter verification code"
-            value={code}
-            onChangeText={setCode}
-            style={{ fontFamily: 'Poppins-Regular' }}
-          />
-          <Text className="mb-1 text-base text-black" style={{ fontFamily: 'Poppins-Regular' }}>
-            New Password
-          </Text>
-          <TextInput
-            className="w-full h-[50px] border border-gray-300 rounded-lg px-3 mb-5"
-            placeholder="Enter new password"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-            style={{ fontFamily: 'Poppins-Regular' }}
-          />
-          {/*Button to send reset password  - this can be change by using the button component*/}
-          <TouchableOpacity
-            className="bg-accent py-4 rounded-lg items-center mb-3"
-            onPress={resetPassword}
-          >
-            <Text className="text-white" style={{ fontFamily: 'Poppins-Bold' }}>
-              Reset Password
-            </Text>
-          </TouchableOpacity>
-        </>
-      )}
-      {error ? (
-        <Text className="text-red-600 mt-2 text-center" style={{ fontFamily: 'Poppins-Regular' }}>
-          {error}
-        </Text>
-      ) : null}
-      //* Back to Sign In */
-      <TouchableOpacity
-        onPress={() => router.push('../(auth)/signin')}
-        className="mb-4 items-center"
-      >
-        <Text
-          className="text-[16px] underline text-accent"
-          style={{ fontFamily: 'Poppins-Medium' }}
-        >
-          I remember my password
-        </Text>
-      </TouchableOpacity>
+        )}
+
+        <Button
+          label="I remember my password"
+          onPress={() => router.push('../(auth)/authscreen')}
+          size=""
+          color=""
+          className="w-full"
+          textClassName="text-[16px] underline text-accent"
+          textStyle={{ fontFamily: 'Poppins-Medium' }}
+        />
+      </View>
     </View>
   );
 }
