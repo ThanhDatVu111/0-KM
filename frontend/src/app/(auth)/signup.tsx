@@ -6,8 +6,9 @@ import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
+import { createUser } from '@/apis/user';
 
-export default function SignUpScreen() {
+export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = useState('');
@@ -44,6 +45,7 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
+      console.error('Sign-up error:', JSON.stringify(err, null, 2));
       const readableMessage =
         err?.errors?.[0]?.shortMessage ||
         err?.errors?.[0]?.longMessage ||
@@ -58,33 +60,39 @@ export default function SignUpScreen() {
     if (!isLoaded) return;
 
     try {
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
-      });
+      // 1) Attempt verification & grab the new user’s ID
+      const { status, createdSessionId, createdUserId } =
+        await signUp.attemptEmailAddressVerification({ code });
 
-      if (signUpAttempt.status === 'complete') {
-        await setActive({ session: signUpAttempt.createdSessionId });
-        const newUserId = signUpAttempt.createdUserId;
-        console.log(newUserId); //check this
-        router.replace({
-          pathname: '../(onboard)/onboardingFlow',
-          params: {
-            email: emailAddress,
-            userId: newUserId,
-          },
-        });
-      } else {
-        setError('The verification code is incorrect or expired. Please try again.'); //what the user sees
+      // 2) Bail if verification didn’t complete
+      if (status !== 'complete' || !createdUserId) {
+        setError('Verification failed. Please try again.');
+        return;
       }
+
+      // 3) Activate the new session
+      await setActive({ session: createdSessionId });
+
+      // 4) Save user to your DB
+      const createdUser = await createUser({
+        email: emailAddress,
+        user_id: createdUserId,
+      });
+      console.log('✅ New user saved to database:', createdUser);
+
+      // 5) Redirect
+      router.replace({
+        pathname: '/(onboard)/onboardingFlow',
+        params: { user_id: createdUserId }, // Pass user_id here
+      });
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      const readableMessage =
+      console.error('🚨 onVerifyPress error:', err);
+      const msg =
         err?.errors?.[0]?.shortMessage ||
         err?.errors?.[0]?.longMessage ||
         err?.message ||
-        'Something went wrong during verification. Please check your connection and try again.'; //what the user sees
-
-      setError(readableMessage);
+        'Something went wrong during verification. Please try again.';
+      setError(msg);
     }
   };
 
@@ -113,63 +121,62 @@ export default function SignUpScreen() {
   // ✅ OTP Verification UI
   if (pendingVerification) {
     return (
-      <View className="flex-1 items-center justify-center bg-primary px-6">
-        <Text className="text-xl mb-4 text-accent" style={{ fontFamily: 'Poppins-Bold' }}>
-          Verify your email
-        </Text>
-        <TextInput
-          value={code}
-          placeholder="Enter your verification code"
-          onChangeText={setCode}
-          className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
-        />
-
-        {/* Show error if exists */}
-        {error ? (
-          <Text
-            className="text-red-600 text-center mb-2 w-[300px]"
-            style={{ fontFamily: 'Poppins-Regular' }}
-          >
-            {error}
+      <View>
+        <View className="w-[300px]">
+          <Text className="text-xl mb-4 text-accent" style={{ fontFamily: 'Poppins-Bold' }}>
+            Verify your email
           </Text>
-        ) : null}
+          <TextInput
+            value={code}
+            placeholder="Enter your verification code"
+            onChangeText={setCode}
+            className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
+          />
 
-        <Button
-          label="Verify"
-          onPress={onVerifyPress}
-          size="py-3 px-4"
-          color="bg-accent"
-          className="w-[300px] items-center"
-          textClassName="text-white text-[16px]"
-          textStyle={{ fontFamily: 'Poppins-Regular' }}
-        />
+          {/* Show error if exists */}
+          {error ? (
+            <Text
+              className="text-red-600 text-center mb-2 w-[300px]"
+              style={{ fontFamily: 'Poppins-Regular' }}
+            >
+              {error}
+            </Text>
+          ) : null}
 
-        {/* ✅ Resend button or Timer */}
-        {resendTimer > 0 ? (
-          <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
-            You can resend code in {resendTimer} seconds
-          </Text>
-        ) : (
           <Button
-            label="Resend Code"
-            onPress={onResendCode}
+            label="Verify"
+            onPress={onVerifyPress}
             size="py-3 px-4"
-            color="border border-accent"
-            className="w-[300px] items-center mb-4"
-            textClassName="text-accent text-[16px]"
+            color="bg-accent"
+            className="w-[300px] items-center"
+            textClassName="text-white text-[16px]"
             textStyle={{ fontFamily: 'Poppins-Regular' }}
           />
-        )}
+
+          {/* ✅ Resend button or Timer */}
+          {resendTimer > 0 ? (
+            <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
+              You can resend code in {resendTimer} seconds
+            </Text>
+          ) : (
+            <Button
+              label="Resend Code"
+              onPress={onResendCode}
+              size="py-3 px-4"
+              color="border border-accent"
+              className="w-[300px] items-center mb-4"
+              textClassName="text-accent text-[16px]"
+              textStyle={{ fontFamily: 'Poppins-Regular' }}
+            />
+          )}
+        </View>
       </View>
     );
   }
 
   // ✅ Sign-up form UI
   return (
-    <AuthLayout
-      activeTab="sign-up"
-      onTabChange={(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}
-    >
+    <View>
       <View className="w-[300px]">
         <FormInput
           label="Email"
@@ -220,6 +227,6 @@ export default function SignUpScreen() {
         textClassName="text-accent text-[16px]"
         textStyle={{ fontFamily: 'Poppins-Regular' }}
       />
-    </AuthLayout>
+    </View>
   );
 }
