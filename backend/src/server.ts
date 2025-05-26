@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
-import router from './routes/userRoutes';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
@@ -29,7 +28,7 @@ const startServer = async () => {
     // Test query to check connection
     const { error } = await supabase.from('users').select('*').limit(1);
     if (error) {
-      console.error('❌ Supabase connection failed:', error.message);
+      console.error('❌ Supabase connection failed or users is not exist:', error.message);
       return;
     }
     app.listen(PORT, () => {

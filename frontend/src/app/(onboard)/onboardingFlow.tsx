@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Platform, Image, TextInput, Alert } from 'react-native';
+import { View, Text, Platform, Image, TextInput} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
-import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams } from 'expo-router';
-import { createUser } from '@/apis/user';
+import { onboardUser } from '@/apis/user';
 import { createRoom } from '@/apis/room';
 
 /** --- Step 1: NameEntry --- */
@@ -183,25 +182,24 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
-  const { userId, email } = useLocalSearchParams();
+  const {user_id} = useLocalSearchParams();
   const router = useRouter();
   const roomId = crypto.randomUUID();
 
   const handleFinish = async () => {
     try {
-      const user = await createUser({
-        email: email as string,
-        userId: userId as string,
+      const user = await onboardUser({
+        user_id: user_id as string,
         name: name,
         birthdate: birthdate.toISOString(),
-        photo: photo || '',
+        photo_url: photo || '',
       });
 
-      console.log('✅ User created:', user);
+      console.log('✅ User updated in database:', user);
 
       const room = await createRoom({
         room_id: roomId as string,
-        user_1: userId as string,
+        user_1: user_id as string,
       });
 
       console.log('✅ Room created:', room);
@@ -210,7 +208,7 @@ const OnboardingFlow = () => {
       router.push({
         pathname: '/(onboard)/join-room',
         params: {
-          userId: userId,
+          userId: user_id,
           roomId: roomId,
         },
       });

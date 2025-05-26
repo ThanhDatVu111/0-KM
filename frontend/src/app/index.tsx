@@ -32,7 +32,7 @@ export default function Index() {
           {/* Login Button */}
           <Button
             label="Let’s login"
-            onPress={() => router.push('../(auth)/signin')}
+            onPress={() => router.push('../(auth)/authscreen')}
             size="w-72 mt-8 px-6 py-4"
             color="bg-accent"
             textClassName="text-white text-lg text-center"

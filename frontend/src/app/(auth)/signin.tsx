@@ -7,7 +7,7 @@ import React from 'react';
 import Button from '@/components/Button';
 import { useState } from 'react';
 
-export default function Page() {
+export default function SignInForm() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = useState('');
@@ -46,12 +46,9 @@ export default function Page() {
   };
 
   return (
-    <AuthLayout
-      activeTab="sign-in"
-      onTabChange={(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}
-    >
-      {/* Input Fields */}
+    <View>
       <View className="w-[300px]">
+        {/* Input Fields */}
         <FormInput
           label="Email"
           borderColor="#F5829B"
@@ -114,6 +111,6 @@ export default function Page() {
         textClassName="text-[16px] underline text-accent"
         textStyle={{ fontFamily: 'Poppins-Medium' }}
       />
-    </AuthLayout>
+    </View>
   );
 }
