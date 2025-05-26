@@ -11,6 +11,7 @@ module.exports = {
       colors: {
         primary: '#F5CDDE',
         accent: '#F5829B',
+        calendarButton: '#D05079',
       },
       fontFamily: {
         poppins: ['Poppins-Regular'],
