@@ -17,8 +17,8 @@ app.use(express.urlencoded({ limit: '20mb', extended: true }));
 app.use(cors()); //allows the backend to respond to requests from the frontend.
 
 //If the frontend makes a request to /user/..., go look in UserRouter to handle it.
-app.use('/user', UserRouter);
-app.use('/room', RoomRouter);
+app.use('/users', UserRouter);
+app.use('/rooms', RoomRouter);
 
 // ✅ Start server
 const startServer = async () => {

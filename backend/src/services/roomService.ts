@@ -17,7 +17,6 @@ export async function joinRoom(input: any) {
   });
 }
 
-
 export async function checkRoom(input: any){
   return roomModel.checkRoom({
     room_id: input.room_id,
@@ -30,4 +29,7 @@ export async function deleteRoom(input: any) {
   });
 }
 
+export async function fetchRoom(user_id: string) {
+  return roomModel.fetchRoom(user_id);
+}
 
