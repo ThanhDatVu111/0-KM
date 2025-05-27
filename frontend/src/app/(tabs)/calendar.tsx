@@ -8,6 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,7 +25,7 @@ const Calendar = () => {
   useEffect(() => {
     const loadToken = async () => {
       if (Platform.OS == 'web') {
-        const token = localStorage.getItem('calendar_access_token');
+        const token = sessionStorage.getItem('calendar_access_token');
         if (token) {
           setToken(token);
         }
@@ -49,7 +50,7 @@ const Calendar = () => {
         if (Platform.OS !== 'web') {
           SecureStore.setItemAsync('calendar_access_token', token);
         } else {
-          localStorage.setItem('calendar_access_token', token);
+          sessionStorage.setItem('calendar_access_token', token);
         }
       }
     } else if (response?.type === 'error') {
@@ -57,6 +58,11 @@ const Calendar = () => {
     }
   }, [response]);
 
+  const connectCalendar = () => {
+    promptAsync();
+  };
+
+  
   const fontsLoaded = useFont();
   const router = useRouter();
 
@@ -67,10 +73,6 @@ const Calendar = () => {
       </View>
     );
   }
-
-  const connectCalendar = () => {
-    promptAsync();
-  };
 
   return (
     <View className="tab-screen">
