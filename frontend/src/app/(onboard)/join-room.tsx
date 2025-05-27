@@ -5,6 +5,7 @@ import Button from '@/components/Button';
 import { View, Text, TextInput, Alert, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
+import { SignOutButton } from '@/components/SignOutButton';
 
 function PairingStep({
   myCode,
@@ -12,12 +13,14 @@ function PairingStep({
   partnerCode,
   onFinish,
   error,
+  loading,
 }: {
   myCode: string;
   partnerCode: string;
   setPartnerCode: (s: string) => void;
   onFinish: () => void;
   error: string;
+  loading: boolean;
 }) {
   const handleCopy = async () => {
     if (!myCode || myCode.length === 0) {
@@ -62,18 +65,19 @@ function PairingStep({
         <TextInput
           value={partnerCode}
           onChangeText={setPartnerCode}
-          placeholder="_ _ _ _ _ _"
+          placeholder="_ _ _ _ _"
           className="text-center text-2xl tracking-[1em] mb-4 py-2"
           maxLength={40}
         />
 
         <Button
-          label="Pair now"
+          label={loading ? 'Pairing...' : 'Pair now'}
           onPress={onFinish}
           size="py-3"
-          color="bg-pink-400"
+          color={loading ? 'bg-gray-400' : 'bg-pink-400'}
           className="w-full rounded-xl"
           textClassName="text-white text-base font-medium"
+          disabled={loading} // Disable the button while loading
         />
       </View>
 
@@ -82,18 +86,21 @@ function PairingStep({
   );
 }
 
-const joinRoom = () => {
+const JoinRoom = () => {
   const router = useRouter();
   const { userId, roomId } = useLocalSearchParams();
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
       setError('Cannot enter your own code');
       return;
     }
+
+    setLoading(true); // Set loading to true when the request starts
     try {
       // Pair with the partner's room
       console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
@@ -114,24 +121,28 @@ const joinRoom = () => {
       // Success feedback and navigation
       console.log('Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
-      router.push('/(home)/home-page');
+      router.push('/(tabs)/home');
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
+    } finally {
+      setLoading(false); // Set loading to false when the request finishes
     }
   };
 
   return (
     <View className="flex-1 items-center justify-center bg-pink-100">
+      <SignOutButton />
       <PairingStep
         myCode={roomIdString}
         partnerCode={partnerCode}
         setPartnerCode={setPartnerCode}
         onFinish={connectRoom}
         error={error}
+        loading={loading} // Pass loading state to the child component
       />
     </View>
   );
 };
 
-export default joinRoom;
+export default JoinRoom;

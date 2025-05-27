@@ -1,23 +1,11 @@
-export interface roomRequest {
-  room_id: string;
-  user_1: string;
-}
-
-export interface createdRoom {
-  room_id: string;
-  user_1: string;
-  user_2: string;
-  created_at: string;
-}
-
-export interface pairRequest {
-  room_id: string;
-  user_2: string;
-}
-
-export interface deleteRoomRequest {
-  room_id: string;
-}
+import {
+  RoomRequest,
+  CreatedRoom,
+  PairRequest,
+  DeleteRoomRequest,
+  FetchRoomRequest,
+  FetchRoomResponse,
+} from '@/types/rooms';
 
 const host = process.env.EXPO_PUBLIC_API_HOST;
 const port = process.env.EXPO_PUBLIC_API_PORT;
@@ -27,9 +15,9 @@ if (!host || !port) {
 }
 const BASE_URL = `${host}:${port}`;
 
-export async function createRoom(request: roomRequest): Promise<createdRoom> {
+export async function createRoom(request: RoomRequest): Promise<CreatedRoom> {
   try {
-    const response = await fetch(`${BASE_URL}/room/createRoom`, {
+    const response = await fetch(`${BASE_URL}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -38,41 +26,48 @@ export async function createRoom(request: roomRequest): Promise<createdRoom> {
     const result = await response.json();
 
     if (!response.ok) {
-      // API responded with an error status (4xx/5xx)
       throw new Error(result.error || 'Failed to create room');
     }
 
-    // Backend returns { data: CreatedUser }
-    return result.data as createdRoom;
+    return result.data as CreatedRoom;
   } catch (err: any) {
-    // Network or parsing error ends up here
     if (err.name === 'TypeError') {
-      // E.g. “Network request failed”
       throw new Error(
         `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
       );
     }
-    // Re‑throw any other errors
-    throw err;
+    if (err instanceof Error) {
+      throw new Error(`Error in createRoom: ${err.message}`);
+    }
+    throw new Error('An unknown error occurred in createRoom');
   }
 }
 
-export async function pairRoom(request: pairRequest): Promise<void> {
+export async function pairRoom(request: PairRequest): Promise<void> {
   try {
-    await fetch(`${BASE_URL}/room/joinRoom`, {
+    const response = await fetch(`${BASE_URL}/rooms/${request.room_id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
     });
 
-  } catch (err: any) {
-    throw err;
+    // Check if the response is not OK (e.g., 4xx or 5xx status codes)
+    if (!response.ok) {
+      const result = await response.json(); // Parse the error response
+      throw new Error(result.error || 'Failed to pair room');
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('Error in pairRoom:', err.message);
+      throw err; // Re-throw the error for the caller to handle
+    }
+    throw new Error('An unknown error occurred in pairRoom');
   }
 }
 
-export async function deleteRoom(request: deleteRoomRequest): Promise<void> {
+export async function deleteRoom(request: DeleteRoomRequest): Promise<void> {
   try {
-    const response = await fetch(`${BASE_URL}/room/deleteRoom/${request.room_id}`, {
+    const response = await fetch(`${BASE_URL}/rooms/${request.room_id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -82,6 +77,30 @@ export async function deleteRoom(request: deleteRoomRequest): Promise<void> {
       throw new Error(result.error || 'Failed to delete room');
     }
   } catch (err: any) {
+    throw err;
+  }
+}
+
+export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomResponse> {
+  try {
+    const response = await fetch(`${BASE_URL}/rooms/${request.user_id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to fetch room data');
+    }
+
+    return result.data as FetchRoomResponse;
+  } catch (err: any) {
+    if (err.name === 'TypeError') {
+      throw new Error(
+        `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
+      );
+    }
     throw err;
   }
 }

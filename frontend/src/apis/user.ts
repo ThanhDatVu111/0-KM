@@ -1,35 +1,10 @@
-export interface UserRequest {
-  email: string;
-  user_id: string;
-}
-
-export interface CreatedUser {
-  user_id: string;
-  email: string;
-  created_at: string;
-}
-
-export interface OnboardRequest {
-  user_id: string;
-  name: string;
-  birthdate: string;
-  photo_url?: string;
-}
-
-export interface OnboardResponse {
-  name: string;
-  birthdate: string;
-  photo_url: string;
-}
-
-export interface FetchedUserResponse {
-  email: string;
-  user_id: string;
-  username?: string;
-  birthdate?: string;
-  photo_url?: string;
-  created_at: string;
-}
+import {
+  UserRequest,
+  CreatedUser,
+  OnboardRequest,
+  OnboardResponse,
+  FetchedUserResponse,
+} from '@/types/users';
 
 const host = process.env.EXPO_PUBLIC_API_HOST;
 const port = process.env.EXPO_PUBLIC_API_PORT;
@@ -42,7 +17,7 @@ const BASE_URL = `${host}:${port}`;
 // This function is responsible for making the API call to create a user
 export async function createUser(request: UserRequest): Promise<CreatedUser> {
   try {
-    const response = await fetch(`${BASE_URL}/user/signup`, {
+    const response = await fetch(`${BASE_URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -72,7 +47,7 @@ export async function createUser(request: UserRequest): Promise<CreatedUser> {
 
 export async function onboardUser(request: OnboardRequest): Promise<OnboardResponse> {
   try {
-    const response = await fetch(`${BASE_URL}/user/onboard`, {
+    const response = await fetch(`${BASE_URL}/users/${request.user_id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -100,7 +75,7 @@ export async function onboardUser(request: OnboardRequest): Promise<OnboardRespo
 
 export async function fetchUser(userId: string): Promise<FetchedUserResponse> {
   try {
-    const response = await fetch(`${BASE_URL}/user/fetch?userId=${userId}`, {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });

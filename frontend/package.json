@@ -23,6 +23,7 @@
     "expo": "^53.0.9",
     "expo-auth-session": "~6.1.5",
     "expo-blur": "~14.1.4",
+    "expo-clipboard": "~7.1.4",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
@@ -42,6 +43,7 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
+    "react-native-uuid": "^2.0.3",
     "react-native-web": "^0.20.0",
     "react-native-webview": "13.13.5",
     "tailwindcss": "^3.4.17"
