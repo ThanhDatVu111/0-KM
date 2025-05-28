@@ -43,7 +43,7 @@ function PairingStep({
           Invite your partner
         </Text>
 
-        <Text className="text-lg font-medium text-gray-700 text-center mb-2">{myCode}</Text>
+        <Text className="text-lg font-medium text-white text-center mb-2">{myCode}</Text>
 
         <Button
           label="Copy invite code"
