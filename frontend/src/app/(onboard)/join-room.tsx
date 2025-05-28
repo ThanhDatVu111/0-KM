@@ -38,7 +38,7 @@ function PairingStep({
 
       <Text className="text-2xl font-semibold text-gray-800 mb-8">Pair with your partner</Text>
 
-      <View className="w-full bg-white/20 rounded-3xl p-6 mb-4">
+      <View className="w-full bg-custom rounded-3xl p-6 mb-4">
         <Text className="text-xl font-medium text-gray-800 mb-2 text-center">
           Invite your partner
         </Text>
@@ -49,7 +49,7 @@ function PairingStep({
           label="Copy invite code"
           onPress={handleCopy}
           size="py-3"
-          color="bg-pink-400"
+          color="bg-accent"
           className="w-full rounded-xl"
           textClassName="text-white text-base font-medium"
         />
@@ -65,8 +65,8 @@ function PairingStep({
         <TextInput
           value={partnerCode}
           onChangeText={setPartnerCode}
-          placeholder="_ _ _ _ _"
-          className="text-center text-2xl tracking-[1em] mb-4 py-2"
+          placeholder="Enter code here"
+          className="border border-gray-300 bg-white px-4 py-3 rounded-lg w-full mb-4"
           maxLength={40}
         />
 
@@ -74,14 +74,14 @@ function PairingStep({
           label={loading ? 'Pairing...' : 'Pair now'}
           onPress={onFinish}
           size="py-3"
-          color={loading ? 'bg-gray-400' : 'bg-pink-400'}
+          color={loading ? 'bg-gray-400' : 'bg-accent'}
           className="w-full rounded-xl"
           textClassName="text-white text-base font-medium"
           disabled={loading} // Disable the button while loading
         />
       </View>
 
-      {error && <Text className="text-red-500 text-center mt-4">{error}</Text>}
+      {error && <Text className="text-accent mb-4 text-center">{error}</Text>}
     </View>
   );
 }
@@ -131,7 +131,7 @@ const JoinRoom = () => {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-pink-100">
+    <View className="flex-1 items-center justify-center  bg-primary px-4">
       <SignOutButton />
       <PairingStep
         myCode={roomIdString}
