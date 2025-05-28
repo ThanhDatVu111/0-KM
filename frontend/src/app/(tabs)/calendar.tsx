@@ -6,34 +6,38 @@ import { useRouter } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const Calendar = () => {
   const [accessToken, setToken] = useState<String | null>(null);
+  const redirectUri = makeRedirectUri();
+  console.log('redirect:', redirectUri);
   const [request, response, promptAsync] = Google.useAuthRequest({
-    redirectUri: 'https://auth.expo.io/@aanh1009/0km-app',
+    redirectUri: redirectUri,
     iosClientId: '152482242112-2c1othbu00qpt0725oki6u782hoppagj.apps.googleusercontent.com',
     webClientId: '152482242112-vgd2s47q3btrf7ksrhksa99heju44qd6.apps.googleusercontent.com',
     scopes: ['https://www.googleapis.com/auth/calendar'],
-    clientSecret: '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',
   });
 
   useEffect(() => {
     const loadToken = async () => {
-      if (Platform.OS == 'web') {
-        const token = sessionStorage.getItem('calendar_access_token');
-        if (token) {
-          setToken(token);
+      try {
+        if (Platform.OS === 'web') {
+          const token = sessionStorage.getItem('calendar_access_token');
+          if (token) {
+            setToken(token);
+          }
+        } else {
+          const token = await SecureStore.getItemAsync('calendar_access_token');
+          if (token) {
+            setToken(token);
+          }
         }
-      } else {
-        const token = await SecureStore.getItemAsync('calendar_access_token');
-        if (token) {
-          setToken(token);
-        }
+      } catch (error) {
+        console.error('Error loading token:', error);
       }
     };
     loadToken();
@@ -43,14 +47,19 @@ const Calendar = () => {
     if (response) {
       console.log('Google auth response: ', JSON.stringify(response, null, 2));
     }
+
     if (response?.type === 'success') {
       const token = response.authentication?.accessToken;
       if (token) {
         setToken(token || null);
-        if (Platform.OS !== 'web') {
-          SecureStore.setItemAsync('calendar_access_token', token);
-        } else {
-          sessionStorage.setItem('calendar_access_token', token);
+        try {
+          if (Platform.OS !== 'web') {
+            SecureStore.setItemAsync('calendar_access_token', token);
+          } else {
+            sessionStorage.setItem('calendar_access_token', token);
+          }
+        } catch (error) {
+          console.error('Error saving token:', error);
         }
       }
     } else if (response?.type === 'error') {
@@ -58,11 +67,17 @@ const Calendar = () => {
     }
   }, [response]);
 
-  const connectCalendar = () => {
-    promptAsync();
+  const connectCalendar = async () => {
+    try {
+      const result = await promptAsync();
+      if (result.type === 'error') {
+        console.error('Error during promptAsync:', result.error);
+      }
+    } catch (error) {
+      console.error('Error during Google OAuth flow:', error);
+    }
   };
 
-  
   const fontsLoaded = useFont();
   const router = useRouter();
 
@@ -85,7 +100,7 @@ const Calendar = () => {
           <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>connect to</Text>
           <Image source={icons.googleCalendar} style={{ width: '100%', height: '10%' }} />
           <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>
-            too see mutual availability and
+            to see mutual availability and
           </Text>
           <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>
             schedule your next virtual date
