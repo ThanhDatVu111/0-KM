@@ -3,6 +3,7 @@ import { View, Text, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Button from '@/components/Button';
 import { useSignUp } from '@clerk/clerk-expo';
+import { createUser } from '@/apis/user';
 
 export default function VerifyEmail() {
   const { emailAddress } = useLocalSearchParams(); // Get email from navigation params
@@ -35,6 +36,12 @@ export default function VerifyEmail() {
       }
 
       await setActive({ session: createdSessionId });
+
+      const createdUser = await createUser({
+        email: Array.isArray(emailAddress) ? emailAddress[0] : emailAddress,
+        user_id: createdUserId,
+      });
+      console.log('✅ New user saved to database:', createdUser);
 
       // Redirect to onboarding
       router.replace({
