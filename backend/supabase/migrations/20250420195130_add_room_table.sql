@@ -4,7 +4,7 @@ CREATE TABLE room (
   user_1     TEXT                    NOT NULL REFERENCES users(user_id),
   user_2     TEXT                    NULL      REFERENCES users(user_id),
   created_at TIMESTAMP               NOT NULL DEFAULT now(),
-  filled     BOOLEAN                 NOT NULL DEFAULT FALSE
+  filled     BOOLEAN                 NOT NULL DEFAULT FALSE,
 );
 
 -- enforce one room per unordered pair
