@@ -1,54 +1,72 @@
 import * as userService from '../services/userService';
+import { Request, Response, NextFunction } from 'express';
+import { SignUpBody, OnboardBody, FetchUserQuery } from '../types/users';
 
-//ROLE: validate user input
-
-export async function signUp(req: any, res: any) {
+// Sign Up
+export async function signUp(
+  req: Request<{}, {}, SignUpBody>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    //perform basic http request validation
-    if (!req.body.email || !req.body.user_id) {
-      return res.status(400).json({ error: 'Missing required fields for signup' });
-    }
-    //pass the request body to the userService
-    // 2) Service-layer call
-    const newUser = await userService.registerUser(req.body);
+    const { email, user_id } = req.body;
 
-    // 3) Return created
-    return res
-      .status(201) // Created
-      .json({ data: newUser });
+    if (!email || !user_id) {
+      res.status(400).json({ error: 'Missing required fields for signup' });
+      return;
+    }
+
+    const newUser = await userService.registerUser({ email, user_id });
+    res.status(201).json({ data: newUser });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 }
 
-export async function onboard(req: any, res: any) {
+// Onboard
+export async function onboard(
+  req: Request<{}, {}, OnboardBody>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    // Validate required fields
-    if (!req.body.name || !req.body.birthdate || !req.body.photo_url) {
-      return res.status(400).json({ error: 'Missing required fields for onboarding' });
+    const { user_id, name, birthdate, photo_url } = req.body;
+
+    if (!user_id || !name || !birthdate || !photo_url) {
+      res.status(400).json({ error: 'Missing required fields for onboarding' });
+      return;
     }
 
-    // Pass the request to the service layer
-    const updatedUser = await userService.onboardUser(req.body);
+    const updatedUser = await userService.onboardUser({
+      user_id,
+      username: name,
+      birthdate,
+      photo_url,
+    });
 
-    // 3) Return created
-    return res
-      .status(201) // Created
-      .json({ data: updatedUser });
+    res.status(201).json({ data: updatedUser });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 }
 
-export async function fetchUser(req: any, res: any) {
+// Fetch User
+export async function fetchUser(
+  req: Request<{ userId: string }, {}, {}, FetchUserQuery>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    const userId = req.query.userId;
+    const { userId } = req.params;
+
     if (!userId) {
-      return res.status(400).json({ error: 'Missing required userId to fetch user' });
+      res.status(400).json({ error: 'Missing required userId to fetch user' });
+      return;
     }
+
     const user = await userService.fetchUser({ userId });
-    return res.status(200).json({ data: user });
+    res.status(200).json({ data: user });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    next(err);
   }
 }

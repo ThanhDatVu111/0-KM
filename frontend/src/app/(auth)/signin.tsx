@@ -1,7 +1,6 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
 import Button from '@/components/Button';
@@ -54,7 +53,7 @@ export default function SignInForm() {
           borderColor="#F5829B"
           autoCapitalize="none"
           value={emailAddress}
-          placeholder="Sample@domain.com"
+          placeholder=""
           onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
         />
 
@@ -63,7 +62,7 @@ export default function SignInForm() {
           borderColor="#F5829B"
           autoCapitalize="none"
           value={password}
-          placeholder="•••••••••••"
+          placeholder=""
           secureTextEntry={true}
           onChangeText={(password) => setPassword(password)}
         />
