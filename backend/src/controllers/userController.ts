@@ -30,16 +30,28 @@ export async function onboard(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id, name, birthdate, photo_url } = req.body;
+    const { user_id, username, birthdate, photo_url } = req.body;
 
-    if (!user_id || !name || !birthdate || !photo_url) {
-      res.status(400).json({ error: 'Missing required fields for onboarding' });
+    if (!user_id) {
+      res.status(400).json({ error: 'Missing user id' });
+      return;
+    }
+    if (!username) {
+      res.status(400).json({ error: 'Missing name' });
+      return;
+    }
+    if (!birthdate) {
+      res.status(400).json({ error: 'Missing birthdate' });
+      return;
+    }
+    if (!photo_url) {
+      res.status(400).json({ error: 'Missing photo' });
       return;
     }
 
     const updatedUser = await userService.onboardUser({
       user_id,
-      username: name,
+      username: username,
       birthdate,
       photo_url,
     });

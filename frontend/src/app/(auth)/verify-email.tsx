@@ -3,6 +3,7 @@ import { View, Text, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Button from '@/components/Button';
 import { useSignUp } from '@clerk/clerk-expo';
+import { createUser } from '@/apis/user';
 
 export default function VerifyEmail() {
   const { emailAddress } = useLocalSearchParams(); // Get email from navigation params
@@ -33,7 +34,12 @@ export default function VerifyEmail() {
         setError('Verification failed. Please try again.');
         return;
       }
-
+      try {
+        createUser({
+          user_id: createdUserId,
+          email: Array.isArray(emailAddress) ? emailAddress[0] : emailAddress,
+        });
+      } catch (error) {}
       await setActive({ session: createdSessionId });
 
       // Redirect to onboarding

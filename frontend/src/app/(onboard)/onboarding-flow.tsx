@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Platform, Image, TextInput} from 'react-native';
+import { View, Text, Platform, Image, TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
@@ -183,15 +183,15 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
-  const {user_id} = useLocalSearchParams();
+  const { user_id } = useLocalSearchParams();
   const router = useRouter();
-  const roomId = uuid.v4(); 
+  const roomId = uuid.v4();
 
   const handleFinish = async () => {
     try {
       const user = await onboardUser({
         user_id: user_id as string,
-        name: name,
+        username: name,
         birthdate: birthdate.toISOString(),
         photo_url: photo || '',
       });

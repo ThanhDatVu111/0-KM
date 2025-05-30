@@ -27,7 +27,9 @@ export async function updateUser(attrs: {
     .eq('user_id', attrs.user_id) // Match by user_id
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error('error onboarding: ', error.message);
+  }
   return data;
 }
 

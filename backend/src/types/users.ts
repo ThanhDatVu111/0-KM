@@ -5,7 +5,7 @@ export interface SignUpBody {
 
 export interface OnboardBody {
   user_id: string;
-  name: string;
+  username: string;
   birthdate: string;
   photo_url: string;
 }

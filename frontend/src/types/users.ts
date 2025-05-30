@@ -11,13 +11,13 @@ export interface CreatedUser {
 
 export interface OnboardRequest {
   user_id: string;
-  name: string;
+  username: string;
   birthdate: string;
   photo_url?: string;
 }
 
 export interface OnboardResponse {
-  name: string;
+  username: string;
   birthdate: string;
   photo_url: string;
 }
