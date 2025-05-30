@@ -1,69 +1,71 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import images from '@/constants/images';
+import { CreateBook } from '../components/CreateBook';
+import { libraryApi } from '../apis/library';
+import type { Book } from '../types/library';
+import { useAuth } from '@clerk/clerk-expo';
+import { fetchRoom } from '../apis/room';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
 
-interface BookItem {
-  id: string;
-  title: string;
-  date: string;
-  lastModified: string;
-}
-
 export default function Library() {
   const [sortOption, setSortOption] = useState<SortOption>('last_modified');
+  const [books, setBooks] = useState<Book[]>([]);
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const { userId, isLoaded, isSignedIn } = useAuth();
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = (screenWidth - 48) / 3;
 
-  // Generate random book data
-  const books: BookItem[] = useMemo(() => {
-    const titles = [
-      'Love Story',
-      'Adventure Tales',
-      'Mystery House',
-      'Summer Days',
-      'Winter Dreams',
-      'Spring Romance',
-      'Autumn Leaves',
-      'Sunset Boulevard',
-    ];
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August'];
-    const days = Array.from({ length: 28 }, (_, i) => i + 1);
-    const years = [2023, 2024, 2025];
-    const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  // Fetch room ID
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !userId) return;
 
-    return Array.from({ length: 8 }, (_, i) => {
-      const createdMonth = months[Math.floor(Math.random() * months.length)];
-      const createdDay = days[Math.floor(Math.random() * days.length)];
-      const createdYear = years[Math.floor(Math.random() * years.length)];
-      const createdHour = hours[Math.floor(Math.random() * hours.length)];
+    const getRoomId = async () => {
+      try {
+        const room = await fetchRoom({ user_id: userId });
+        setRoomId(room.room_id);
+      } catch (error: any) {
+        setError('Failed to fetch room. Please try again later.');
+      }
+    };
 
-      const modifiedMonth = months[Math.floor(Math.random() * months.length)];
-      const modifiedDay = days[Math.floor(Math.random() * days.length)];
-      const modifiedYear = years[Math.floor(Math.random() * years.length)];
-      const modifiedHour = hours[Math.floor(Math.random() * hours.length)];
+    getRoomId();
+  }, [isLoaded, isSignedIn, userId]);
 
-      return {
-        id: String(i + 1),
-        title: titles[i],
-        date: `${createdMonth} ${createdDay}, ${createdYear} at ${createdHour}:00 pm`,
-        lastModified: `${modifiedMonth} ${modifiedDay}, ${modifiedYear} at ${modifiedHour}:00 pm`,
-      };
-    });
-  }, []);
+  // Fetch books
+  const fetchBooks = async () => {
+    if (!roomId) return;
+
+    try {
+      const fetchedBooks = await libraryApi.getBooks(roomId);
+      setBooks(fetchedBooks);
+      setError(null);
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (roomId) {
+      fetchBooks();
+    }
+  }, [roomId]);
 
   // Sort books based on selected option
-  const sortedBooks = useMemo(() => {
+  const sortedBooks = React.useMemo(() => {
     const booksToSort = [...books];
     switch (sortOption) {
       case 'last_modified':
         return booksToSort.sort(
-          (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
+          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
         );
       case 'date_created':
-        return booksToSort.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return booksToSort.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
       case 'name':
         return booksToSort.sort((a, b) => a.title.localeCompare(b.title));
       default:
@@ -88,24 +90,48 @@ export default function Library() {
     </TouchableOpacity>
   );
 
-  const BookCard = ({ isNew, title, date }: { isNew?: boolean; title?: string; date?: string }) => (
+  const BookCard = ({ isNew, book }: { isNew?: boolean; book?: Book }) => (
     <View style={{ width: cardWidth }} className="aspect-[3/4] mb-4">
       {isNew ? (
-        <TouchableOpacity className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg items-center justify-center">
+        <TouchableOpacity
+          className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
+          onPress={() => setIsCreateModalVisible(true)}
+        >
           <View className="w-16 h-16 rounded-full bg-pink-100 items-center justify-center">
             <Text className="text-3xl text-pink-500">+</Text>
           </View>
           <Text className="mt-2 text-gray-500 text-lg">new</Text>
         </TouchableOpacity>
-      ) : (
+      ) : book ? (
         <TouchableOpacity className="w-full h-full items-center justify-center">
-          <Image source={images.book} className="w-full h-full" resizeMode="contain" />
-          <View className="absolute bottom-0 w-full px-1 pb-2">
-            <Text className="text-center text-xs font-medium text-gray-800">{title}</Text>
-            <Text className="text-center text-xs text-gray-600">{date}</Text>
+          <View className="w-full h-full relative">
+            <Image
+              source={
+                book.color === 'blue'
+                  ? require('../assets/images/blue book.png')
+                  : require('../assets/images/book.png')
+              }
+              style={{
+                width: cardWidth,
+                height: cardWidth * (4 / 3),
+                resizeMode: 'contain',
+              }}
+            />
+            <View className="absolute bottom-0 w-full px-1 pb-2 bg-white/80">
+              <Text
+                className="text-center text-sm font-medium text-gray-800"
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {book.title}
+              </Text>
+              <Text className="text-center text-xs text-gray-600">
+                {new Date(book.created_at).toLocaleDateString()}
+              </Text>
+            </View>
           </View>
         </TouchableOpacity>
-      )}
+      ) : null}
     </View>
   );
 
@@ -143,15 +169,62 @@ export default function Library() {
         </View>
       </View>
 
+      {/* Error message */}
+      {error && (
+        <View className="px-4 py-2 bg-red-100">
+          <Text className="text-red-600">{error}</Text>
+        </View>
+      )}
+
       {/* Books grid */}
       <ScrollView className="flex-1 px-4">
         <View className="flex-row flex-wrap justify-between">
           <BookCard isNew />
           {sortedBooks.map((book) => (
-            <BookCard key={book.id} title={book.title} date={book.date} />
+            <BookCard key={book.id} book={book} />
           ))}
         </View>
       </ScrollView>
+
+      {/* Create Book Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isCreateModalVisible}
+        onRequestClose={() => setIsCreateModalVisible(false)}
+      >
+        <View className="flex-1 justify-center bg-black/50">
+          <View className="m-5 bg-white rounded-lg">
+            <View className="p-2 border-b border-gray-200">
+              <Text className="text-lg font-semibold text-center">Create New Book</Text>
+            </View>
+
+            {roomId ? (
+              <CreateBook
+                coupleId={roomId}
+                onSuccess={() => {
+                  setIsCreateModalVisible(false);
+                  fetchBooks();
+                }}
+                onError={(error) => setError(error)}
+              />
+            ) : (
+              <View className="p-4">
+                <Text className="text-center text-red-500">
+                  Unable to create book. Please make sure you're connected to a room.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              className="p-4 border-t border-gray-200"
+              onPress={() => setIsCreateModalVisible(false)}
+            >
+              <Text className="text-center text-gray-500">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

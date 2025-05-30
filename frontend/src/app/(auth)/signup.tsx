@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
 import { createUser } from '@/apis/user';
+import { SignOutButton } from '@/components/SignOutButton';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -59,11 +60,11 @@ export default function SignUpForm() {
     if (!isLoaded) return;
 
     try {
-      // 1) Attempt verification & grab the new user’s ID
+      // 1) Attempt verification & grab the new user's ID
       const { status, createdSessionId, createdUserId } =
         await signUp.attemptEmailAddressVerification({ code });
 
-      // 2) Bail if verification didn’t complete
+      // 2) Bail if verification didn't complete
       if (status !== 'complete' || !createdUserId) {
         setError('Verification failed. Please try again.');
         return;
@@ -177,6 +178,9 @@ export default function SignUpForm() {
   return (
     <View>
       <View className="w-[300px]">
+        <View className="flex-row justify-end mb-4">
+          <SignOutButton />
+        </View>
         <FormInput
           label="Email"
           borderColor="#F5829B"
