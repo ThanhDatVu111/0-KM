@@ -1,13 +1,12 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import AuthLayout from '@/components/AuthLayout';
 import FormInput from '@/components/FormInput';
 import React from 'react';
 import Button from '@/components/Button';
 import { useState } from 'react';
 
-export default function Page() {
+export default function SignInForm() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = useState('');
@@ -46,18 +45,15 @@ export default function Page() {
   };
 
   return (
-    <AuthLayout
-      activeTab="sign-in"
-      onTabChange={(tab) => router.replace(tab === 'sign-in' ? '/signin' : '/signup')}
-    >
-      {/* Input Fields */}
+    <View>
       <View className="w-[300px]">
+        {/* Input Fields */}
         <FormInput
           label="Email"
           borderColor="#F5829B"
           autoCapitalize="none"
           value={emailAddress}
-          placeholder="Sample@domain.com"
+          placeholder=""
           onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
         />
 
@@ -66,7 +62,7 @@ export default function Page() {
           borderColor="#F5829B"
           autoCapitalize="none"
           value={password}
-          placeholder="•••••••••••"
+          placeholder=""
           secureTextEntry={true}
           onChangeText={(password) => setPassword(password)}
         />
@@ -114,6 +110,6 @@ export default function Page() {
         textClassName="text-[16px] underline text-accent"
         textStyle={{ fontFamily: 'Poppins-Medium' }}
       />
-    </AuthLayout>
+    </View>
   );
 }

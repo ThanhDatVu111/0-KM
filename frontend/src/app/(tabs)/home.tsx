@@ -1,10 +1,12 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View, Text } from 'react-native';
+import React from 'react';
+import { SignOutButton } from '@/components/SignOutButton';
 
 const Home = () => {
   return (
-    <View className="flex-1 justify-center items-center bg-white">
-      <Text>home</Text>
+    <View className="tab-screen">
+      <Text>this is home</Text>
+      <SignOutButton />
     </View>
   );
 };

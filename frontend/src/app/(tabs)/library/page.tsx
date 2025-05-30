@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native';
 import React from 'react';
 
-const Calendar = () => {
+const Library = () => {
   return (
     <View className="tab-screen">
-      <Text>this is calendar</Text>
+      <Text>this is libraryyyyyyyyy</Text>
     </View>
   );
 };
 
-export default Calendar;
+export default Library;

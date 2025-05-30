@@ -6,6 +6,7 @@ import useFont from '../hooks/useFont';
 //constants
 import images from '@/constants/images';
 import Button from '../components/Button';
+import { SignOutButton } from '@/components/SignOutButton';
 
 export default function Index() {
   const fontsLoaded = useFont();
@@ -21,6 +22,7 @@ export default function Index() {
   return (
     <SafeAreaView className="flex h-full bg-primary items-center justify-between">
       <View className="flex-1 items-center justify-center">
+        <SignOutButton />
         {/* Logo */}
         <View className="w-full items-center">
           <Image source={images.logo} className="w-40 h-28" resizeMode="contain" />
@@ -32,7 +34,7 @@ export default function Index() {
           {/* Login Button */}
           <Button
             label="Let’s login"
-            onPress={() => router.push('../(auth)/signin')}
+            onPress={() => router.push('../(auth)/authscreen')}
             size="w-72 mt-8 px-6 py-4"
             color="bg-accent"
             textClassName="text-white text-lg text-center"
