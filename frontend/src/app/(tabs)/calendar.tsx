@@ -12,13 +12,15 @@ import { makeRedirectUri } from 'expo-auth-session';
 WebBrowser.maybeCompleteAuthSession();
 
 const Calendar = () => {
+  const iosClientId = process.env.IOS_CLIENT_ID;
+  const webClientId = process.env.WEB_CLIENT_ID;
   const [accessToken, setToken] = useState<String | null>(null);
   const redirectUri = makeRedirectUri();
   console.log('redirect:', redirectUri);
   const [request, response, promptAsync] = Google.useAuthRequest({
     redirectUri: redirectUri,
-    iosClientId: '152482242112-2c1othbu00qpt0725oki6u782hoppagj.apps.googleusercontent.com',
-    webClientId: '152482242112-vgd2s47q3btrf7ksrhksa99heju44qd6.apps.googleusercontent.com',
+    iosClientId: iosClientId,
+    webClientId: webClientId,
     scopes: ['https://www.googleapis.com/auth/calendar'],
   });
 
