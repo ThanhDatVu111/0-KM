@@ -10,6 +10,11 @@
     "prettier": "^3.2.5"
   },
   "dependencies": {
-    "dotenv": "^16.5.0"
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/react-native-fontawesome": "^0.3.2",
+    "dotenv": "^16.5.0",
+    "react-native-svg": "^15.12.0",
+    "react-native-uuid": "^2.0.3",
+    "uuid": "^11.1.0"
   }
 }

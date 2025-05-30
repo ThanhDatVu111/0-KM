@@ -105,6 +105,7 @@ export default function TabsLayout() {
         options={{
           title: 'chat',
           headerShown: false,
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon={icons.speech_bubble} title="Chat" />
           ),
