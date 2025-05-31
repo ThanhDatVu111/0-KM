@@ -193,10 +193,10 @@ export default function Library() {
         visible={isCreateModalVisible}
         onRequestClose={() => setIsCreateModalVisible(false)}
       >
-        <View className="flex-1 justify-center bg-black/50">
-          <View className="m-5 bg-white rounded-lg">
-            <View className="p-2 border-b border-gray-200">
-              <Text className="text-lg font-semibold text-center">Create New Book</Text>
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="w-[70%] max-h-[80%] bg-white rounded-lg overflow-hidden">
+            <View className="py-1.5 border-b border-gray-200">
+              <Text className="text-sm font-semibold text-center">Create New Book</Text>
             </View>
 
             {roomId ? (
@@ -209,18 +209,18 @@ export default function Library() {
                 onError={(error) => setError(error)}
               />
             ) : (
-              <View className="p-4">
-                <Text className="text-center text-red-500">
+              <View className="p-3">
+                <Text className="text-center text-red-500 text-xs">
                   Unable to create book. Please make sure you're connected to a room.
                 </Text>
               </View>
             )}
 
             <TouchableOpacity
-              className="p-4 border-t border-gray-200"
+              className="py-2 border-t border-gray-200"
               onPress={() => setIsCreateModalVisible(false)}
             >
-              <Text className="text-center text-gray-500">Cancel</Text>
+              <Text className="text-center text-gray-500 text-xs">Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -16,10 +16,11 @@ interface CreateBookProps {
   onError?: (error: string) => void;
 }
 
-// Calculate consistent book size
+// Calculate much smaller book size for the create modal
 const screenWidth = Dimensions.get('window').width;
-const cardWidth = (screenWidth - 48) / 3; // Same calculation as in Library screen
-const cardHeight = cardWidth * (4 / 3); // Using the same 3:4 aspect ratio
+const modalWidth = screenWidth * 0.7; // Modal takes 70% of screen width
+const previewWidth = (modalWidth - 64) / 2.5; // Make previews even smaller
+const previewHeight = previewWidth * (4 / 3); // Keep the 3:4 aspect ratio
 
 export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onError }) => {
   const [title, setTitle] = useState('');
@@ -53,6 +54,7 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
         onChangeText={setTitle}
         placeholder="Enter book title"
         placeholderTextColor="#666"
+        maxLength={30}
       />
 
       <View style={styles.colorSelector}>
@@ -82,53 +84,52 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 12,
     backgroundColor: '#fff',
-    borderRadius: 8,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 12,
+    fontSize: 13,
   },
   colorSelector: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 12,
   },
   colorOption: {
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 2,
+    padding: 4,
+    borderRadius: 6,
+    borderWidth: 1,
     borderColor: 'transparent',
   },
   selectedColor: {
     borderColor: '#007AFF',
   },
   bookImage: {
-    width: cardWidth,
-    height: cardHeight,
+    width: previewWidth,
+    height: previewHeight,
     resizeMode: 'contain',
   },
   colorText: {
-    marginTop: 8,
-    fontSize: 14,
+    marginTop: 2,
+    fontSize: 11,
     color: '#333',
   },
   createButton: {
     backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
   },
 });
