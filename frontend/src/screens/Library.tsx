@@ -90,34 +90,48 @@ export default function Library() {
     </TouchableOpacity>
   );
 
-  const BookCard = ({ isNew, book }: { isNew?: boolean; book?: Book }) => (
-    <View style={{ width: cardWidth }} className="aspect-[3/4] mb-4">
-      {isNew ? (
-        <TouchableOpacity
-          className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
-          onPress={() => setIsCreateModalVisible(true)}
-        >
-          <View className="w-16 h-16 rounded-full bg-pink-100 items-center justify-center">
-            <Text className="text-3xl text-pink-500">+</Text>
-          </View>
-          <Text className="mt-2 text-gray-500 text-lg">new</Text>
-        </TouchableOpacity>
-      ) : book ? (
-        <TouchableOpacity className="w-full h-full items-center justify-center">
-          <View className="w-full h-full relative">
+  const BookCard = ({ isNew, book }: { isNew?: boolean; book?: Book }) => {
+    const getBookImage = (color?: string) => {
+      switch (color) {
+        case 'blue':
+          return require('../assets/images/blue book.png');
+        case 'green':
+          return require('../assets/images/green book.png');
+        case 'yellow':
+          return require('../assets/images/yellow book.png');
+        case 'purple':
+          return require('../assets/images/purple book.png');
+        case 'red':
+          return require('../assets/images/red book.png');
+        case 'pink':
+        default:
+          return require('../assets/images/book.png');
+      }
+    };
+
+    return (
+      <View style={{ width: cardWidth }} className="mb-4">
+        {isNew ? (
+          <TouchableOpacity
+            className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
+            onPress={() => setIsCreateModalVisible(true)}
+          >
+            <View className="w-16 h-16 rounded-full bg-pink-100 items-center justify-center">
+              <Text className="text-3xl text-pink-500">+</Text>
+            </View>
+            <Text className="mt-2 text-gray-500 text-lg">new</Text>
+          </TouchableOpacity>
+        ) : book ? (
+          <View>
             <Image
-              source={
-                book.color === 'blue'
-                  ? require('../assets/images/blue book.png')
-                  : require('../assets/images/book.png')
-              }
+              source={getBookImage(book.color)}
               style={{
                 width: cardWidth,
                 height: cardWidth * (4 / 3),
                 resizeMode: 'contain',
               }}
             />
-            <View className="absolute bottom-0 w-full px-1 pb-2 bg-white/80">
+            <View className="bg-white mt-1 px-1">
               <Text
                 className="text-center text-sm font-medium text-gray-800"
                 numberOfLines={2}
@@ -125,15 +139,15 @@ export default function Library() {
               >
                 {book.title}
               </Text>
-              <Text className="text-center text-xs text-gray-600">
+              <Text className="text-center text-xs text-gray-600 mt-0.5">
                 {new Date(book.created_at).toLocaleDateString()}
               </Text>
             </View>
           </View>
-        </TouchableOpacity>
-      ) : null}
-    </View>
-  );
+        ) : null}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
