@@ -83,19 +83,42 @@ export async function deleteRoom(request: DeleteRoomRequest): Promise<void> {
 
 export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomResponse> {
   try {
+    console.log('📱 Fetching room for user:', request.user_id);
+
     const response = await fetch(`${BASE_URL}/rooms/${request.user_id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
 
     const result = await response.json();
+    console.log('📱 Room fetch response:', {
+      status: response.status,
+      ok: response.ok,
+      result,
+    });
 
     if (!response.ok) {
+      // If it's a 404, return null instead of throwing
+      if (response.status === 404) {
+        console.log('📱 No room found for user:', request.user_id);
+        return null;
+      }
       throw new Error(result.error || 'Failed to fetch room data');
+    }
+
+    if (!result.data) {
+      console.log('📱 No room data in response for user:', request.user_id);
+      return null;
     }
 
     return result.data as FetchRoomResponse;
   } catch (err: any) {
+    console.error('📱 Error fetching room:', {
+      error: err,
+      user_id: request.user_id,
+      message: err.message,
+    });
+
     if (err.name === 'TypeError') {
       throw new Error(
         `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,

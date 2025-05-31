@@ -6,7 +6,7 @@ import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
 import { createUser } from '@/apis/user';
-import { SignOutButton } from '@/components/SignOutButton';
+import { SimpleSignOutButton } from '@/components/SignOutButton';
 
 export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -179,7 +179,7 @@ export default function SignUpForm() {
     <View>
       <View className="w-[300px]">
         <View className="flex-row justify-end mb-4">
-          <SignOutButton />
+          <SimpleSignOutButton />
         </View>
         <FormInput
           label="Email"
