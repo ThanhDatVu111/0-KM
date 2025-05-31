@@ -30,6 +30,20 @@ export interface CreatedAccessToken {
   token_type: 'Bearer';
 }
 
+export interface CheckRefreshToken {
+  room_id: string;
+}
+
+export interface UpdateRefreshToken {
+  room_id: string;
+  refresh_token: string;
+}
+
+export interface UpdatedRefreshToken {
+  room_id: string;
+  refresh_token: string;
+}
+
 if (!host || !port) {
   throw new Error('Missing LOCAL_HOST_URL or PORT in your environment');
 }
@@ -77,7 +91,7 @@ export async function fetchNewAccessToken(
   try {
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Content-type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: request.client_id,
         client_secret: request.client_secret,
@@ -100,5 +114,41 @@ export async function fetchNewAccessToken(
       throw new Error(`Error in createRefreshToken: ${err.message}`);
     }
     throw new Error('An unknown error occurred in creating refresh token');
+  }
+}
+
+export async function checkRefreshToken(request: CheckRefreshToken): Promise<Boolean | undefined> {
+  try {
+    const response = await fetch('/calendar/', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response) {
+      throw new Error('error trying to check refresh token of user');
+    }
+    const result = await response.json();
+    return result as Boolean;
+  } catch (error) {
+    console.error('error when checking refresh token: ', error);
+  }
+}
+
+export async function updateRefreshToken(
+  request: UpdateRefreshToken,
+): Promise<UpdatedRefreshToken | undefined> {
+  try {
+    const response = await fetch('/calendar/', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response) {
+      throw new Error('error trying to update user refresh token');
+    }
+    const result = await response.json();
+    return result as UpdatedRefreshToken;
+  } catch (error) {
+    console.error('error when updating refresh token: ', error);
   }
 }
