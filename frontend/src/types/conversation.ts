@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from 'react-native';
 
-type User = {
+export type User = {
   userId: string;
   email: string;
   username?: string;
@@ -9,7 +9,7 @@ type User = {
   partnerId: string;
 };
 
-type Message = {
+export type Message = {
   messageId: number;
   content: string;
   createdAt: Date;

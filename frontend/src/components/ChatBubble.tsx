@@ -1,7 +1,7 @@
 import { useUser } from '@clerk/clerk-expo';
 import React from 'react';
 import { View, Text, Image } from 'react-native';
-import { Message } from 'types';
+import { Message } from '@/types/conversation';
 
 interface ChatBubbleProps {
   message: Message;

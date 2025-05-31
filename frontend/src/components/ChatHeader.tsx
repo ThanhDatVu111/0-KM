@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import icons from '@/constants/icons';
-import { recipient, sender } from '@/constants';
+import { recipient, sender } from '@/constants/chat';
 import { router } from 'expo-router';
 
 const ChatHeader = () => {

@@ -3,8 +3,8 @@ import { Text, StatusBar, Platform, FlatList, KeyboardAvoidingView } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import ChatHeader from '@/components/ChatHeader';
-import { messages } from '@/constants';
-import { sender } from '@/constants';
+import { messages } from '@/constants/chat';
+import { sender } from '@/constants/chat';
 import ChatBubble from '@/components/ChatBubble';
 import ChatInput from '@/components/ChatInput';
 import { useMessages } from '@/hooks/useMessages';

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, TouchableOpacity, TextInput } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { sender } from '@/constants';
+import { sender } from '@/constants/chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 

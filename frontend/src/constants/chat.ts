@@ -1,5 +1,5 @@
 import icons from '@/constants/icons';
-import { Message, User } from 'types';
+import { Message, User } from '@/types/conversation';
 
 // Chat function mock values
 export const sender: User = {

@@ -1,6 +1,6 @@
-import { messages } from '@/constants';
+import { messages } from '@/constants/chat';
 import { useCallback, useEffect, useState } from 'react';
-import { Message } from 'types';
+import { Message } from '@/types/conversation';
 
 export const useMessages = () => {
   const [conversation, setConversation] = useState<Message[]>([]);
