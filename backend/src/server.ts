@@ -5,7 +5,7 @@ import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
-// import other routers like TripRouter, NotificationRouter if needed
+import EntriesRouter from './routes/entriesRoutes';
 
 dotenv.config();
 
@@ -27,6 +27,7 @@ app.use(
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
+app.use('/entries', EntriesRouter);
 
 const startServer = async () => {
   try {
