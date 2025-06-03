@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, Image, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -41,9 +42,9 @@ export default function BookPage() {
 
   const editEntry = (entry: any) => {
     router.push({
-      pathname: `/library/[bookid]/update-entry`,
+      pathname: `/library/[bookId]/update-entry`,
       params: {
-        bookid: bookId,
+        bookId,
         entryId: entry.id,
         title: entry.title,
         body: entry.body,
@@ -55,7 +56,9 @@ export default function BookPage() {
   };
 
   const goCreate = () => {
-    {console.log('Navigating to create entry for book:', bookId);}
+    {
+      console.log('Navigating to create entry for book:', bookId);
+    }
     router.push(`/library/${bookId}/create-entry`);
   };
 
@@ -109,7 +112,7 @@ export default function BookPage() {
             body={entry.body}
             createdAt={entry.created_at}
             media={entry.media}
-            location={entry.location.address}
+            location={entry.location}
             onDelete={() => deleteEntry(bookId, entry.id)}
             onEdit={() => editEntry(entry)}
           />

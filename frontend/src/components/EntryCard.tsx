@@ -12,7 +12,7 @@ interface EntryCardProps {
   body: string;
   createdAt: string;
   media: MediaItem[];
-  location?: string | null;
+  location?: { address: string } | null;
   onDelete: () => void;
   onEdit: () => void;
 }
@@ -234,7 +234,9 @@ const EntryCard: React.FC<EntryCardProps> = ({
             </View>
           )}
         </View>
-        {location && <Text className="text-xs text-gray-400">{location}</Text>}
+        {location?.address && (
+          <Text className="text-xs text-gray-400">{location.address}</Text>
+        )}
       </View>
     </View>
   );
