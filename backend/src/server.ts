@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import LibraryRouter from './routes/libraryRoutes';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(cors()); //allows the backend to respond to requests from the frontend.
 //If the frontend makes a request to /user/..., go look in UserRouter to handle it.
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
+app.use('/library', LibraryRouter);
 
 // ✅ Start server
 const startServer = async () => {

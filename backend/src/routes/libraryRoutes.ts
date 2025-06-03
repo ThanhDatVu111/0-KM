@@ -3,6 +3,7 @@ import * as libraryController from '../controllers/libraryController';
 
 const router = express.Router();
 
+// Define RESTful routes relative to `/library`
 router.post('/', libraryController.createBook);
 router.put('/:id', libraryController.updateBook);
 router.get('/', libraryController.getBooks);

@@ -21,9 +21,20 @@ export async function updateBook(req: Request, res: Response) {
 
 export async function getBooks(req: Request, res: Response) {
   try {
-    const books = await libraryModel.getBooks(req.query.coupleId as string);
+    const coupleId = req.query.coupleId as string;
+
+    if (!coupleId) {
+      console.error('❌ Missing coupleId in request:', req.query);
+      res.status(400).json({ error: 'Missing required coupleId parameter' });
+      return;
+    }
+
+    console.log('📚 Fetching books for room:', coupleId);
+    const books = await libraryModel.getBooks(coupleId);
+    console.log('✅ Books fetched:', books);
     res.json({ data: books });
   } catch (error: any) {
+    console.error('❌ Error in getBooks:', error);
     res.status(400).json({ error: error.message });
   }
 }
