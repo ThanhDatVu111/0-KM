@@ -1,4 +1,3 @@
-// /app/(tabs)/library/[bookId]/update-entry/[entryId].tsx
 'use client';
 
 import React, { useState } from 'react';
