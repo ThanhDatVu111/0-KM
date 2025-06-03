@@ -81,7 +81,7 @@ export async function deleteRoom(request: DeleteRoomRequest): Promise<void> {
   }
 }
 
-export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomResponse> {
+export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomResponse | null> {
   try {
     console.log('📱 Fetching room for user:', request.user_id);
 
@@ -90,30 +90,27 @@ export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomRes
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const result = await response.json();
-    console.log('📱 Room fetch response:', {
-      status: response.status,
-      ok: response.ok,
-      result,
-    });
-
     if (!response.ok) {
-      // If it's a 404, return null instead of throwing
-      if (response.status === 404) {
-        console.log('📱 No room found for user:', request.user_id);
-        return null;
-      }
+      const result = await response.json();
+      console.error('❌ Error fetching room:', {
+        status: response.status,
+        error: result.error,
+        user_id: request.user_id,
+      });
       throw new Error(result.error || 'Failed to fetch room data');
     }
 
+    const result = await response.json();
+    console.log('✅ Room fetch successful:', result.data);
+
     if (!result.data) {
-      console.log('📱 No room data in response for user:', request.user_id);
+      console.log('❌ No room data in response for user:', request.user_id);
       return null;
     }
 
-    return result.data as FetchRoomResponse;
+    return result.data;
   } catch (err: any) {
-    console.error('📱 Error fetching room:', {
+    console.error('❌ Error in fetchRoom:', {
       error: err,
       user_id: request.user_id,
       message: err.message,

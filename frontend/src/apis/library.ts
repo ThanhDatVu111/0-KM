@@ -11,32 +11,40 @@ const BASE_URL = `${host}:${port}`;
 export const libraryApi = {
   createBook: async (book: CreateBookDTO): Promise<Book> => {
     try {
-      const response = await fetch(`${BASE_URL}/books`, {
+      console.log('📚 Creating book:', book);
+
+      const response = await fetch(`${BASE_URL}/library`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(book),
       });
 
       const result = await response.json();
+      console.log('📚 Create book response:', {
+        status: response.status,
+        ok: response.ok,
+        data: result.data,
+        error: result.error,
+      });
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to create book');
       }
 
       return result.data;
-    } catch (err: any) {
-      if (err.name === 'TypeError') {
-        throw new Error(
-          `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
-        );
-      }
-      throw err;
+    } catch (error: any) {
+      console.error('❌ Error creating book:', {
+        error,
+        message: error.message,
+        book,
+      });
+      throw error;
     }
   },
 
   updateBook: async (id: string, book: UpdateBookDTO): Promise<Book> => {
     try {
-      const response = await fetch(`${BASE_URL}/books/${id}`, {
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(book),
@@ -61,7 +69,39 @@ export const libraryApi = {
 
   getBooks: async (coupleId: string): Promise<Book[]> => {
     try {
-      const response = await fetch(`${BASE_URL}/books?coupleId=${coupleId}`, {
+      console.log('📚 Fetching books for room:', coupleId);
+
+      const response = await fetch(`${BASE_URL}/library?coupleId=${coupleId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+      console.log('📚 Get books response:', {
+        status: response.status,
+        ok: response.ok,
+        data: result.data,
+        error: result.error,
+      });
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch books');
+      }
+
+      return result.data;
+    } catch (error: any) {
+      console.error('❌ Error fetching books:', {
+        error,
+        message: error.message,
+        coupleId,
+      });
+      throw error;
+    }
+  },
+
+  getBook: async (id: string): Promise<Book> => {
+    try {
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -69,7 +109,7 @@ export const libraryApi = {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch books');
+        throw new Error(result.error || 'Failed to fetch book');
       }
 
       return result.data;
@@ -83,20 +123,17 @@ export const libraryApi = {
     }
   },
 
-  getBook: async (id: string): Promise<Book> => {
+  deleteBook: async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${BASE_URL}/books/${id}`, {
-        method: 'GET',
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch book');
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to delete book');
       }
-
-      return result.data;
     } catch (err: any) {
       if (err.name === 'TypeError') {
         throw new Error(

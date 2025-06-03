@@ -35,7 +35,7 @@ export async function createUser(request: UserRequest): Promise<CreatedUser> {
   } catch (err: any) {
     // Network or parsing error ends up here
     if (err.name === 'TypeError') {
-      // E.g. “Network request failed”
+      // E.g. "Network request failed"
       throw new Error(
         `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
       );
@@ -75,23 +75,40 @@ export async function onboardUser(request: OnboardRequest): Promise<OnboardRespo
 
 export async function fetchUser(userId: string): Promise<FetchedUserResponse> {
   try {
+    console.log('📱 Fetching user data for ID:', userId);
+
     const response = await fetch(`${BASE_URL}/users/${userId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
+
     const result = await response.json();
+    console.log('📱 User fetch response:', {
+      status: response.status,
+      ok: response.ok,
+      result,
+    });
 
     if (!response.ok) {
+      if (response.status === 404) {
+        console.log('📱 User not found:', userId);
+        throw new Error('User not found');
+      }
       throw new Error(result.error || 'Failed to fetch user data');
+    }
+
+    if (!result.data) {
+      console.log('📱 No user data in response');
+      throw new Error('No user data received');
     }
 
     return result.data as FetchedUserResponse;
   } catch (err: any) {
-    if (err.name === 'TypeError') {
-      throw new Error(
-        `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
-      );
-    }
+    console.error('📱 Error fetching user:', {
+      error: err,
+      userId,
+      message: err.message,
+    });
     throw err;
   }
 }

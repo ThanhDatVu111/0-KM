@@ -31,7 +31,14 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
 
   const handleCreateBook = async () => {
     try {
+      console.log('📚 Attempting to create book:', {
+        couple_id: coupleId,
+        title: title.trim(),
+        color: selectedColor,
+      });
+
       if (!title.trim()) {
+        console.log('❌ Empty title provided');
         onError?.('Please enter a title');
         return;
       }
@@ -42,9 +49,11 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
         color: selectedColor,
       });
 
+      console.log('✅ Book created successfully');
       setTitle('');
       onSuccess?.();
     } catch (error: any) {
+      console.error('❌ Error creating book:', error);
       onError?.(error.message || 'Failed to create book');
     }
   };
