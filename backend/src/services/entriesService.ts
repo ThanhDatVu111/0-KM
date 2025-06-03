@@ -38,3 +38,38 @@ export async function createEntries(input: {
     throw error;
   }
 }
+
+export async function deleteEntries(input: { book_id: string; entry_id: string }): Promise<void> {
+  try {
+    await entriesModel.deleteEntries(input.book_id, input.entry_id);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('❌ Error in entriesService deleteEntry:', error.message);
+    } else {
+      console.error('❌ Unknown error in entriesService deleteEntry:', error);
+    }
+    throw error;
+  }
+}
+
+export async function updateEntries(input: {
+  id: string;
+  book_id: string;
+  title: string;
+  body?: string | null;
+  location?: object | null;
+  media: object[];
+  updated_at: string;
+}) {
+  try {
+    const updatedEntry = await entriesModel.updateEntries(input);
+    return updatedEntry;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('❌ Error in entriesModel updateEntries:', error.message);
+    } else {
+      console.error('❌ Unknown error in entriesModel updateEntries:', error);
+    }
+    throw error;
+  }
+}
