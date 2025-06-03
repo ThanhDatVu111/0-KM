@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateBook } from '@/components/CreateBook';
-import { EditBook } from '@/components/EditBook';
 import { libraryApi } from '@/apis/library';
 import type { Book } from '@/types/library';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
-import { MaterialIcons } from '@expo/vector-icons';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
 
@@ -15,17 +13,11 @@ export default function Library() {
   const [sortOption, setSortOption] = useState<SortOption>('last_modified');
   const [books, setBooks] = useState<Book[]>([]);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const { userId, isLoaded, isSignedIn } = useAuth();
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = (screenWidth - 48) / 3;
-
-  // Add gap calculation
-  const gap = 8; // Gap between cards
-  const adjustedCardWidth = (screenWidth - 48 - gap * 2) / 3; // Width accounting for gaps
 
   // Fetch room ID
   useEffect(() => {
@@ -98,27 +90,27 @@ export default function Library() {
     </TouchableOpacity>
   );
 
-  const getBookImage = (color?: string) => {
-    switch (color) {
-      case 'blue':
-        return require('@/assets/images/blue book.png');
-      case 'green':
-        return require('@/assets/images/green book.png');
-      case 'yellow':
-        return require('@/assets/images/yellow book.png');
-      case 'purple':
-        return require('@/assets/images/purple book.png');
-      case 'red':
-        return require('@/assets/images/red book.png');
-      case 'pink':
-      default:
-        return require('@/assets/images/book.png');
-    }
-  };
-
   const BookCard = ({ isNew, book }: { isNew?: boolean; book?: Book }) => {
+    const getBookImage = (color?: string) => {
+      switch (color) {
+        case 'blue':
+          return require('@/assets/images/blue book.png');
+        case 'green':
+          return require('@/assets/images/green book.png');
+        case 'yellow':
+          return require('@/assets/images/yellow book.png');
+        case 'purple':
+          return require('@/assets/images/purple book.png');
+        case 'red':
+          return require('@/assets/images/red book.png');
+        case 'pink':
+        default:
+          return require('@/assets/images/book.png');
+      }
+    };
+
     return (
-      <View style={{ width: adjustedCardWidth, marginRight: gap, marginBottom: gap }}>
+      <View style={{ width: cardWidth }} className="mb-4">
         {isNew ? (
           <TouchableOpacity
             className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
@@ -134,33 +126,19 @@ export default function Library() {
             <Image
               source={getBookImage(book.color)}
               style={{
-                width: adjustedCardWidth,
-                height: adjustedCardWidth * (4 / 3),
+                width: cardWidth,
+                height: cardWidth * (4 / 3),
                 resizeMode: 'contain',
               }}
             />
             <View className="bg-white mt-1 px-1">
-              <View className="flex-row items-center">
-                <View style={{ width: adjustedCardWidth - 24 }}>
-                  <Text
-                    className="text-center text-sm font-medium text-gray-800"
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {book.title}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedBook(book);
-                    setIsEditModalVisible(true);
-                  }}
-                  style={{ width: 20 }}
-                  className="items-center"
-                >
-                  <MaterialIcons name="arrow-drop-down" size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
+              <Text
+                className="text-center text-sm font-medium text-gray-800"
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {book.title}
+              </Text>
               <Text className="text-center text-xs text-gray-600 mt-0.5">
                 {new Date(book.created_at).toLocaleDateString()}
               </Text>
@@ -214,7 +192,7 @@ export default function Library() {
 
       {/* Books grid */}
       <ScrollView className="flex-1 px-4">
-        <View className="flex-row flex-wrap justify-start" style={{ marginRight: -gap }}>
+        <View className="flex-row flex-wrap justify-between">
           <BookCard isNew />
           {sortedBooks.map((book) => (
             <BookCard key={book.id} book={book} />
@@ -258,41 +236,6 @@ export default function Library() {
             >
               <Text className="text-center text-gray-500 text-xs">Cancel</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Edit Book Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isEditModalVisible && selectedBook !== null}
-        onRequestClose={() => {
-          setIsEditModalVisible(false);
-          setSelectedBook(null);
-        }}
-      >
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="w-[60%] max-h-[60%] bg-white rounded-lg overflow-hidden">
-            <View className="py-1.5 border-b border-gray-200">
-              <Text className="text-sm font-semibold text-center">Edit Book</Text>
-            </View>
-
-            {selectedBook && (
-              <EditBook
-                book={selectedBook}
-                onSuccess={() => {
-                  setIsEditModalVisible(false);
-                  setSelectedBook(null);
-                  fetchBooks();
-                }}
-                onError={(error) => setError(error)}
-                onCancel={() => {
-                  setIsEditModalVisible(false);
-                  setSelectedBook(null);
-                }}
-              />
-            )}
           </View>
         </View>
       </Modal>
