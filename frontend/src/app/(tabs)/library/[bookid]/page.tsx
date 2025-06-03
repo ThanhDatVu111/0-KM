@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, Image, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
@@ -41,9 +41,9 @@ export default function BookPage() {
 
   const editEntry = (entry: any) => {
     router.push({
-      pathname: `/library/[bookId]/update-entry`,
+      pathname: `/library/[bookid]/update-entry`,
       params: {
-        bookId: bookId,
+        bookid: bookId,
         entryId: entry.id,
         title: entry.title,
         body: entry.body,
@@ -55,6 +55,7 @@ export default function BookPage() {
   };
 
   const goCreate = () => {
+    {console.log('Navigating to create entry for book:', bookId);}
     router.push(`/library/${bookId}/create-entry`);
   };
 

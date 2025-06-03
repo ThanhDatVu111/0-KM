@@ -75,6 +75,7 @@ export async function updateEntryApi(updatedEntryData: {
   updated_at?: string; 
 }) {
   try {
+    console.log('Updating entry with data:', updatedEntryData);
     const response = await fetch(`${BASE_URL}/entries/${updatedEntryData.book_id}/${updatedEntryData.id}`, {
       method: 'PUT',
       headers: {
@@ -90,7 +91,7 @@ export async function updateEntryApi(updatedEntryData: {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error updating entry:', error);
+    console.error('Error updating entry in api entries:', error);
     throw error;
   }
 }

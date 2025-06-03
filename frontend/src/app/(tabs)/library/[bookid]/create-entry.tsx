@@ -1,4 +1,3 @@
-// /app/(tabs)/library/[bookId]/create-entries.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -25,6 +24,7 @@ export default function NewEntryScreen() {
     created_at?: string;
   }) => {
     try {
+      console.log('Creating new entry with data:', data);
       // Generate a brand‐new UUID for this entry
       const newId = (uuid.v4() as string) || '';
       const toCreate = { ...data, id: newId, created_at: new Date().toISOString() };
