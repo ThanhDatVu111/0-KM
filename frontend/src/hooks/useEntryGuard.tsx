@@ -1,23 +1,27 @@
-import { useEffect } from 'react';
+import React from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { fetchUser } from '@/apis/user';
 import { fetchRoom } from '@/apis/room';
-import { Alert } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 
 export function useEntryGuard() {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const router = useRouter();
+  const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      router.replace('/');
+      router.replace('/'); // Redirect to home if not signed in
+      setLoading(false); // Stop loading
       return;
     }
 
     (async () => {
+      setLoading(true); // Start loading
       let user;
       try {
         // Fetch user data
@@ -28,9 +32,8 @@ export function useEntryGuard() {
           hasProfile: !!user.birthdate && !!user.photo_url,
         });
       } catch (err) {
-        console.error('❌ Error fetching user data:', err);
-        Alert.alert('Error', 'Failed to load your profile. Please try again later.');
-        return;
+        setLoading(false); // Stop loading on error
+        return; // Stop execution if fetching user fails
       }
 
       // Check if user needs to complete onboarding
@@ -40,6 +43,7 @@ export function useEntryGuard() {
           pathname: '/(onboard)/onboarding-flow',
           params: { user_id: userId },
         });
+        setLoading(false); // Stop loading
         return;
       }
 
@@ -59,6 +63,7 @@ export function useEntryGuard() {
             pathname: '/(onboard)/join-room',
             params: { userId },
           });
+          setLoading(false); // Stop loading
           return;
         }
 
@@ -67,11 +72,27 @@ export function useEntryGuard() {
         router.replace('/(tabs)/home');
       } catch (err) {
         console.error('❌ Error fetching room data:', err);
-        Alert.alert(
-          'Connection Error',
-          'Failed to connect to your room. Please check your connection and try again.',
-        );
+        setLoading(false); // Stop loading on error
+        return; // Stop execution if fetching room fails
       }
+
+      // Redirect to home if everything is complete
+      router.replace('/(tabs)/home');
+      setLoading(false); // Stop loading
     })();
   }, [isLoaded, isSignedIn, userId]);
+
+  // Render a loading indicator if loading
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-primary">
+        <ActivityIndicator size="large" color="#F5829B" />
+        <Text className="text-lg text-white mt-4" style={{ fontFamily: 'Poppins-Regular' }}>
+          Loading...
+        </Text>
+      </View>
+    );
+  }
+
+  return null; // No UI is rendered by the hook itself
 }

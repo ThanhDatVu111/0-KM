@@ -11,7 +11,7 @@ const BASE_URL = `${host}:${port}`;
 export const libraryApi = {
   createBook: async (book: CreateBookDTO): Promise<Book> => {
     try {
-      const response = await fetch(`${BASE_URL}/books`, {
+      const response = await fetch(`${BASE_URL}/library`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(book),
@@ -36,7 +36,7 @@ export const libraryApi = {
 
   updateBook: async (id: string, book: UpdateBookDTO): Promise<Book> => {
     try {
-      const response = await fetch(`${BASE_URL}/books/${id}`, {
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(book),
@@ -61,7 +61,7 @@ export const libraryApi = {
 
   getBooks: async (coupleId: string): Promise<Book[]> => {
     try {
-      const response = await fetch(`${BASE_URL}/books?coupleId=${coupleId}`, {
+      const response = await fetch(`${BASE_URL}/library?coupleId=${coupleId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -85,7 +85,7 @@ export const libraryApi = {
 
   getBook: async (id: string): Promise<Book> => {
     try {
-      const response = await fetch(`${BASE_URL}/books/${id}`, {
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });

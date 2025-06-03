@@ -30,6 +30,7 @@ export async function joinRoom(attrs: { room_id: string; user_2: string }) {
     .from('room')
     .update({
       user_2: attrs.user_2,
+      filled: true,
     })
     .eq('room_id', attrs.room_id) // Match the room by room_id
     .is('user_2', null) // Only update if user_2 is null
