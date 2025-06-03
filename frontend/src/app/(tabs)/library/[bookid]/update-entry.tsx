@@ -13,8 +13,14 @@ export default function UpdateEntryScreen() {
   // Extract required route params
   const rawBookId = params.bookId!;
   const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId;
+  if (bookId) {
+    console.log('bookId provided in params in UpdateEntryScreen', bookId);
+  }
   const rawEntryId = params.entryId!;
   const entryId = Array.isArray(rawEntryId) ? rawEntryId[0]! : rawEntryId;
+  if (entryId) {
+    console.log('enryId provided in params in UpdateEntryScreen', entryId);
+  }
 
   const initialTitle = params.title || '';
   const initialBody = params.body || '';
