@@ -5,6 +5,8 @@ import {
   DeleteRoomRequest,
   FetchRoomRequest,
   FetchRoomResponse,
+  FetchRoomByUserIdRequest,
+  FetchRoomByUserIdResponse
 } from '@/types/rooms';
 
 const host = process.env.EXPO_PUBLIC_API_HOST;
@@ -102,5 +104,26 @@ export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomRes
       );
     }
     throw err;
+  }
+}
+
+export async function fetchRoomByUserId(request: FetchRoomByUserIdRequest): Promise<FetchRoomByUserIdResponse> {
+  try {
+    const response = await fetch('/room/', {
+      method: 'GET',
+      headers: { 'Content-Type': 'Application/json' },
+      body: JSON.stringify(request)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to fetch room data using user id');
+    }
+    const room_id = result.data.room_id;
+    const other_user_id = result.data.user_1
+      ? (result.data.user_1 !== request.user_id ? result.data.user_1 : result.data.user_2)
+      : result.data.user_2;
+    return { room_id: room_id, other_user_id: other_user_id } as FetchRoomByUserIdResponse;
+  } catch (error: any) {
+    throw new Error(error?.message || 'An unknown error occurred in fetchRoomByUserId');
   }
 }

@@ -29,3 +29,15 @@ export async function updateToken(attrs: {
     if (error) throw error;
     return data
 }
+
+export async function fetchRefreshToken(attrs: {
+    user_id: string
+}) {
+    const { data, error } = await supabase
+        .from('access_tokens')
+        .select()
+        .eq('user_id', attrs.user_id)
+        .single()
+    if (error) throw error;
+    return data
+}

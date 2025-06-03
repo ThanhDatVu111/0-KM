@@ -31,7 +31,7 @@ export interface CreatedAccessToken {
 }
 
 export interface CheckRefreshToken {
-  room_id: string;
+  user_id: string;
 }
 
 export interface UpdateRefreshToken {
@@ -41,6 +41,14 @@ export interface UpdateRefreshToken {
 
 export interface UpdatedRefreshToken {
   room_id: string;
+  refresh_token: string;
+}
+
+export interface FetchRefreshTokenRequest {
+  user_id: string;
+}
+
+export interface FetchRefreshTokenResponse {
   refresh_token: string;
 }
 
@@ -150,5 +158,23 @@ export async function updateRefreshToken(
     return result as UpdatedRefreshToken;
   } catch (error) {
     console.error('error when updating refresh token: ', error);
+  }
+}
+
+export async function fetchRefreshToken(
+  request: FetchRefreshTokenRequest,
+): Promise<FetchRefreshTokenResponse | undefined> {
+  try {
+    const response = await fetch('/calendar/token', {
+      method: 'GET',
+      headers: { 'Content-Type': 'Application/json' },
+    });
+    if (!response) {
+      throw new Error('error trying to update user refresh token');
+    }
+    const result = await response.json();
+    return result as FetchRefreshTokenResponse;
+  } catch (error) {
+    console.error('error when fetching refresh token: ', error);
   }
 }

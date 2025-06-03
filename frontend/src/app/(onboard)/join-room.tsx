@@ -121,7 +121,7 @@ const JoinRoom = () => {
       // Success feedback and navigation
       console.log('Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
-      router.push('/(tabs)/home');
+      router.push({ pathname: '/(tabs)/home', params: { userId } });
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');

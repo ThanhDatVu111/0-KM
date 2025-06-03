@@ -33,3 +33,6 @@ export async function fetchRoom(user_id: string) {
   return roomModel.fetchRoom(user_id);
 }
 
+export async function fetchRoomByUserId(input: any) {
+  return roomModel.fetchRoomByUserId(input);
+}

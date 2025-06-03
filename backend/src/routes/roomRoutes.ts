@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { fetchRoom, createRoom, joinRoom, deleteRoom } from '../controllers/roomController';
+import { fetchRoom, createRoom, joinRoom, deleteRoom, fetchRoomByUserId } from '../controllers/roomController';
 
 const router = Router();
 
@@ -8,5 +8,6 @@ router.post('/', createRoom);
 router.put('/:room_id', joinRoom);
 router.delete('/:room_id', deleteRoom); 
 router.get('/:user_id', fetchRoom);
+router.get('/', fetchRoomByUserId);
 
 export default router;
