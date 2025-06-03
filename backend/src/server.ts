@@ -1,9 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer, get } from 'http';
+import { Server } from 'socket.io';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import {
+  ClientToServerEvents,
+  InterServerEvents,
+  ServerToClientEvents,
+  SocketData,
+} from './types/socket';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
@@ -65,3 +73,18 @@ const startServer = async () => {
 };
 
 startServer();
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>({
+  cors: {
+    origin: ['http://localhost:8081'],
+    methods: ['GET', 'POST'],
+  },
+});
+
+// io.on('connection', (socket) => {
+//   console.log('User connected');
+//   socket.on('disconnect', () => console.log('User disconnected'));
+// });
+
+// // Message handler and routing
+// app.post('/messages');

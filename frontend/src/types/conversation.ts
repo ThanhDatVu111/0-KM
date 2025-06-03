@@ -22,5 +22,3 @@ export type Message = {
   }[];
 };
 
-// interface GetRoom {}
-// interface GetMessages {}
