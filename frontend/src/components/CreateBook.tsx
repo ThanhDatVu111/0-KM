@@ -11,13 +11,13 @@ import {
 } from 'react-native';
 import { libraryApi } from '../apis/library';
 
+type BookColor = 'blue' | 'pink' | 'green' | 'yellow' | 'purple' | 'red';
+
 interface CreateBookProps {
   coupleId: string;
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
-
-type BookColor = 'blue' | 'pink' | 'green' | 'yellow' | 'purple' | 'red';
 
 // Calculate much smaller book size for the create modal
 const screenWidth = Dimensions.get('window').width;
@@ -84,7 +84,7 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.createButton} onPress={handleCreateBook}>
+      <TouchableOpacity style={styles.button} onPress={handleCreateBook}>
         <Text style={styles.buttonText}>Create Book</Text>
       </TouchableOpacity>
     </View>
@@ -93,58 +93,56 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
-    backgroundColor: '#fff',
+    padding: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 12,
-    fontSize: 13,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+    color: '#333',
   },
   colorScrollView: {
-    maxHeight: previewHeight * 2 + 40, // Allow for 2 rows of books
+    maxHeight: 200,
   },
   colorSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    paddingVertical: 8,
   },
   colorOption: {
-    alignItems: 'center',
-    padding: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'transparent',
     width: previewWidth,
+    marginBottom: 16,
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
   },
   selectedColor: {
-    borderColor: '#007AFF',
+    backgroundColor: '#f0f0f0',
   },
   bookImage: {
-    width: previewWidth - 8,
-    height: previewHeight - 8,
+    width: previewWidth - 16,
+    height: previewHeight - 16,
     resizeMode: 'contain',
   },
   colorText: {
-    marginTop: 2,
-    fontSize: 11,
-    color: '#333',
+    marginTop: 4,
+    fontSize: 12,
+    color: '#666',
   },
-  createButton: {
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 6,
+  button: {
+    backgroundColor: '#FF69B4',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    marginTop: 16,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 13,
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

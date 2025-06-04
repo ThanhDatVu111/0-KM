@@ -106,4 +106,26 @@ export const libraryApi = {
       throw err;
     }
   },
+
+  deleteBook: async (id: string): Promise<void> => {
+    try {
+      const response = await fetch(`${BASE_URL}/library/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete book');
+      }
+    } catch (err: any) {
+      if (err.name === 'TypeError') {
+        throw new Error(
+          `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
+        );
+      }
+      throw err;
+    }
+  },
 };

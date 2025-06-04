@@ -49,15 +49,6 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
     }
   };
 
-  const handleDeleteBook = async () => {
-    try {
-      await libraryApi.deleteBook(book.id);
-      onSuccess?.();
-    } catch (error: any) {
-      onError?.(error.message || 'Failed to delete book');
-    }
-  };
-
   const colorOptions: { color: BookColor; label: string; image: any }[] = [
     { color: 'blue', label: 'Blue', image: require('../assets/images/blue book.png') },
     { color: 'pink', label: 'Pink', image: require('../assets/images/book.png') },
@@ -94,100 +85,87 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteBook}>
-          <Text style={[styles.buttonText, styles.deleteButtonText]}>Delete</Text>
+        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.button} onPress={handleEditBook}>
           <Text style={styles.buttonText}>Save Changes</Text>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 6,
-    backgroundColor: '#fff',
+    padding: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 4,
-    marginBottom: 6,
-    fontSize: 12,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+    color: '#333',
   },
   colorScrollView: {
-    maxHeight: previewHeight * 2 + 24, // Show only 2 rows of books
+    maxHeight: 200,
   },
   colorSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    columnGap: 6,
-    rowGap: 3,
-    marginBottom: 6,
-    paddingHorizontal: 0,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
   colorOption: {
+    width: previewWidth,
+    marginBottom: 16,
     alignItems: 'center',
-    padding: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    width: previewWidth - 2,
+    padding: 8,
+    borderRadius: 8,
   },
   selectedColor: {
-    borderColor: '#F5829B',
+    backgroundColor: '#f0f0f0',
   },
   bookImage: {
-    width: previewWidth - 4,
-    height: previewHeight - 4,
+    width: previewWidth - 16,
+    height: previewHeight - 16,
     resizeMode: 'contain',
   },
   colorText: {
-    marginTop: 1,
-    fontSize: 9,
-    color: '#333',
+    marginTop: 4,
+    fontSize: 12,
+    color: '#666',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 6,
-    marginBottom: 6,
+    marginTop: 16,
+    gap: 8,
   },
   button: {
     flex: 1,
-    backgroundColor: '#F5829B',
-    padding: 6,
-    borderRadius: 6,
+    backgroundColor: '#FF69B4',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-  },
-  deleteButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#dc2626',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 11,
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
-  deleteButtonText: {
-    color: '#dc2626',
-  },
   cancelButton: {
-    padding: 6,
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: '#f0f0f0',
   },
   cancelButtonText: {
     color: '#666',
-    fontSize: 11,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
