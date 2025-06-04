@@ -84,14 +84,9 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
         </View>
       </ScrollView>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleEditBook}>
-          <Text style={styles.buttonText}>Save Changes</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.button} onPress={handleEditBook}>
+        <Text style={styles.buttonText}>Save Changes</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -138,33 +133,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 8,
-  },
   button: {
-    flex: 1,
     backgroundColor: '#FF69B4',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 16,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  cancelButtonText: {
-    color: '#666',
     fontSize: 16,
     fontWeight: '600',
   },

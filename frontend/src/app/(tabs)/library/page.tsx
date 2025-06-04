@@ -267,7 +267,10 @@ export default function Library() {
 
         {/* Books grid */}
         <ScrollView className="flex-1 px-8">
-          <View className="flex-row flex-wrap gap-4" style={{ marginRight: -16 }}>
+          <View
+            className="flex-row flex-wrap gap-4"
+            style={{ marginRight: -16, paddingBottom: 100 }}
+          >
             <BookCard isNew />
             {sortedBooks.map((book) => (
               <BookCard key={book.id} book={book} />
@@ -290,8 +293,17 @@ export default function Library() {
         >
           <View className="flex-1 justify-center items-center bg-black/50">
             <View className="w-[70%] max-h-[80%] bg-white rounded-lg overflow-hidden">
-              <View className="py-1.5 border-b border-gray-200">
-                <Text className="text-sm font-semibold text-center">Create New Book</Text>
+              <View className="py-1.5 border-b border-gray-200 flex-row justify-between items-center px-4">
+                <View style={{ width: 20 }} /> {/* Empty view for centering */}
+                <Text className="text-sm font-semibold">Create New Book</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsCreateModalVisible(false);
+                    setCreateError(null);
+                  }}
+                >
+                  <MaterialCommunityIcons name="close" size={20} color="#666" />
+                </TouchableOpacity>
               </View>
 
               {createError && (
@@ -333,8 +345,17 @@ export default function Library() {
         >
           <View className="flex-1 justify-center items-center bg-black/50">
             <View className="w-[70%] max-h-[80%] bg-white rounded-lg overflow-hidden">
-              <View className="py-1.5 border-b border-gray-200">
-                <Text className="text-sm font-semibold text-center">Edit Book</Text>
+              <View className="py-1.5 border-b border-gray-200 flex-row justify-between items-center px-4">
+                <View style={{ width: 20 }} /> {/* Empty view for centering */}
+                <Text className="text-sm font-semibold">Edit Book</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedBook(null);
+                    setEditError(null);
+                  }}
+                >
+                  <MaterialCommunityIcons name="close" size={20} color="#666" />
+                </TouchableOpacity>
               </View>
 
               {editError && (
