@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Text,
-  Dimensions,
-  ScrollView,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { libraryApi } from '../apis/library';
 import type { Book } from '../types/library';
 
@@ -21,13 +12,16 @@ interface EditBookProps {
 
 type BookColor = 'blue' | 'pink' | 'green' | 'yellow' | 'purple' | 'red';
 
-// Calculate much smaller book size for the edit modal
-const screenWidth = Dimensions.get('window').width;
-const modalWidth = screenWidth * 0.6; // Modal takes 60% of screen width
-const previewWidth = (modalWidth - 32) / 2; // Show 2 books per row with less padding
-const previewHeight = previewWidth * (3 / 4); // Make books shorter
+const colorMap: Record<BookColor, string> = {
+  blue: '#4A90E2',
+  pink: '#FF69B4',
+  green: '#50C878',
+  yellow: '#FFD700',
+  purple: '#9370DB',
+  red: '#FF6B6B',
+};
 
-export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, onCancel }) => {
+export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError }) => {
   const [title, setTitle] = useState(book.title);
   const [selectedColor, setSelectedColor] = useState<BookColor>(book.color as BookColor);
 
@@ -49,13 +43,13 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
     }
   };
 
-  const colorOptions: { color: BookColor; label: string; image: any }[] = [
-    { color: 'blue', label: 'Blue', image: require('../assets/images/blue book.png') },
-    { color: 'pink', label: 'Pink', image: require('../assets/images/book.png') },
-    { color: 'green', label: 'Green', image: require('../assets/images/green book.png') },
-    { color: 'yellow', label: 'Yellow', image: require('../assets/images/yellow book.png') },
-    { color: 'purple', label: 'Purple', image: require('../assets/images/purple book.png') },
-    { color: 'red', label: 'Red', image: require('../assets/images/red book.png') },
+  const colorOptions: { color: BookColor; label: string }[] = [
+    { color: 'blue', label: 'Blue' },
+    { color: 'pink', label: 'Pink' },
+    { color: 'green', label: 'Green' },
+    { color: 'yellow', label: 'Yellow' },
+    { color: 'purple', label: 'Purple' },
+    { color: 'red', label: 'Red' },
   ];
 
   return (
@@ -69,20 +63,29 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
         maxLength={30}
       />
 
-      <ScrollView style={styles.colorScrollView}>
-        <View style={styles.colorSelector}>
-          {colorOptions.map((option) => (
-            <TouchableOpacity
-              key={option.color}
-              style={[styles.colorOption, selectedColor === option.color && styles.selectedColor]}
-              onPress={() => setSelectedColor(option.color)}
+      <Text style={styles.label}>Color</Text>
+      <View style={styles.colorSelector}>
+        {colorOptions.map((option) => (
+          <TouchableOpacity
+            key={option.color}
+            style={styles.colorOptionContainer}
+            onPress={() => setSelectedColor(option.color)}
+          >
+            <View
+              style={[
+                styles.colorCircle,
+                { backgroundColor: colorMap[option.color] },
+                selectedColor === option.color && styles.selectedColor,
+              ]}
+            />
+            <Text
+              style={[styles.colorText, selectedColor === option.color && styles.selectedColorText]}
             >
-              <Image source={option.image} style={styles.bookImage} />
-              <Text style={styles.colorText}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleEditBook}>
         <Text style={styles.buttonText}>Save Changes</Text>
@@ -104,34 +107,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  colorScrollView: {
-    maxHeight: 200,
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 12,
   },
   colorSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  colorOption: {
-    width: previewWidth,
+    gap: 8,
     marginBottom: 16,
+    justifyContent: 'center',
+  },
+  colorOptionContainer: {
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 8,
+    width: '28%', // Slightly less than 1/3 to account for gap
+    marginBottom: 8,
+  },
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginBottom: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   selectedColor: {
-    backgroundColor: '#f0f0f0',
-  },
-  bookImage: {
-    width: previewWidth - 16,
-    height: previewHeight - 16,
-    resizeMode: 'contain',
+    borderColor: '#333',
   },
   colorText: {
-    marginTop: 4,
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
+    textAlign: 'center',
+  },
+  selectedColorText: {
+    color: '#333',
+    fontWeight: '500',
   },
   button: {
     backgroundColor: '#FF69B4',

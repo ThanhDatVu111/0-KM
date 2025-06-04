@@ -182,41 +182,43 @@ export default function Library() {
                 resizeMode: 'contain',
               }}
             />
-            <View className="bg-white mt-1 px-1 flex-row justify-between items-start">
-              <Text
-                className="flex-1 text-sm font-medium text-gray-800"
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {book.title}
-              </Text>
-              <View className="relative">
-                <TouchableOpacity onPress={toggleDropdown} className="p-1">
-                  <MaterialCommunityIcons name="dots-vertical" size={18} color="#666" />
-                </TouchableOpacity>
-                {isDropdownVisible && (
-                  <View className="absolute right-0 top-8 bg-white rounded-lg shadow-lg z-50 w-24 py-1 border border-gray-200">
-                    <TouchableOpacity
-                      onPress={handleEdit}
-                      className="flex-row items-center px-3 py-2"
-                    >
-                      <MaterialCommunityIcons name="pencil" size={16} color="#666" />
-                      <Text className="ml-2 text-sm text-gray-600">Edit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteBook(book)}
-                      className="flex-row items-center px-3 py-2"
-                    >
-                      <MaterialCommunityIcons name="delete" size={16} color="#FF4444" />
-                      <Text className="ml-2 text-sm text-red-500">Delete</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+            <View className="bg-white mt-1">
+              <View className="flex-row justify-between items-start pr-0">
+                <Text
+                  className="flex-1 text-sm font-medium text-gray-800 px-1"
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {book.title}
+                </Text>
+                <View className="relative">
+                  <TouchableOpacity onPress={toggleDropdown} className="p-1 -mr-1">
+                    <MaterialCommunityIcons name="dots-vertical" size={18} color="#666" />
+                  </TouchableOpacity>
+                  {isDropdownVisible && (
+                    <View className="absolute right-0 top-8 bg-white rounded-lg shadow-lg z-50 w-24 py-1 border border-gray-200">
+                      <TouchableOpacity
+                        onPress={handleEdit}
+                        className="flex-row items-center px-3 py-2"
+                      >
+                        <MaterialCommunityIcons name="pencil" size={16} color="#666" />
+                        <Text className="ml-2 text-sm text-gray-600">Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteBook(book)}
+                        className="flex-row items-center px-3 py-2"
+                      >
+                        <MaterialCommunityIcons name="delete" size={16} color="#FF4444" />
+                        <Text className="ml-2 text-sm text-red-500">Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
+              <Text className="text-xs text-gray-600 mt-0.5 px-1">
+                {new Date(book.created_at).toLocaleDateString()}
+              </Text>
             </View>
-            <Text className="text-center text-xs text-gray-600 mt-0.5">
-              {new Date(book.created_at).toLocaleDateString()}
-            </Text>
           </View>
         ) : null}
       </View>
@@ -226,19 +228,12 @@ export default function Library() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Pressable onPress={() => setActiveDropdownId(null)} style={{ flex: 1 }}>
-        <View className="px-4 py-2">
+        <View className="items-center py-2">
           <Text className="text-2xl font-bold text-gray-800 mb-4">Library</Text>
 
           {/* Sort options */}
-          <View className="items-center mb-4">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                flexGrow: 1,
-                justifyContent: 'center',
-              }}
-            >
+          <View className="mb-4 w-full flex items-center">
+            <View className="flex-row gap-2">
               <SortButton
                 title="Last modified"
                 active={sortOption === 'last_modified'}
@@ -254,7 +249,7 @@ export default function Library() {
                 active={sortOption === 'name'}
                 onPress={() => setSortOption('name')}
               />
-            </ScrollView>
+            </View>
           </View>
         </View>
 
@@ -268,13 +263,14 @@ export default function Library() {
         {/* Books grid */}
         <ScrollView className="flex-1 px-8">
           <View
-            className="flex-row flex-wrap gap-4"
+            className="flex-row flex-wrap gap-2"
             style={{ marginRight: -16, paddingBottom: 100 }}
           >
             <BookCard isNew />
             {sortedBooks.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
+            {/* Add invisible placeholder cards to maintain grid alignment */}
             {[...Array(3)].map((_, index) => (
               <View key={`placeholder-${index}`} style={{ width: cardWidth }} />
             ))}
