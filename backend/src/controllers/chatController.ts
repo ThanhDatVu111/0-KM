@@ -10,13 +10,13 @@ export async function fetchMessages(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { room_id } = req.params;
+    const { room_id } = req.query;
     if (!room_id) {
       res.status(400).json({ error: 'Missing field/params: room_id' });
       return;
     }
 
-    const prevMessage = await chatService.fetchMessages({ room_id });
+    const prevMessage = await chatService.fetchMessages({ room_id: room_id as string });
     res.status(200).json({ data: prevMessage });
   } catch (err: any) {
     next(err);

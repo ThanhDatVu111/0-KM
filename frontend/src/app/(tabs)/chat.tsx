@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -58,17 +58,20 @@ export default function ChatScreen() {
   }, [isLoaded, isSignedIn, userId]);
 
   // Retrieve previous conversation
-  const fetchConversation = async () => {
+  const fetchConversation = useCallback(async () => {
+    if (!roomId) return;
     try {
       const prevChat = await chatApi.fetchMessages(roomId);
-      setPreviousChat(prevChat);
+      console.log('Messages fetched successfully:', prevChat?.length || 0, 'messages');
+      setPreviousChat(prevChat || []);
     } catch (err: any) {
       console.error(err);
     }
-  };
+  }, [roomId]);
 
   useEffect(() => {
     if (roomId) {
+      console.log('Room ID changed, fetching conversation:', roomId);
       fetchConversation();
     }
   }, [roomId]);
@@ -86,13 +89,65 @@ export default function ChatScreen() {
       is_sent: true,
     };
 
+    setPreviousChat((prev) => [messagePayload, ...prev]);
+    setMessage('');
+
     try {
       console.log('Sending message:', messagePayload);
       await chatApi.sendMessage(messagePayload);
       setMessage('');
     } catch (error: any) {
-      console.error(error);
+      console.error('Failed to send message: ', error);
+      // Remove the optimistic message on error
+      setPreviousChat((prev) => prev.filter((msg) => msg.message_id !== messagePayload.message_id));
+
+      // Restore the message text so user can retry
+      setMessage(trimmed);
     }
+  };
+
+  const renderMessage = ({ item }: { item: Message }) => {
+    const isSender = item.sender_id === userId;
+    return (
+      <View className={`flex-row mb-3 ${isSender ? 'justify-end' : 'justify-start'}`}>
+        {/* Avatar for received messages */}
+        {!isSender && (
+          <Image source={icons.user_icon_female} className="w-8 h-8 rounded-full mr-2 mt-1" />
+        )}
+
+        <View className="flex-1 max-w-[80%]">
+          <View
+            className={`rounded-2xl px-4 py-2.5 ${
+              isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
+            }`}
+          >
+            <Text
+              className={`font-poppins-light text-base ${
+                isSender ? 'text-white' : 'text-gray-900'
+              }`}
+            >
+              {item.content}
+            </Text>
+          </View>
+
+          <Text
+            className={`font-poppins-light text-xs text-gray-500 mt-1 ${
+              isSender ? 'text-right' : 'text-left'
+            }`}
+          >
+            {new Date(item.created_at!).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+
+        {/* Avatar for sent messages */}
+        {isSender && (
+          <Image source={icons.user_icon_female} className="w-8 h-8 rounded-full ml-2 mt-1" />
+        )}
+      </View>
+    );
   };
 
   return (
@@ -140,34 +195,8 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
-          data={previousChat}
-          renderItem={({ item }) => {
-            const isSender = item.sender_id === userId;
-            return (
-              <View>
-                <View
-                  className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${isSender ? 'bg-accent' : 'bg-primary'}`}
-                >
-                  <Text
-                    className={`font-poppins-light text-base ${isSender ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    {item.content}
-                  </Text>
-
-                  <Text className="font-poppins-light text-sm text-right">
-                    {new Date(item.created_at!).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
-                // Avatar next to Chat Container
-                {isSender && item.sender_photo_url && (
-                  <Image source={icons.user_icon_female} className="w-8 h-8 rounded-2xl ml-2" />
-                )}
-              </View>
-            );
-          }}
+          data={[...previousChat].reverse()} // Reverse the ordering 
+          renderItem={renderMessage}
           keyExtractor={(item) => item?.message_id ?? 'unknown'}
           inverted
           showsVerticalScrollIndicator={false}
