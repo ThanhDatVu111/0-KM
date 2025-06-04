@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Dimensions,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { View, Text, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateBook } from '@/components/CreateBook';
 import { EditBook } from '@/components/EditBook';
@@ -32,8 +25,8 @@ export default function Library() {
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const { userId, isLoaded, isSignedIn } = useAuth();
   const screenWidth = Dimensions.get('window').width;
-  const totalHorizontalPadding = 64; // 32px on each side
-  const gapBetweenCards = 16; // 16px between each card
+  const totalHorizontalPadding = 48; // 24px (px-6) on each side
+  const gapBetweenCards = 16; // gap-4 between cards
   const totalGapWidth = gapBetweenCards * 2; // Gap for 2 spaces between 3 cards
   const cardWidth = (screenWidth - totalHorizontalPadding - totalGapWidth) / 3;
 
@@ -162,11 +155,8 @@ export default function Library() {
         )}
 
         {/* Books grid */}
-        <ScrollView className="flex-1 px-8">
-          <View
-            className="flex-row flex-wrap gap-2"
-            style={{ marginRight: -16, paddingBottom: 200 }}
-          >
+        <ScrollView className="flex-1 px-6">
+          <View className="flex-row flex-wrap gap-4 justify-between" style={{ paddingBottom: 200 }}>
             <BookCard
               isNew
               cardWidth={cardWidth}
