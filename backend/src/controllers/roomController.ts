@@ -122,7 +122,14 @@ export async function fetchRoom(
       return;
     }
 
-    res.status(200).json({ data: { filled: room.filled } }); // Return only the `filled` column
+    res.status(200).json({
+      data: {
+        room_id: room.room_id,
+        user_1: room.user_1,
+        user_2: room.user_2,
+        filled: room.filled,
+      },
+    }); // Return only the `filled` column
   } catch (err: any) {
     next(err); // Pass errors to the error handler middleware
   }

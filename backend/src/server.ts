@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import ChatRouter from './routes/chatRoutes';
 import {
   ClientToServerEvents,
   InterServerEvents,
@@ -27,6 +28,7 @@ app.use(cors()); // allows the backend to respond to requests from the frontend.
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
+app.use('/chat', ChatRouter);
 
 const startServer = async () => {
   try {

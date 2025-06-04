@@ -1,19 +1,5 @@
 import supabase from '../../supabase/db';
 
-// Initialize the chatroom with room_id and 2 users ID
-export async function createChat(attrs: { room_id: string; user_1: string; user_2: string }) {
-  const { data, error } = await supabase
-    .from('chat')
-    .insert([attrs]) // Insert row
-    .select()
-    .single();
-  if (error) {
-    console.error('Failed to intialize chat.', error.message);
-    throw error;
-  }
-  return data;
-}
-
 // Fetch all preceding messages before opening the chatroom
 export async function fetchMessages({
   room_id,
@@ -29,7 +15,7 @@ export async function fetchMessages({
   if (!room_id) return;
 
   const { data, error } = await supabase
-    .from('messages')
+    .from('chat')
     .select()
     .eq('room_id', room_id)
     .order('created_at', { ascending: false })
@@ -48,7 +34,7 @@ export async function getMessageById(message_id: string) {
   if (!message_id) return;
 
   const { data, error } = await supabase
-    .from('messages')
+    .from('chat')
     .select()
     .eq('message_id', message_id)
     .single();
@@ -57,23 +43,19 @@ export async function getMessageById(message_id: string) {
     console.error('Failed to retrieve message.', error.message);
     throw error;
   }
-  return data[0];
+  return data;
 }
 
 export async function sendMessage(attrs: {
   message_id: string;
   room_id: string;
   content: string;
-  sent_by: string;
+  sender_id: string;
   created_at: string;
 }) {
   if (!attrs.room_id || !attrs.content) return;
-    const { data, error } = await supabase
-        .from('messages')
-        .insert([attrs])
-        .select()
-        .single(); // Expect 1 row
-    
+  const { data, error } = await supabase.from('chat').insert([attrs]).select().single(); // Expect 1 row
+
   if (error) {
     console.error('Failed to send message.', error.message);
     throw error;
@@ -87,7 +69,7 @@ export async function editMessage(attrs: { message_id: string; newInput: string 
   if (!message || message === attrs.newInput) return;
 
   const { data, error } = await supabase
-    .from('messages')
+    .from('chat')
     .update({ content: attrs.newInput })
     .eq('message_id', attrs.message_id)
     .select()
@@ -103,7 +85,7 @@ export async function editMessage(attrs: { message_id: string; newInput: string 
 }
 
 export async function deleteMessage(message_id: string) {
-  const { error } = await supabase.from('messages').delete().eq('message_id', message_id);
+  const { error } = await supabase.from('chat').delete().eq('message_id', message_id);
 
   if (error) {
     console.error('Failed to delete message.', error.message);

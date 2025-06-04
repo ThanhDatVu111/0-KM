@@ -1,26 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as chatService from '../services/chatService';
 
-export async function createChat(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const { room_id, user_1, user_2 } = req.body;
-    if (!room_id || !user_1 || !user_2) {
-      res
-        .status(400)
-        .json({ error: 'Missing fields/params: room_id and/or user_1 ID and/or user_2 ID' });
-      return;
-    }
-    const newChat = await chatService.createChat({
-      room_id,
-      user_1,
-      user_2,
-    });
-    res.status(201).json({ data: newChat });
-  } catch (err: any) {
-    next(err);
-  }
-}
-
 export async function fetchMessages(
   req: Request<{
     room_id: string;
@@ -64,7 +44,7 @@ export async function getMessageById(
 
 export async function sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { message_id, room_id, content, sent_by, created_at } = req.body;
+    const { message_id, room_id, content, sender_id, created_at } = req.body;
     if (!room_id || !content) {
       res.status(400).json({ error: 'RMissing field/params: room_id and content' });
       return;
@@ -74,7 +54,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       message_id,
       room_id,
       content,
-      sent_by,
+      sender_id,
       created_at,
     });
   } catch (err: any) {

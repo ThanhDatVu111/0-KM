@@ -1,40 +1,44 @@
 import icons from '@/constants/icons';
-import { Message, User } from '@/types/conversation';
+import { Message } from '@/types/chat';
+import { User } from '@/types/users';
 
 // Chat function mock values
 export const sender: User = {
-  userId: '1',
+  user_id: '1',
   email: 'a@gmail.com',
   username: 'You',
   photo_url: icons.user_icon_female,
-  partnerId: '2',
+  created_at: '',
 };
 
 export const recipient: User = {
-  userId: '2',
+  user_id: '2',
   email: 'b@gmail.com',
   username: 'Your Partner',
   photo_url: icons.user_icon_female,
-  partnerId: '1',
+  created_at: '',
 };
 
 export const messages: Message[] = [
   {
-    messageId: 3,
+    message_id: '3',
     content: 'I miss you too ;-;',
-    createdAt: new Date(Date.now() - 1000 * 60 * 10),
-    user: recipient,
+    created_at: '2025-05-30T12:10:00.000Z',
+    sender_id: recipient.user_id,
+    sender_photo_url: icons.user_icon_female,
   },
   {
-    messageId: 2,
+    message_id: '2',
     content: 'It was good! Missing you though 💕',
-    createdAt: new Date(Date.now() - 1000 * 60 * 5),
-    user: sender,
+    created_at: '2025-05-30T12:05:00.000Z',
+    sender_id: sender.user_id,
+    sender_photo_url: icons.user_icon_female,
   },
   {
-    messageId: 1,
+    message_id: '1',
     content: 'Hey babe! How was your day? ❤️',
-    createdAt: new Date(),
-    user: recipient,
+    created_at: '2025-05-30T12:00:00.000Z',
+    sender_id: recipient.user_id,
+    sender_photo_url: icons.user_icon_female,
   },
 ];

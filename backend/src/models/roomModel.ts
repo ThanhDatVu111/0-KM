@@ -57,7 +57,7 @@ export async function deleteRoom(attrs: { room_id: string }): Promise<string | n
 export async function fetchRoom(user_id: string) {
   const { data, error } = await supabase
     .from('room')
-    .select('filled') // Select only the `filled` column
+    .select('room_id, user_1, user_2, filled')
     .or(`user_1.eq.${user_id}`) // Match user_id with user_1 or user_2
     .single(); // Expect a single room
 
