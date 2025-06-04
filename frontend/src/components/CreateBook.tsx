@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  Image,
-  StyleSheet,
-  Text,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, TextInput, Image, ScrollView, Dimensions } from 'react-native';
 import { libraryApi } from '../apis/library';
 import Button from '@/components/Button';
 import { BookColor, COLOR_OPTIONS } from '@/constants/books';
@@ -19,15 +10,13 @@ interface CreateBookProps {
   onError?: (error: string) => void;
 }
 
-// Calculate much smaller book size for the create modal
-const screenWidth = Dimensions.get('window').width;
-const modalWidth = screenWidth * 0.7; // Modal takes 70% of screen width
-const previewWidth = (modalWidth - 64) / 3; // Adjust for 3 books per row
-const previewHeight = previewWidth * (4 / 3); // Keep the 3:4 aspect ratio
-
 export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onError }) => {
   const [title, setTitle] = useState('');
   const [selectedColor, setSelectedColor] = useState<BookColor>('blue');
+  const screenWidth = Dimensions.get('window').width;
+  const modalWidth = screenWidth * 0.7; // Modal takes 70% of screen width
+  const itemWidth = (modalWidth - 32) / 3; // 3 items per row, 16px total gap
+  const imageSize = itemWidth - 16; // Padding on both sides
 
   const handleCreateBook = async () => {
     try {
@@ -49,6 +38,19 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
     }
   };
 
+  // Group COLOR_OPTIONS into rows of 3
+  const rows = COLOR_OPTIONS.reduce(
+    (acc, curr, i) => {
+      const rowIndex = Math.floor(i / 3);
+      if (!acc[rowIndex]) {
+        acc[rowIndex] = [];
+      }
+      acc[rowIndex].push(curr);
+      return acc;
+    },
+    [] as (typeof COLOR_OPTIONS)[],
+  );
+
   return (
     <View className="p-4">
       <TextInput
@@ -59,83 +61,34 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
         maxLength={30}
       />
 
-      <ScrollView style={styles.colorScrollView}>
-        <View style={styles.colorSelector}>
-          {COLOR_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.color}
-              style={[styles.colorOption, selectedColor === option.color && styles.selectedColor]}
-              onPress={() => setSelectedColor(option.color)}
-            >
-              <Image source={option.image} style={styles.bookImage} />
-              <Text style={styles.colorText}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+      <View className="mb-4">
+        {rows.map((row, rowIndex) => (
+          <View key={rowIndex} className="flex-row justify-between mb-4">
+            {row.map((option) => (
+              <View key={option.color} style={{ width: itemWidth }} className="items-center">
+                <Image
+                  source={option.image}
+                  style={{ width: imageSize, height: imageSize * 1.33 }}
+                  resizeMode="contain"
+                />
+                <Button
+                  onPress={() => setSelectedColor(option.color)}
+                  className={`w-full px-2 py-1 mt-1 rounded ${selectedColor === option.color ? 'bg-gray-100' : ''}`}
+                  label={option.label}
+                  textClassName="text-xs text-gray-600"
+                />
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
 
       <Button
         onPress={handleCreateBook}
         label="Create Book"
-        className="bg-[#F5829B] px-4 py-2"
-        textClassName="text-white"
+        className="bg-[#F5829B] px-6 py-3"
+        textClassName="text-white font-semibold"
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#333',
-  },
-  colorScrollView: {
-    maxHeight: 200,
-  },
-  colorSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  colorOption: {
-    width: previewWidth,
-    marginBottom: 16,
-    alignItems: 'center',
-    padding: 8,
-    borderRadius: 8,
-  },
-  selectedColor: {
-    backgroundColor: '#f0f0f0',
-  },
-  bookImage: {
-    width: previewWidth - 16,
-    height: previewHeight - 16,
-    resizeMode: 'contain',
-  },
-  colorText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#666',
-  },
-  button: {
-    backgroundColor: '#FF69B4',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

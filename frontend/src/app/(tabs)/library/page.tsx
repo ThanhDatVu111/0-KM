@@ -2,13 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
-  Image,
   Dimensions,
   Modal,
   Pressable,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateBook } from '@/components/CreateBook';
@@ -17,9 +14,7 @@ import { libraryApi } from '@/apis/library';
 import type { Book } from '@/types/library';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Button from '@/components/Button';
-import { BOOK_IMAGES, BookColor } from '@/constants/books';
 import { BookCard } from '@/components/BookCard';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
@@ -105,12 +100,12 @@ export default function Library() {
     active: boolean;
     onPress: () => void;
   }) => (
-    <TouchableOpacity
+    <Button
       onPress={onPress}
-      className={`px-4 py-2 rounded-full mx-1 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
-    >
-      <Text className={`${active ? 'text-pink-600' : 'text-gray-600'}`}>{title}</Text>
-    </TouchableOpacity>
+      label={title}
+      className={`mx-1 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
+      textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
+    />
   );
 
   const handleDeleteBook = async (book: Book) => {
@@ -215,14 +210,15 @@ export default function Library() {
               <View className="py-1.5 border-b border-gray-200 flex-row justify-between items-center px-4">
                 <View style={{ width: 20 }} /> {/* Empty view for centering */}
                 <Text className="text-sm font-semibold">Create New Book</Text>
-                <TouchableOpacity
+                <Button
                   onPress={() => {
                     setIsCreateModalVisible(false);
                     setCreateError(null);
                   }}
-                >
-                  <MaterialCommunityIcons name="close" size={20} color="#666" />
-                </TouchableOpacity>
+                  label="×"
+                  className="p-1 -mr-2"
+                  textClassName="text-gray-600 text-xl leading-none"
+                />
               </View>
 
               {createError && (
@@ -267,14 +263,15 @@ export default function Library() {
               <View className="py-1.5 border-b border-gray-200 flex-row justify-between items-center px-4">
                 <View style={{ width: 20 }} /> {/* Empty view for centering */}
                 <Text className="text-sm font-semibold">Edit Book</Text>
-                <TouchableOpacity
+                <Button
                   onPress={() => {
                     setSelectedBook(null);
                     setEditError(null);
                   }}
-                >
-                  <MaterialCommunityIcons name="close" size={20} color="#666" />
-                </TouchableOpacity>
+                  label="×"
+                  className="p-1 -mr-2"
+                  textClassName="text-gray-600 text-xl leading-none"
+                />
               </View>
 
               {editError && (
