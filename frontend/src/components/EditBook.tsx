@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { libraryApi } from '../apis/library';
-import type { Book } from '../types/library';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { libraryApi } from '@/apis/library';
+import type { Book } from '@/types/library';
+import Button from '@/components/Button';
+import { BookColor, BOOK_COLORS, COLOR_OPTIONS } from '@/constants/books';
 
 interface EditBookProps {
   book: Book;
@@ -10,18 +12,7 @@ interface EditBookProps {
   onCancel?: () => void;
 }
 
-type BookColor = 'blue' | 'pink' | 'green' | 'yellow' | 'purple' | 'red';
-
-const colorMap: Record<BookColor, string> = {
-  blue: '#4A90E2',
-  pink: '#FF69B4',
-  green: '#50C878',
-  yellow: '#FFD700',
-  purple: '#9370DB',
-  red: '#FF6B6B',
-};
-
-export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError }) => {
+export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, onCancel }) => {
   const [title, setTitle] = useState(book.title);
   const [selectedColor, setSelectedColor] = useState<BookColor>(book.color as BookColor);
 
@@ -43,29 +34,19 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError }) 
     }
   };
 
-  const colorOptions: { color: BookColor; label: string }[] = [
-    { color: 'blue', label: 'Blue' },
-    { color: 'pink', label: 'Pink' },
-    { color: 'green', label: 'Green' },
-    { color: 'yellow', label: 'Yellow' },
-    { color: 'purple', label: 'Purple' },
-    { color: 'red', label: 'Red' },
-  ];
-
   return (
-    <View style={styles.container}>
+    <View className="p-4">
       <TextInput
-        style={styles.input}
+        className="border border-gray-300 rounded-lg px-3 py-2 mb-4"
+        placeholder="Book title"
         value={title}
         onChangeText={setTitle}
-        placeholder="Enter book title"
-        placeholderTextColor="#666"
         maxLength={30}
       />
 
       <Text style={styles.label}>Color</Text>
       <View style={styles.colorSelector}>
-        {colorOptions.map((option) => (
+        {COLOR_OPTIONS.map((option) => (
           <TouchableOpacity
             key={option.color}
             style={styles.colorOptionContainer}
@@ -74,7 +55,7 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError }) 
             <View
               style={[
                 styles.colorCircle,
-                { backgroundColor: colorMap[option.color] },
+                { backgroundColor: BOOK_COLORS[option.color] },
                 selectedColor === option.color && styles.selectedColor,
               ]}
             />
@@ -87,9 +68,20 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError }) 
         ))}
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleEditBook}>
-        <Text style={styles.buttonText}>Save Changes</Text>
-      </TouchableOpacity>
+      <View className="flex-row justify-end gap-2 mt-4">
+        <Button
+          onPress={onCancel}
+          label="Cancel"
+          className="bg-gray-100 px-4 py-2"
+          textClassName="text-gray-600"
+        />
+        <Button
+          onPress={handleEditBook}
+          label="Save Changes"
+          className="bg-[#F5829B] px-4 py-2"
+          textClassName="text-white"
+        />
+      </View>
     </View>
   );
 };
@@ -111,24 +103,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#666',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   colorSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 20,
+    width: '100%',
     justifyContent: 'center',
   },
   colorOptionContainer: {
     alignItems: 'center',
-    width: '28%', // Slightly less than 1/3 to account for gap
-    marginBottom: 8,
+    width: '28%',
+    marginBottom: 12,
   },
   colorCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     marginBottom: 4,
     borderWidth: 2,
     borderColor: 'transparent',

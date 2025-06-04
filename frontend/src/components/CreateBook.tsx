@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput,
-  TouchableOpacity,
   Image,
   StyleSheet,
   Text,
   Dimensions,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { libraryApi } from '../apis/library';
-
-type BookColor = 'blue' | 'pink' | 'green' | 'yellow' | 'purple' | 'red';
+import Button from '@/components/Button';
+import { BookColor, COLOR_OPTIONS } from '@/constants/books';
 
 interface CreateBookProps {
   coupleId: string;
@@ -49,29 +49,19 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
     }
   };
 
-  const colorOptions: { color: BookColor; label: string; image: any }[] = [
-    { color: 'blue', label: 'Blue', image: require('../assets/images/blue book.png') },
-    { color: 'pink', label: 'Pink', image: require('../assets/images/book.png') },
-    { color: 'green', label: 'Green', image: require('../assets/images/green book.png') },
-    { color: 'yellow', label: 'Yellow', image: require('../assets/images/yellow book.png') },
-    { color: 'purple', label: 'Purple', image: require('../assets/images/purple book.png') },
-    { color: 'red', label: 'Red', image: require('../assets/images/red book.png') },
-  ];
-
   return (
-    <View style={styles.container}>
+    <View className="p-4">
       <TextInput
-        style={styles.input}
+        className="border border-gray-300 rounded-lg px-3 py-2 mb-4"
+        placeholder="Book title"
         value={title}
         onChangeText={setTitle}
-        placeholder="Enter book title"
-        placeholderTextColor="#666"
         maxLength={30}
       />
 
       <ScrollView style={styles.colorScrollView}>
         <View style={styles.colorSelector}>
-          {colorOptions.map((option) => (
+          {COLOR_OPTIONS.map((option) => (
             <TouchableOpacity
               key={option.color}
               style={[styles.colorOption, selectedColor === option.color && styles.selectedColor]}
@@ -84,9 +74,12 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.button} onPress={handleCreateBook}>
-        <Text style={styles.buttonText}>Create Book</Text>
-      </TouchableOpacity>
+      <Button
+        onPress={handleCreateBook}
+        label="Create Book"
+        className="bg-[#F5829B] px-4 py-2"
+        textClassName="text-white"
+      />
     </View>
   );
 };

@@ -18,6 +18,9 @@ import type { Book } from '@/types/library';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Button from '@/components/Button';
+import { BOOK_IMAGES, BookColor } from '@/constants/books';
+import { BookCard } from '@/components/BookCard';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
 
@@ -128,103 +131,6 @@ export default function Library() {
     }
   };
 
-  const BookCard = ({ isNew, book }: { isNew?: boolean; book?: Book }) => {
-    const isDropdownVisible = book ? activeDropdownId === book.id : false;
-
-    const getBookImage = (color?: string) => {
-      switch (color) {
-        case 'blue':
-          return require('@/assets/images/blue book.png');
-        case 'green':
-          return require('@/assets/images/green book.png');
-        case 'yellow':
-          return require('@/assets/images/yellow book.png');
-        case 'purple':
-          return require('@/assets/images/purple book.png');
-        case 'red':
-          return require('@/assets/images/red book.png');
-        case 'pink':
-        default:
-          return require('@/assets/images/book.png');
-      }
-    };
-
-    const handleEdit = () => {
-      if (!book) return;
-      setActiveDropdownId(null);
-      setSelectedBook(book);
-    };
-
-    const toggleDropdown = () => {
-      if (!book) return;
-      setActiveDropdownId(isDropdownVisible ? null : book.id);
-    };
-
-    return (
-      <View style={{ width: cardWidth }} className="mb-4">
-        {isNew ? (
-          <TouchableOpacity
-            className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
-            onPress={() => setIsCreateModalVisible(true)}
-          >
-            <View className="w-16 h-16 rounded-full bg-pink-100 items-center justify-center">
-              <Text className="text-3xl text-pink-500">+</Text>
-            </View>
-            <Text className="mt-2 text-gray-500 text-lg">new</Text>
-          </TouchableOpacity>
-        ) : book ? (
-          <View>
-            <Image
-              source={getBookImage(book.color)}
-              style={{
-                width: cardWidth,
-                height: cardWidth * (4 / 3),
-                resizeMode: 'contain',
-              }}
-            />
-            <View className="bg-white mt-1">
-              <View className="flex-row justify-between items-start pr-0">
-                <Text
-                  className="flex-1 text-sm font-medium text-gray-800 px-1"
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {book.title}
-                </Text>
-                <View className="relative">
-                  <TouchableOpacity onPress={toggleDropdown} className="p-1 -mr-1">
-                    <MaterialCommunityIcons name="dots-vertical" size={18} color="#666" />
-                  </TouchableOpacity>
-                  {isDropdownVisible && (
-                    <View className="absolute right-0 top-8 bg-white rounded-lg shadow-lg z-50 w-24 py-1 border border-gray-200">
-                      <TouchableOpacity
-                        onPress={handleEdit}
-                        className="flex-row items-center px-3 py-2"
-                      >
-                        <MaterialCommunityIcons name="pencil" size={16} color="#666" />
-                        <Text className="ml-2 text-sm text-gray-600">Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteBook(book)}
-                        className="flex-row items-center px-3 py-2"
-                      >
-                        <MaterialCommunityIcons name="delete" size={16} color="#FF4444" />
-                        <Text className="ml-2 text-sm text-red-500">Delete</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-              <Text className="text-xs text-gray-600 mt-0.5 px-1">
-                {new Date(book.created_at).toLocaleDateString()}
-              </Text>
-            </View>
-          </View>
-        ) : null}
-      </View>
-    );
-  };
-
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Pressable onPress={() => setActiveDropdownId(null)} style={{ flex: 1 }}>
@@ -264,11 +170,28 @@ export default function Library() {
         <ScrollView className="flex-1 px-8">
           <View
             className="flex-row flex-wrap gap-2"
-            style={{ marginRight: -16, paddingBottom: 100 }}
+            style={{ marginRight: -16, paddingBottom: 200 }}
           >
-            <BookCard isNew />
+            <BookCard
+              isNew
+              cardWidth={cardWidth}
+              onCreatePress={() => setIsCreateModalVisible(true)}
+            />
             {sortedBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <BookCard
+                key={book.id}
+                book={book}
+                cardWidth={cardWidth}
+                isDropdownVisible={activeDropdownId === book.id}
+                onToggleDropdown={() =>
+                  setActiveDropdownId(activeDropdownId === book.id ? null : book.id)
+                }
+                onEditPress={() => {
+                  setActiveDropdownId(null);
+                  setSelectedBook(book);
+                }}
+                onDeletePress={handleDeleteBook}
+              />
             ))}
             {/* Add invisible placeholder cards to maintain grid alignment */}
             {[...Array(3)].map((_, index) => (
@@ -395,18 +318,18 @@ export default function Library() {
                   undone.
                 </Text>
                 <View className="flex-row justify-end gap-2">
-                  <TouchableOpacity
+                  <Button
                     onPress={() => setBookToDelete(null)}
-                    className="px-4 py-2 rounded-lg bg-gray-100"
-                  >
-                    <Text className="text-gray-600">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
+                    label="Cancel"
+                    className="bg-gray-100 px-4 py-2"
+                    textClassName="text-gray-600"
+                  />
+                  <Button
                     onPress={confirmDelete}
-                    className="px-4 py-2 rounded-lg bg-red-500"
-                  >
-                    <Text className="text-white">Delete</Text>
-                  </TouchableOpacity>
+                    label="Delete"
+                    className="bg-[#F5829B] px-4 py-2"
+                    textClassName="text-white"
+                  />
                 </View>
               </View>
             </View>
