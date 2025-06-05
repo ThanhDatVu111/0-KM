@@ -1,12 +1,47 @@
-import { View, Text } from "react-native";
-import React from "react";
+import React, { useState } from 'react';
+import { Text, StatusBar, Platform, FlatList, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
+import ChatHeader from '@/components/ChatHeader';
+import { messages } from '@/constants/chat';
+import { sender } from '@/constants/chat';
+import ChatBubble from '@/components/ChatBubble';
+import ChatInput from '@/components/ChatInput';
+import { useMessages } from '@/hooks/useMessages';
 
-const Chat = () => {
+export default function ChatScreen() {
+  const { conversation, sendMessage } = useMessages();
+  const roomId = useLocalSearchParams();
+
+  if (!roomId) {
+    // Handle if users try to access unavailable rooms. For now, we don't want to touch too much on the DB
+
+    // console.log("Room not found")
+    // router.push("/(tabs)/home")
+    return <Text>Cannot find the room</Text>;
+  }
+
   return (
-    <View className="tab-screen">
-      <Text>this is chat</Text>
-    </View>
-  );
-};
+    <SafeAreaView className="flex-1 bg-white p-5">
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-export default Chat;
+      <ChatHeader />
+
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <FlatList
+          data={conversation}
+          renderItem={({ item }) => <ChatBubble message={item} myId={sender.userId} />}
+          keyExtractor={(item) => item.user.userId.toString()}
+          inverted
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 8 }}
+        />
+
+        <ChatInput sendMessage={sendMessage} />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
