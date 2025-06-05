@@ -3,7 +3,6 @@ import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BOOK_IMAGES, BookColor } from '@/constants/books';
 import type { Book } from '@/types/library';
-import Button from '@/components/Button';
 
 interface BookCardProps {
   isNew?: boolean;
@@ -14,6 +13,7 @@ interface BookCardProps {
   onDeletePress?: (book: Book) => void;
   isDropdownVisible?: boolean;
   onToggleDropdown?: () => void;
+  onPress?: () => void;
 }
 
 export const BookCard: React.FC<BookCardProps> = ({
@@ -25,6 +25,7 @@ export const BookCard: React.FC<BookCardProps> = ({
   onDeletePress,
   isDropdownVisible,
   onToggleDropdown,
+  onPress,
 }) => {
   const getBookImage = (color?: string) => {
     return BOOK_IMAGES[color as BookColor] || BOOK_IMAGES.pink;
@@ -50,14 +51,16 @@ export const BookCard: React.FC<BookCardProps> = ({
 
   return (
     <View style={{ width: cardWidth }} className="mb-4">
-      <Image
-        source={getBookImage(book.color)}
-        style={{
-          width: cardWidth,
-          height: cardWidth * (4 / 3),
-          resizeMode: 'contain',
-        }}
-      />
+      <TouchableOpacity onPress={onPress}>
+        <Image
+          source={getBookImage(book.color)}
+          style={{
+            width: cardWidth,
+            height: cardWidth * (4 / 3),
+            resizeMode: 'contain',
+          }}
+        />
+      </TouchableOpacity>
       <View className="bg-white mt-1" style={{ position: 'relative', zIndex: 1 }}>
         <View className="flex-row justify-between items-start pr-0">
           <Text

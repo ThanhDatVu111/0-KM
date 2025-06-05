@@ -41,7 +41,6 @@ export default function NewEntryScreen() {
     <EntryForm
       bookId={bookId}
       saving={saving}
-      // No initial… props → form will be blank
       onSubmit={async (entryData) => {
         setSaving(true);
         await handleCreate(entryData);

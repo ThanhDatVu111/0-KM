@@ -31,6 +31,7 @@ export async function CreateEntry(entryData: {
   created_at: string;
 }): Promise<any[]> {
   try {
+    console.log('Creating new entry with data in apis entry:', entryData);
     const response = await fetch(`${BASE_URL}/entries/${entryData.book_id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
