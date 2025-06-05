@@ -104,24 +104,25 @@ export async function deleteRoom(
 }
 
 export async function fetchRoom(
-  req: Request<{ user_id: string }>, // Extract `user_id` from the path
+  req: Request<{ user_id: string }>,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id } = req.params; // Get `user_id` from the path parameters
+    const { user_id } = req.params;
 
     if (!user_id) {
       res.status(400).json({ error: 'Missing required user_id parameter' });
       return;
     }
 
-    const room = await roomService.fetchRoom(user_id); // Fetch room by user_id
+    const room = await roomService.fetchRoom(user_id);
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
 
+    // Return all room data
     res.status(200).json({
       data: {
         room_id: room.room_id,
@@ -129,8 +130,8 @@ export async function fetchRoom(
         user_2: room.user_2,
         filled: room.filled,
       },
-    }); // Return only the `filled` column
+    });
   } catch (err: any) {
-    next(err); // Pass errors to the error handler middleware
+    next(err);
   }
 }

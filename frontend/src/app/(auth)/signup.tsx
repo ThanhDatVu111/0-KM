@@ -5,6 +5,7 @@ import { useSignUp } from '@clerk/clerk-expo';
 import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
+import { SimpleSignOutButton } from '@/components/SignOutButton';
 
 export default function SignUpForm() {
   const { isLoaded, signUp } = useSignUp();
@@ -30,7 +31,7 @@ export default function SignUpForm() {
 
       // Navigate to the verify-email page
       router.replace({
-        pathname: '/(auth)/verify-email',
+        pathname: '../(auth)/verify-email',
         params: { emailAddress }, // Pass emailAddress to the verification page
       });
     } catch (err: any) {
@@ -47,6 +48,9 @@ export default function SignUpForm() {
   return (
     <View>
       <View className="w-[300px]">
+        <View className="flex-row justify-end mb-4">
+          <SimpleSignOutButton />
+        </View>
         <FormInput
           label="Email"
           borderColor="#F5829B"

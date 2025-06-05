@@ -19,7 +19,7 @@ interface FetchUserInput {
 }
 
 export async function registerUser(input: RegisterUserInput) {
-  //Receive “raw” data from the controller and pass it to the model
+  //Receive "raw" data from the controller and pass it to the model
   return userModel.createUser({
     email: input.email,
     user_id: input.user_id,
@@ -35,5 +35,6 @@ export function onboardUser(input: OnboardUserInput) {
 }
 
 export function fetchUser(input: FetchUserInput) {
+  console.log('🔍 Fetching user with ID:', input.userId);
   return userModel.getUser(input.userId);
 }
