@@ -195,21 +195,16 @@ const EntryCard: React.FC<EntryCardProps> = ({
   };
 
   return (
-    <View className="mx-4 bg-white rounded-2xl shadow-md mb-10">
+    <View className="mx-4 bg-white rounded-2xl shadow-md mb-14">
       {renderCollage()}
       {/* ─── Text Section ─── */}
       <View className="p-4">
-        <Text className="text-lg font-semibold mb-2">{title}</Text>
-        <Text className="text-sm text-gray-500 mb-2" numberOfLines={2}>
-          {body}
-        </Text>
-        <View className="flex-row justify-between items-center">
-          <Text className="text-xs text-gray-400">{formattedDate}</Text>
-          {/*I need help here*/}
+        <View className="relative flex-row justify-between items-center">
+          <Text className="text-lg font-semibold mb-2">{title}</Text>
           <Ionicons name="ellipsis-horizontal" size={20} color="#666" onPress={toggleMenu} />
           {/* ─── Dropdown Menu (edit / delete) ─── */}
           {menuVisible && (
-            <View className="absolute top-5 right-0 bg-white shadow-lg rounded-md border border-gray-200 z-50">
+            <View className="absolute top-7 right-0 bg-white shadow-md rounded-md border border-gray-200 z-50">
               <Pressable
                 onPress={() => {
                   onEdit(); // ← calls BookPage.handleEditEntry(...)
@@ -229,14 +224,17 @@ const EntryCard: React.FC<EntryCardProps> = ({
                 }}
                 className="px-4 py-2"
               >
-                <Text>Delete</Text>
+                <Text className="text-red-600">Delete</Text>
               </Pressable>
             </View>
           )}
         </View>
-        {location?.address && (
-          <Text className="text-xs text-gray-400">{location.address}</Text>
-        )}
+        <Text className="text-sm text-gray-500 mb-2" numberOfLines={3}>
+          {body}
+        </Text>
+        <Text className="text-xs text-gray-400">{formattedDate}</Text>
+
+        {location?.address && <Text className="text-xs text-gray-400">{location.address}</Text>}
       </View>
     </View>
   );

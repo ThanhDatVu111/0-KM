@@ -12,6 +12,7 @@ import EntryCard from '@/components/EntryCard';
 export default function BookPage() {
   const { bookId: rawId } = useLocalSearchParams<{ bookId: string }>();
   const bookId = Array.isArray(rawId) ? rawId[0] : rawId;
+  console.log('Book ID:', bookId);
   const router = useRouter();
 
   const [entries, setEntries] = useState<any[]>([]);
@@ -44,7 +45,7 @@ export default function BookPage() {
     router.push({
       pathname: `/library/[bookId]/update-entry`,
       params: {
-        bookId,
+        bookId: bookId,
         entryId: entry.id,
         title: entry.title,
         body: entry.body,
@@ -56,9 +57,6 @@ export default function BookPage() {
   };
 
   const goCreate = () => {
-    {
-      console.log('Navigating to create entry for book:', bookId);
-    }
     router.push(`/library/${bookId}/create-entry`);
   };
 

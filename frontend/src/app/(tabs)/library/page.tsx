@@ -9,6 +9,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import Button from '@/components/Button';
 import { BookCard } from '@/components/BookCard';
+import { useRouter } from 'expo-router';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
 
@@ -29,6 +30,7 @@ export default function Library() {
   const gapBetweenCards = 16; // gap-4 between cards
   const totalGapWidth = gapBetweenCards * 2; // Gap for 2 spaces between 3 cards
   const cardWidth = (screenWidth - totalHorizontalPadding - totalGapWidth) / 3;
+  const router = useRouter();
 
   // Fetch room ID
   useEffect(() => {
@@ -93,12 +95,14 @@ export default function Library() {
     active: boolean;
     onPress: () => void;
   }) => (
-    <Button
-      onPress={onPress}
-      label={title}
-      className={`mx-1 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
-      textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
-    />
+    <View className="flex justify-center">
+      <Button
+        onPress={onPress}
+        label={title}
+        className={`px-4 py-2 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
+        textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
+      />
+    </View>
   );
 
   const handleDeleteBook = async (book: Book) => {
@@ -176,6 +180,12 @@ export default function Library() {
                   setSelectedBook(book);
                 }}
                 onDeletePress={handleDeleteBook}
+                onPress={() => {
+                   router.push({
+                     pathname: `/library/[bookId]/page`,
+                     params: { bookId: book.id, title: book.title }, // Pass the book ID and title as parameters
+                   });
+                }}
               />
             ))}
             {/* Add invisible placeholder cards to maintain grid alignment */}

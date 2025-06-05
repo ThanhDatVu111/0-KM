@@ -227,6 +227,7 @@ export default function EntryForm({
   };
   const onCancelLocation = () => {
     setTempAddress('');
+    setLocationAddress('');
     setShowLocationModal(false);
     setLocationLoading(false);
   };
