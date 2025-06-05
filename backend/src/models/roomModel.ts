@@ -58,7 +58,7 @@ export async function fetchRoom(user_id: string) {
   const { data, error } = await supabase
     .from('room')
     .select('room_id, user_1, user_2, filled')
-    .or(`user_1.eq.${user_id}`) // Match user_id with user_1 or user_2
+    .or(`user_1.eq.${user_id}, user_2.eq.${user_id}`) // Match user_id with user_1 or user_2
     .single(); // Expect a single room
 
   if (error && error.code !== 'PGRST116') {

@@ -26,7 +26,7 @@ export async function fetchMessages({
     throw error;
   }
 
-  return data.reverse(); // Reverse the ordering of the message, from latest
+  return data; // Reverse the ordering of the message, from latest
 }
 
 // Retrieve specific messages

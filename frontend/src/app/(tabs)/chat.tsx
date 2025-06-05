@@ -81,7 +81,7 @@ export default function ChatScreen() {
     if (!trimmed) return;
 
     const messagePayload = {
-      message_id: `${Date.now()}`,
+      message_id: `${Date.now()}-${userId}`,
       room_id: roomId,
       content: trimmed,
       sender_id: userId!,
@@ -195,7 +195,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
-          data={[...previousChat].reverse()} // Reverse the ordering 
+          data={previousChat} // Reverse the ordering
           renderItem={renderMessage}
           keyExtractor={(item) => item?.message_id ?? 'unknown'}
           inverted

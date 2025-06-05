@@ -1,25 +1,29 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createServer, get } from 'http';
+import { createServer } from 'http';
 import { Server } from 'socket.io';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import ChatRouter from './routes/chatRoutes';
-import {
-  ClientToServerEvents,
-  InterServerEvents,
-  ServerToClientEvents,
-  SocketData,
-} from './types/socket';
+import Socket from './types/socket';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+
 const PORT = process.env.PORT;
 const LOCAL_HOST_URL = process.env.LOCAL_HOST_URL;
+
+const io = new Server(server, {
+  cors: {
+    origin: `${LOCAL_HOST_URL}:${PORT}`,
+    methods: ['GET', 'POST'],
+  },
+});
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
@@ -75,18 +79,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>({
-  cors: {
-    origin: ['http://localhost:8081'],
-    methods: ['GET', 'POST'],
-  },
-});
-
-// io.on('connection', (socket) => {
-//   console.log('User connected');
-//   socket.on('disconnect', () => console.log('User disconnected'));
-// });
-
-// // Message handler and routing
-// app.post('/messages');

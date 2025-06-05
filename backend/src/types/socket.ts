@@ -1,45 +1,55 @@
-import { User } from '@supabase/supabase-js';
-import { Socket, Server } from 'socket.io';
+import { Server } from 'socket.io';
+import { Message } from './chat';
+import { User, SocketConnectedUsers, SocketSocketIdUserId } from './users';
 
-export interface ServerToClientEvents {
-  noArg: () => void;
-  basicEmit: (a: number, b: string, c: Buffer) => void;
-  withAck: (d: string, callback: (e: number) => void) => void;
-}
+class Socket {
+  private static _instance: Socket;
 
-export interface ClientToServerEvents {
-  hello: () => void;
-}
+  private io;
+  private users: SocketConnectedUsers = {};
+  private socketIdUserId: SocketSocketIdUserId = {};
 
-export interface InterServerEvents {
-  ping: () => void;
-}
+  private constructor(server: Server) {
+    this.io = server;
 
-export interface SocketData {
-  name: string;
-  age: number;
-}
+    this.io.on('connection', (socket) => {
+      console.log('User connected');
 
-export interface SocketConnectedUsers {
-  [key: string]: {
-    socketId: string;
-    socket: Socket;
-    user: User;
-  };
-}
+      // Update user information upon "join" event
+      socket.on('join', (user: User) => {
+        this.users[user.user_id] = {
+          socketId: socket.id,
+          socket: socket,
+          user_id: user.user_id,
+        };
 
-export interface SocketSocketIdUserId {
-  [key: string]: string;
-}
+        this.socketIdUserId[socket.id] = user.user_id;
+      });
 
-export function registerSocketHandlers(io: Server) {
-  console.log('Socket handlers called');
-  io.on('connection', (socket) => {
-    const user_id = socket.handshake.auth.user_id || socket.handshake.query.user_id;
-    console.log(`User connected with ID: ${user_id}`);
+      // Delete user information when users go offline to not overload memory
+      socket.on('disconnect', () => {
+        const userId = this.socketIdUserId[socket.id];
 
-    if (user_id) {
-      socket.join(user_id); // join their personal chatroom
+        if (userId) {
+          delete this.users[userId];
+          delete this.socketIdUserId[socket.id];
+        }
+      });
+    });
+  }
+
+  static getInstance(server?: Server) {
+    if (this._instance) {
+      return this._instance;
     }
-  });
+
+    if (server) {
+      this._instance = new Socket(server);
+      return this._instance;
+    }
+
+    return Error('Failed to init socket');
+  }
 }
+
+export default Socket;
