@@ -6,8 +6,8 @@ export async function createUser(attrs: { email: string; user_id: string }) {
   const { data, error } = await supabase
     .from('users')
     .insert([attrs]) // insert 1 new row
-    .select() // ask Supabase to send back the new row’s columns
-    .single(); // “I know it’s exactly one row—give me the object directly”
+    .select() // ask Supabase to send back the new row's columns
+    .single(); // "I know it's exactly one row—give me the object directly"
   if (error) throw error;
   return data;
 }
@@ -32,13 +32,24 @@ export async function updateUser(attrs: {
 }
 
 export async function getUser(userId: string) {
-  const { data, error } = await supabase.from('users').select('*').eq('user_id', userId).single(); // This is where the error occurs
+  console.log('📝 Attempting to fetch user from database with ID:', userId);
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
 
   if (error) {
-    console.error('❌ Error fetching user:', error.message);
+    console.error('❌ Error fetching user:', error.message, error.details);
     throw error;
   }
 
-  console.log('✅ User fetched:', data);
+  if (!data) {
+    console.log('❌ No user found with ID:', userId);
+    return null;
+  }
+
+  console.log('✅ User fetched successfully:', data);
   return data;
 }

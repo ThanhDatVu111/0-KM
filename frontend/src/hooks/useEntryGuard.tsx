@@ -26,14 +26,19 @@ export function useEntryGuard() {
       try {
         // Fetch user data
         user = await fetchUser(userId);
-        console.log('Fetched user:', user.username, user.birthdate, user.photo_url);
+        console.log('✅ Fetched user:', {
+          id: userId,
+          username: user.username,
+          hasProfile: !!user.birthdate && !!user.photo_url,
+        });
       } catch (err) {
         setLoading(false); // Stop loading on error
         return; // Stop execution if fetching user fails
       }
 
+      // Check if user needs to complete onboarding
       if (!user.username || !user.birthdate || !user.photo_url) {
-        // Redirect to onboarding if user data is incomplete
+        console.log('⚠️ User needs to complete onboarding');
         router.replace({
           pathname: '/(onboard)/onboarding-flow',
           params: { user_id: userId },
@@ -45,10 +50,15 @@ export function useEntryGuard() {
       try {
         // Fetch room data
         const room = await fetchRoom({ user_id: userId });
-        console.log('Fetched room:', room);
+        console.log('✅ Room status:', {
+          exists: !!room,
+          filled: room?.filled,
+          roomId: room?.room_id,
+        });
 
-        if (!room.filled) {
-          // Redirect to pairing if the room is incomplete
+        // If no room exists or room is not filled, redirect to pairing
+        if (!room || !room.filled) {
+          console.log('⚠️ User needs to complete room pairing');
           router.replace({
             pathname: '/(onboard)/join-room',
             params: { userId },
@@ -56,6 +66,10 @@ export function useEntryGuard() {
           setLoading(false); // Stop loading
           return;
         }
+
+        // Everything is complete, go to home
+        console.log('✅ User setup complete, going to home');
+        router.replace('/(tabs)/home');
       } catch (err) {
         console.error('❌ Error fetching room data:', err);
         setLoading(false); // Stop loading on error

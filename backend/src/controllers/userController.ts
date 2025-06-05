@@ -65,6 +65,12 @@ export async function fetchUser(
     }
 
     const user = await userService.fetchUser({ userId });
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
     res.status(200).json({ data: user });
   } catch (err: any) {
     next(err);
