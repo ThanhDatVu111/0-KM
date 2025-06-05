@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import icons from '@/constants/icons';
-import { recipient } from '@/constants/chat';
 import { Message } from '@/types/chat';
 import { chatApi } from '@/apis/chat';
 import { fetchRoom } from '@/apis/room';
@@ -177,7 +176,7 @@ export default function ChatScreen() {
         <Image source={icons.user_icon_female} className="w-10 h-10 rounded-lg mr-3" />
 
         <View className="flex-1">
-          <Text className="text-lg font-poppins-medium text-black">{recipient.username}</Text>
+          <Text className="text-lg font-poppins-medium text-black">Your Partner</Text>
           <Text className="text-sm text-gray-500 gap-2">Active now</Text>
         </View>
 
