@@ -29,10 +29,8 @@ export default function NewEntryScreen() {
       const newId = (uuid.v4() as string) || '';
       const toCreate = { ...data, id: newId, created_at: new Date().toISOString() };
       await CreateEntry(toCreate);
-      alert('Entry created successfully!');
     } catch (err: any) {
       console.error('CreateEntries error:', err);
-      alert('Failed to create entry. Please try again.');
     }
     router.back();
   };

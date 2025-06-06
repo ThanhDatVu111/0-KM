@@ -49,7 +49,6 @@ export default function SignUpForm() {
     <View>
       <View className="w-[300px]">
         <View className="flex-row justify-end mb-4">
-          <SimpleSignOutButton />
         </View>
         <FormInput
           label="Email"

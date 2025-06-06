@@ -99,7 +99,7 @@ export default function Library() {
       <Button
         onPress={onPress}
         label={title}
-        className={`px-4 py-2 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
+        className={`px-4 py-2 ${active ? 'bg-primary' : 'bg-gray-100'}`}
         textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
       />
     </View>
@@ -127,10 +127,10 @@ export default function Library() {
     <SafeAreaView className="flex-1 bg-white">
       <Pressable onPress={() => setActiveDropdownId(null)} style={{ flex: 1 }}>
         <View className="items-center py-2">
-          <Text className="text-2xl font-bold text-gray-800 mb-4">Library</Text>
+          <Text className="text-2xl font-bold text-accent mb-4">Our Library</Text>
 
           {/* Sort options */}
-          <View className="mb-4 w-full flex items-center">
+          <View className="w-full flex items-center mt-5">
             <View className="flex-row gap-2">
               <SortButton
                 title="Last modified"
