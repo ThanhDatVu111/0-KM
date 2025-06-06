@@ -152,7 +152,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white p-5">
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      // Chat Header
+      {/* Chat Header */}
       <View
         className="flex-row items-center bg-white px-4 py-3 rounded-full"
         style={{
@@ -188,7 +188,7 @@ export default function ChatScreen() {
           <Image source={icons.video} className="w-6 h-6" />
         </TouchableOpacity>
       </View>
-      // Chat Main View
+      {/* Chat Main View */}
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -201,9 +201,9 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingVertical: 8 }}
         />
-        // Chat Input
-        <View className="bg-white border-t border-gray-200 px-3 py-2 flex-row items-center">
-          <View className="flex-1 flex-row bg-white border border-accent px-4 py-2 mr-2 rounded-full">
+        {/* Chat Input */}
+        <View className="bg-white border-t border-gray-200 px-3 py-2 flex-row items-center overflow-scroll container mx-auto">
+          <View className="flex-1 flex-row bg-white border border-accent px-4 py-2 mr-2 rounded-lg">
             {/* Image Button */}
             <TouchableOpacity onPress={onImagePress} className="mt-0.5">
               <FontAwesome name="camera" size={24} color="#F5829B" />
@@ -214,7 +214,7 @@ export default function ChatScreen() {
               onChangeText={setMessage}
               placeholder="Type a message..."
               multiline
-              className=" text-base p-1 items-center px-4 font-poppins-light"
+              className=" text-base p-1 items-center px-4 font-poppins-light mr-5"
               style={{ maxHeight: 100 }}
               placeholderTextColor="#F5829B"
             />
@@ -225,7 +225,7 @@ export default function ChatScreen() {
               </TouchableOpacity>
             )}
           </View>
-          {/* Send Button */}  
+          {/* Send Button */}
           <TouchableOpacity
             onPress={handleSendMessage}
             className="w-12 h-12 rounded-full bg-accent justify-center items-center"
