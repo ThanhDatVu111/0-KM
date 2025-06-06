@@ -22,8 +22,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useMessageActions } from '@/hooks/useMessageAction';
-import { MessageActionModal } from '@/components/MessageActionModal';
 import * as ImagePicker from 'expo-image-picker';
+import Popover from 'react-native-popover-view';
 
 export default function ChatScreen() {
   const { userId, isLoaded, isSignedIn } = useAuth();
@@ -31,16 +31,10 @@ export default function ChatScreen() {
   const [partnerId, setPartnerId] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [previousChat, setPreviousChat] = useState<Message[]>([]);
-  const {
-    selectedMessage,
-    setSelectedMessage,
-    isEditing,
-    setIsEditing,
-    editedContent,
-    setEditedContent,
-    handleDelete,
-    handleSaveEdit,
-  } = useMessageActions(setPreviousChat);
+  const [popoverVisible, setPopoverVisible] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const onRecordPress = () => {};
 
@@ -119,6 +113,15 @@ export default function ChatScreen() {
     }
   };
 
+  const handleDelete = async (messageId: string) => {
+    try {
+      await chatApi.deleteMessage(messageId);
+      setPreviousChat((prev) => prev.filter((msg) => msg.message_id !== messageId));
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
+  };
+
   const onImagePress = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -155,6 +158,8 @@ export default function ChatScreen() {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isSender = item.sender_id === userId;
+    const isMessageSelected = selectedMessage?.message_id === item.message_id;
+
     return (
       <View className={`flex-row mb-3 ${isSender ? 'justify-end' : 'justify-start'}`}>
         {/* Avatar for received messages */}
@@ -163,32 +168,59 @@ export default function ChatScreen() {
         )}
 
         <View className="flex-1 max-w-[80%]">
-          <Pressable
-            className={`rounded-2xl px-4 py-2.5 ${
-              isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
-            }`}
-            onLongPress={() => setSelectedMessage(item)}
-          >
-            {/* Render text content if it exists */}
-            {item.content ? (
-              <Text
-                className={`font-poppins-light text-base ${
-                  isSender ? 'text-white' : 'text-gray-900'
+          <Popover
+            isVisible={isMessageSelected}
+            onRequestClose={() => setSelectedMessage(null)}
+            from={
+              <Pressable
+                onLongPress={() => setSelectedMessage(item)}
+                className={`rounded-2xl px-4 py-2.5 ${
+                  isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
                 }`}
               >
-                {item.content}
-              </Text>
-            ) : null}
+                {/* Render text content if exists */}
+                {item.content ? (
+                  <Text
+                    className={`font-poppins-light text-base ${
+                      isSender ? 'text-white' : 'text-gray-900'
+                    }`}
+                  >
+                    {item.content}
+                  </Text>
+                ) : null}
 
-            {/* Render media if it exists */}
-            {item.media ? (
-              <Image
-                source={{ uri: item.media.uri }}
-                className="w-48 h-48 mt-2 rounded-lg"
-                resizeMode="cover"
-              />
-            ) : null}
-          </Pressable>
+                {/* Render media if exists */}
+                {item.media && (
+                  <Image
+                    source={{ uri: item.media.uri }}
+                    className="w-48 h-48 mt-2 rounded-lg"
+                    resizeMode="cover"
+                  />
+                )}
+              </Pressable>
+            }
+          >
+            <View className="bg-white p-3 rounded-md">
+              <TouchableOpacity
+                className="py-1"
+                onPress={() => {
+                  setEditedContent(item.content ?? '');
+                  setIsEditing(true);
+                }}
+              >
+                <Text>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="py-1"
+                onPress={() => {
+                  handleDelete(item.message_id);
+                  setSelectedMessage(null);
+                }}
+              >
+                <Text className="text-red-500">Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </Popover>
 
           <Text
             className={`font-poppins-light text-xs text-gray-500 mt-1 ${
@@ -263,16 +295,6 @@ export default function ChatScreen() {
           contentContainerStyle={{ paddingVertical: 8 }}
         />
 
-        <MessageActionModal
-          visible={!!selectedMessage}
-          message={selectedMessage}
-          onEdit={() => {
-            // setEditedContent(selectedMessage!.content);
-            setIsEditing(true);
-          }}
-          onDelete={() => handleDelete(selectedMessage!.message_id)}
-          onCancel={() => setSelectedMessage(null)}
-        />
         {/* Chat Input */}
         <View className="bg-white border-t border-gray-200 px-3 py-2 flex-row items-center overflow-scroll container mx-auto">
           <View className="flex-1 flex-row bg-white border border-accent px-4 py-2 mr-2 rounded-lg">
