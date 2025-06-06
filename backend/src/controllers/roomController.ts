@@ -129,18 +129,15 @@ export async function fetchRoom(
   }
 }
 
-
 export async function fetchRoomByUserId(req: any, res: any) {
   try {
-    if (!req.body.user_id) {
-      return res.status(400).json({error: 'missing required fields'})
+    const user_id = req.query.user_id;
+    if (!user_id) {
+      return res.status(400).json({ error: 'missing required fields' });
     }
-    const response = await roomService.fetchRoomByUserId(req.body);
-    if (!response.ok) {
-      return res.status(400).json({ error: 'error fetching room by id' });
-    }
+    const response = await roomService.fetchRoomByUserId({ user_id });
     res.status(200).json({ data: response });
-  } catch (error){
+  } catch (error) {
     return res.status(400).json({ error: error });
-  } 
+  }
 }
