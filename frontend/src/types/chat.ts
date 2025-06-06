@@ -1,10 +1,13 @@
 export interface Message {
   message_id: string;
-  content: string;
+  content?: string;
   created_at: string;
   sender_id: string;
   sender_photo_url?: string; // Avatar of sender
-  media_url?: string; // If the message content any images, media
+  media?: {
+    uri: string;
+    type: string;
+  }; // If the message content any images, media
   is_sent?: boolean; // Default to false
   is_read?: boolean; // Default to false
   is_edited?: boolean; // Default to false

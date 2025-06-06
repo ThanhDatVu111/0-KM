@@ -49,11 +49,12 @@ export async function getMessageById(message_id: string) {
 export async function sendMessage(attrs: {
   message_id: string;
   room_id: string;
-  content: string;
+  content?: string;
   sender_id: string;
   created_at: string;
+  media?: object;
 }) {
-  if (!attrs.room_id || !attrs.content) return;
+  if (!attrs.room_id || (!attrs.content && !attrs.media)) return;
   const { data, error } = await supabase.from('chat').insert([attrs]).select().single(); // Expect 1 row
 
   if (error) {

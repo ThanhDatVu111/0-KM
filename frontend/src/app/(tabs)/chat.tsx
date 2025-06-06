@@ -9,6 +9,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   TextInput,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -20,6 +21,9 @@ import { fetchRoom } from '@/apis/room';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useMessageActions } from '@/hooks/useMessageAction';
+import { MessageActionModal } from '@/components/MessageActionModal';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ChatScreen() {
   const { userId, isLoaded, isSignedIn } = useAuth();
@@ -27,7 +31,17 @@ export default function ChatScreen() {
   const [partnerId, setPartnerId] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [previousChat, setPreviousChat] = useState<Message[]>([]);
-  const onImagePress = () => {};
+  const {
+    selectedMessage,
+    setSelectedMessage,
+    isEditing,
+    setIsEditing,
+    editedContent,
+    setEditedContent,
+    handleDelete,
+    handleSaveEdit,
+  } = useMessageActions(setPreviousChat);
+
   const onRecordPress = () => {};
 
   useEffect(() => {
@@ -105,6 +119,40 @@ export default function ChatScreen() {
     }
   };
 
+  const onImagePress = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], // ✅ correct singular value
+        allowsEditing: false,
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const photo = result.assets[0];
+        const photo_object = {
+          uri: photo.uri,
+          type: photo.type as string,
+        };
+        if (photo_object) {
+          const messagePayload = {
+            message_id: `${Date.now()}-${userId}`,
+            room_id: roomId,
+            sender_id: userId!,
+            content: '',
+            media: photo_object,
+            created_at: new Date().toISOString(),
+            is_sent: true,
+          };
+          await chatApi.sendMessage(messagePayload);
+          setMessage('');
+          setPreviousChat((prev) => [...prev, messagePayload]);
+        }
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+    }
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isSender = item.sender_id === userId;
     return (
@@ -115,19 +163,32 @@ export default function ChatScreen() {
         )}
 
         <View className="flex-1 max-w-[80%]">
-          <View
+          <Pressable
             className={`rounded-2xl px-4 py-2.5 ${
               isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
             }`}
+            onLongPress={() => setSelectedMessage(item)}
           >
-            <Text
-              className={`font-poppins-light text-base ${
-                isSender ? 'text-white' : 'text-gray-900'
-              }`}
-            >
-              {item.content}
-            </Text>
-          </View>
+            {/* Render text content if it exists */}
+            {item.content ? (
+              <Text
+                className={`font-poppins-light text-base ${
+                  isSender ? 'text-white' : 'text-gray-900'
+                }`}
+              >
+                {item.content}
+              </Text>
+            ) : null}
+
+            {/* Render media if it exists */}
+            {item.media ? (
+              <Image
+                source={{ uri: item.media.uri }}
+                className="w-48 h-48 mt-2 rounded-lg"
+                resizeMode="cover"
+              />
+            ) : null}
+          </Pressable>
 
           <Text
             className={`font-poppins-light text-xs text-gray-500 mt-1 ${
@@ -194,12 +255,23 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
-          data={previousChat} // Reverse the ordering
+          data={previousChat}
           renderItem={renderMessage}
           keyExtractor={(item) => item?.message_id ?? 'unknown'}
           inverted
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingVertical: 8 }}
+        />
+
+        <MessageActionModal
+          visible={!!selectedMessage}
+          message={selectedMessage}
+          onEdit={() => {
+            // setEditedContent(selectedMessage!.content);
+            setIsEditing(true);
+          }}
+          onDelete={() => handleDelete(selectedMessage!.message_id)}
+          onCancel={() => setSelectedMessage(null)}
         />
         {/* Chat Input */}
         <View className="bg-white border-t border-gray-200 px-3 py-2 flex-row items-center overflow-scroll container mx-auto">

@@ -37,9 +37,10 @@ export async function getMessageById(message_id: string) {
 export async function sendMessage(input: {
   message_id: string;
   room_id: string;
-  content: string;
+  content?: string;
   sender_id: string;
   created_at: string;
+  media?: object[];
 }) {
   try {
     const newMessage = await chatModel.sendMessage(input);

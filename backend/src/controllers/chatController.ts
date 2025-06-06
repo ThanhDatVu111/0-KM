@@ -44,8 +44,8 @@ export async function getMessageById(
 
 export async function sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { message_id, room_id, content, sender_id, created_at } = req.body;
-    if (!room_id || !content) {
+    const { message_id, room_id, content, sender_id, created_at, media } = req.body;
+    if (!room_id || (!content && !media)) {
       res.status(400).json({ error: 'RMissing field/params: room_id and content' });
       return;
     }
@@ -56,6 +56,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       content,
       sender_id,
       created_at,
+      media,
     });
   } catch (err: any) {
     next(err);

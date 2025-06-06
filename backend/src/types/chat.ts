@@ -1,6 +1,6 @@
 export interface Message {
   message_id: string;
-  content: string;
+  content?: string;
   created_at: string;
   sender_id: string;
 }
@@ -26,4 +26,3 @@ export interface Message {
 // export interface TypedRequestQueryWithParams<Params> extends Express.Request {
 //   params: Params;
 // }
-

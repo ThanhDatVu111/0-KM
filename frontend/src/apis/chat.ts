@@ -85,12 +85,12 @@ export const chatApi = {
     }
   },
 
-  editMessage: async (message_id: string, content: string): Promise<Message> => {
+  editMessage: async (attrs: { message_id: string; content: string }): Promise<Message> => {
     try {
-      const response = await fetch(`${BASE_URL}/chat/${message_id}`, {
+      const response = await fetch(`${BASE_URL}/chat/${attrs.message_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newInput: content }),
+        body: JSON.stringify({ newInput: attrs.content }),
       });
 
       const result = await response.json();
@@ -104,7 +104,6 @@ export const chatApi = {
       console.error('Error editing message:', {
         error,
         message: error.message,
-        message_id,
       });
       throw error;
     }
