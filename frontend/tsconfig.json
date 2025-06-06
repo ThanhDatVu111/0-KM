@@ -16,6 +16,8 @@
     "frontend/nativewind-env.d.ts",
     "config/db.js",
     "nativewind-env.d.ts",
-    "expo-env.d.ts"
-, "src/app/config/db.js"  ]
+    "expo-env.d.ts",
+    "src/app/config/db.js",
+    "../App.tsx"
+  ]
 }

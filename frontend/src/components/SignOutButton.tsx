@@ -3,6 +3,26 @@ import { useClerk, useUser } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
 import { TouchableOpacity, Image, Modal, Text, View, Pressable } from 'react-native';
 
+// Simple version for sign up page
+export const SimpleSignOutButton = () => {
+  const { signOut } = useClerk();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Linking.openURL(Linking.createURL('/'));
+    } catch (err) {
+      console.error(JSON.stringify(err, null, 2));
+    }
+  };
+
+  return (
+    <TouchableOpacity onPress={handleSignOut} className="py-2 px-4 rounded">
+      <Text className="text-accent text-sm">Sign Out</Text>
+    </TouchableOpacity>
+  );
+};
+
 export const SignOutButton = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
@@ -21,7 +41,7 @@ export const SignOutButton = () => {
 
   return (
     <>
-      {/* Avatar Icon - Note: currently this image is not being loaded, consider to fetch supabase for user photo */} 
+      {/* Avatar Icon - Note: currently this image is not being loaded, consider to fetch supabase for user photo */}
       <TouchableOpacity onPress={() => setShowMenu(true)}>
         <Image
           source={{ uri: user.imageUrl }}
