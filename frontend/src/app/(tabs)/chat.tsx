@@ -225,7 +225,7 @@ export default function ChatScreen() {
               </TouchableOpacity>
             )}
           </View>
-          {/* Send Button */}
+          {/* Send Button */}  
           <TouchableOpacity
             onPress={handleSendMessage}
             className="w-12 h-12 rounded-full bg-accent justify-center items-center"
