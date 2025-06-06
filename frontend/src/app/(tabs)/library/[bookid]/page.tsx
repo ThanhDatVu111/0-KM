@@ -1,10 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, Image, ScrollView, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Pressable,
+  TouchableOpacity,
+} from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
-import Button from '@/components/Button';
 import images from '@/constants/images';
 import { Ionicons } from '@expo/vector-icons';
 import EntryCard from '@/components/EntryCard';
@@ -80,21 +87,26 @@ export default function BookPage() {
   // — Empty state —
   if (entries.length === 0) {
     return (
-      <View className="flex-1 items-center px-6">
+      <View className="flex-1 items-center px-6 mt-16">
         <Image source={images.logo} className="w-45 h-28" resizeMode="contain" />
         <Text className="text-2xl font-bold mb-2">Create an entry</Text>
         <Text className="text-center text-sm text-gray-500">
           Tap the plus button to create your entry
         </Text>
-        <View className="absolute bottom-32 left-0 right-0 items-center mb-8">
-          <Button
-            label="+"
-            onPress={goCreate}
-            size="w-20 h-15 rounded-full" // make it a circular button
-            color="bg-accent"
-            textClassName="text-white text-3xl text-center"
-          />
-        </View>
+        <TouchableOpacity
+          onPress={goCreate}
+          className="
+            w-20 h-20            
+            rounded-full          
+            bg-accent          
+            items-center justify-center 
+            shadow-lg         
+            mt-24
+            active:scale-95
+            active:shadow-none"
+        >
+          <Text className="text-white text-4xl">+</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -115,15 +127,21 @@ export default function BookPage() {
             onEdit={() => editEntry(entry)}
           />
         ))}
-        <View className="absolute bottom-20 left-0 right-0 items-center">
-          <Button
-            label="+"
-            onPress={goCreate}
-            size="w-20 h-15 rounded-full" // make it a circular button
-            color="bg-accent"
-            textClassName="text-white text-3xl text-center"
-          />
-        </View>
+        <TouchableOpacity
+          onPress={goCreate}
+          className="
+            w-20 h-20            
+            rounded-full          
+            bg-accent          
+            self-center
+            items-center justify-center
+            shadow-lg         
+            active:scale-95
+            active:shadow-none
+            border border-red-500"
+        >
+          <Text className="text-white text-4xl">+</Text>
+        </TouchableOpacity>
       </ScrollView>
       {/* FAB pinned to the bottom */}
     </View>
