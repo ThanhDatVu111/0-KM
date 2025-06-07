@@ -1,17 +1,30 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
+import ChatRouter from './routes/chatRoutes';
+import Socket from './types/socket';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+
 const PORT = process.env.PORT;
 const LOCAL_HOST_URL = process.env.LOCAL_HOST_URL;
+
+const io = new Server(server, {
+  cors: {
+    origin: `${LOCAL_HOST_URL}:${PORT}`,
+    methods: ['GET', 'POST'],
+  },
+});
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
@@ -21,6 +34,7 @@ app.use(cors()); // allows the backend to respond to requests from the frontend.
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
+app.use('/chat', ChatRouter);
 
 const startServer = async () => {
   try {
