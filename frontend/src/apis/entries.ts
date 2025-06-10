@@ -1,6 +1,8 @@
 const host = process.env.EXPO_PUBLIC_API_HOST;
 const port = process.env.EXPO_PUBLIC_API_PORT;
-const BASE_URL = `${host}:${port}`;
+import { BASE_URL } from './apiClient';
+
+console.log('BASE_URL in api entries:', BASE_URL);
 
 export async function fetchEntries(book_id: string): Promise<any[]> {
   try {
@@ -76,7 +78,6 @@ export async function updateEntryApi(updatedEntryData: {
   updated_at?: string; 
 }) {
   try {
-    console.log('Updating entry with data:', updatedEntryData);
     const response = await fetch(`${BASE_URL}/entries/${updatedEntryData.book_id}/${updatedEntryData.id}`, {
       method: 'PUT',
       headers: {

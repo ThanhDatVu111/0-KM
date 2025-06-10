@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ActivityIndicator,
   Image,
   ScrollView,
   Pressable,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
@@ -28,11 +28,21 @@ export default function BookPage() {
   useFocusEffect(
     React.useCallback(() => {
       if (!bookId) return;
-      setLoading(true);
-      fetchEntries(bookId)
-        .then(setEntries)
-        .catch(console.error)
-        .finally(() => setLoading(false));
+
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const data = await fetchEntries(bookId);
+          setEntries(data);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const timeoutId = setTimeout(fetchData, 300); // Debounce manually
+      return () => clearTimeout(timeoutId); // Cleanup timeout
     }, [bookId]),
   );
 
@@ -68,20 +78,13 @@ export default function BookPage() {
   };
 
   if (loading) {
-    return (
-      <View className="h-12 flex-row items-center px-4">
-        <Pressable onPress={() => router.back()} className="justify-center">
-          <Ionicons name="chevron-back" size={24} color="#000" />
-        </Pressable>
-
-        <View className="flex-1 items-center">
-          <ActivityIndicator size="small" color="#000" />
+    if (loading) {
+      return (
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" />
         </View>
-
-        {/* Invisible spacer so spinner stays centered */}
-        <View style={{ width: 24 }} />
-      </View>
-    );
+      );
+    }
   }
 
   // — Empty state —

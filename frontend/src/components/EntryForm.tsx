@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,16 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import Button from '@/components/Button';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import * as VideoThumbnails from 'expo-video-thumbnails';
+import * as MediaLibrary from 'expo-media-library';
+import { FlatList } from 'react-native';
 
 export type MediaItem = {
   uri: string;
@@ -71,13 +74,103 @@ export default function EntryForm({
   const [body, setBody] = useState<string>(initialBody);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>(initialMedia);
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
+  const [allImages, setAllImages] = useState<MediaLibrary.Asset[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [endCursor, setEndCursor] = useState<string | null>(null);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const loadingRef = useRef(false);
 
   // For location modal
   const [tempAddress, setTempAddress] = useState<string>('');
   const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
   const [locationLoading, setLocationLoading] = useState<boolean>(false);
+  const [initialFetchComplete, setInitialFetchComplete] = useState(false);
 
-  const MAX_MEDIA = 10;
+  const MAX_MEDIA = 15;
+  const PAGE_SIZE = 100;
+
+  const loadMoreImages = async () => {
+    if (!hasNextPage || loadingRef.current) return;
+
+    // Prevent multiple loads at once
+    loadingRef.current = true;
+    setGalleryLoading(true);
+
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Need photo permissions.');
+      setShowGallery(false);
+      setGalleryLoading(false);
+      loadingRef.current = false;
+      return;
+    }
+
+    // fetch a page, starting after whatever cursor we left off
+    const res = await MediaLibrary.getAssetsAsync({
+      first: PAGE_SIZE,
+      after: endCursor ?? undefined, 
+      mediaType: ['photo'],
+      sortBy: ['creationTime'],
+    });
+
+    // convert ph:// to file://
+    const newAssets = await Promise.all(
+      res.assets.map(async (asset) => {
+        const info = await MediaLibrary.getAssetInfoAsync(asset.id);
+        return { ...asset, uri: info.localUri ?? asset.uri };
+      }),
+    );
+
+    setAllImages((prev) => [...prev, ...newAssets]);
+    setEndCursor(res.endCursor);
+    setHasNextPage(res.hasNextPage); //if res is empty, hasNextPage will be false
+    setInitialFetchComplete(true);
+    setGalleryLoading(false);
+    loadingRef.current = false;
+  };
+
+  useEffect(() => {
+    if (!showGallery) return;
+
+    // Reset state
+    setAllImages([]);
+    setEndCursor(null);
+    setHasNextPage(true);
+    setInitialFetchComplete(false); // Reset fetch state
+
+    // Load the first page of images
+    loadMoreImages();
+  }, [showGallery]);
+
+  const toggleMedia = (asset: MediaLibrary.Asset) => {
+    setSelectedMedia((prev) => {
+      const exists = prev.some((m) => m.uri === asset.uri);
+      if (exists) {
+        // remove
+        return prev.filter((m) => m.uri !== asset.uri);
+      }
+      // add (with MAX_MEDIA guard)
+      if (prev.length >= MAX_MEDIA) {
+        alert(`You can only select up to ${MAX_MEDIA} items.`);
+        return prev;
+      }
+      return [...prev, { uri: asset.uri, type: 'image' }];
+    });
+  };
+
+  const handleScroll = useCallback(
+    ({ nativeEvent }: { nativeEvent: any }) => {
+      const { contentOffset, layoutMeasurement, contentSize } = nativeEvent;
+      const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+      // when you’re within one screen’s height from bottom, start loading the next page
+      if (distanceFromBottom < layoutMeasurement.height && !loadingRef.current) {
+        loadMoreImages();
+      }
+    },
+    [loadMoreImages],
+  );
 
   // Format date (read‐only). If editing, show initialCreatedAt; if creating, show “now.”
   const now = new Date();
@@ -97,102 +190,54 @@ export default function EntryForm({
         minute: '2-digit',
       });
 
-  //
   // ─── Media Pickers ────────────────────────────────────────────────────────────────────────────────────────────────
-  //
   const handleCameraPicker = async () => {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
     if (!granted) {
       alert('Permission to access camera is required.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setSelectedMedia((prev) => {
-        if (prev.length + 1 > MAX_MEDIA) {
-          alert(`You can only select up to ${MAX_MEDIA} items.`);
-          return prev;
-        }
-        return [...prev, { uri, type: 'image' }];
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
       });
-    }
-  };
-
-  const handleImagePicker = async () => {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) {
-      alert('Permission to access media library is required.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-      allowsMultipleSelection: true,
-    });
-    if (!result.canceled) {
-      const newItems = result.assets.map((asset) => ({
-        uri: asset.uri,
-        type: 'image' as const,
-      }));
-      setSelectedMedia((prev) => {
-        const combined = [...prev, ...newItems];
-        if (combined.length > MAX_MEDIA) {
-          alert(`You can only select up to ${MAX_MEDIA} items.`);
-          return combined.slice(0, MAX_MEDIA);
-        }
-        return combined;
-      });
-    }
-  };
-
-  const handleVideoPicker = async () => {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) {
-      alert('Permission to access media library is required.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: false,
-      quality: 1,
-      allowsMultipleSelection: true,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      let thumbnailUri: string | null = null;
-      try {
-        const { uri: thumb } = await VideoThumbnails.getThumbnailAsync(uri, {
-          time: 1000,
+      if (!result.canceled) {
+        const uri = result.assets[0].uri;
+        setSelectedMedia((prev) => {
+          if (prev.length + 1 > MAX_MEDIA) {
+            alert(`You can only select up to ${MAX_MEDIA} items.`);
+            return prev;
+          }
+          return [...prev, { uri, type: 'image' }];
         });
-        thumbnailUri = thumb;
-      } catch (err) {
-        console.error('Error generating video thumbnail:', err);
       }
-      setSelectedMedia((prev) => {
-        if (prev.length >= MAX_MEDIA) {
-          alert(`You can only select up to ${MAX_MEDIA} items.`);
-          return prev;
-        }
-        return [...prev, { uri, type: 'video', thumbnail: thumbnailUri }];
-      });
+    } catch (error) {
+      console.error('Error during camera picker:', error);
+      alert('An error occurred while accessing the camera.');
     }
   };
 
-  //
   // ─── Location Picker ──────────────────────────────────────────────────────────────────────────────────────────────
-  //
   const handleLocationPicker = async () => {
     setLocationLoading(true);
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      alert('Permission to access location is required.');
-      setLocationLoading(false);
+      Alert.alert(
+        'Location Permission',
+        'We need your permission to read your location. Please enable it in Settings.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => setLocationLoading(false) },
+          {
+            text: 'Open Settings',
+            onPress: () => {
+              setLocationLoading(false);
+              Linking.openSettings();
+            },
+          },
+        ],
+      );
       return;
     }
     try {
@@ -211,7 +256,7 @@ export default function EntryForm({
       if (rev.postalCode) formatted += ' ' + rev.postalCode;
       if (rev.country) formatted += (formatted ? ', ' : '') + rev.country;
 
-      setTempAddress(formatted);
+      setTempAddress(formatted); //use a temporary address for confirmation
       setShowLocationModal(true);
     } catch (err) {
       console.error('Reverse geocode error:', err);
@@ -232,9 +277,7 @@ export default function EntryForm({
     setLocationLoading(false);
   };
 
-  //
   // ─── When “Done” is pressed ────────────────────────────────────────────────────────────────────────────────────────
-  //
   const handleDonePress = async () => {
     if (!title.trim()) {
       alert('Title is required!');
@@ -282,6 +325,58 @@ export default function EntryForm({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
+        <Modal
+          visible={showGallery && initialFetchComplete}
+          transparent
+          presentationStyle="overFullScreen"
+          animationType="fade"
+        >
+          {/* 1) Full-screen blur overlay */}
+          <BlurView intensity={50} tint="light" className="absolute inset-0" />
+
+          {/* 2) Centered popup container */}
+          <View className="flex-1 justify-center items-center">
+            <View className="w-11/12 h-3/6 bg-white rounded-lg p-4 shadow-lg">
+              {/* 3) Even 4-column grid */}
+              <FlatList
+                className="flex-1" //Fill the remaining vertical space of your parent container, and be that height.”
+                data={allImages}
+                keyExtractor={(img) => img.id}
+                numColumns={4}
+                columnWrapperStyle={{ justifyContent: 'flex-start' }} // left align
+                contentContainerStyle={{ paddingVertical: 10 }} // vertical padding
+                onScroll={handleScroll}
+                ListFooterComponent={galleryLoading ? <ActivityIndicator /> : null}
+                renderItem={({ item: img }) => {
+                  const isSel = selectedMedia.some((m) => m.uri === img.uri);
+                  return (
+                    <Pressable onPress={() => toggleMedia(img)} className="basis-1/4 p-1">
+                      <Image
+                        source={{ uri: img.uri }}
+                        className={`w-full aspect-square rounded-md ${isSel ? 'opacity-50' : ''}`}
+                      />
+                      {isSel && (
+                        <View className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/80 flex items-center justify-center">
+                          <Text>✓</Text>
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                }}
+              />
+
+              {/* 4) Done button */}
+              <Button
+                label="Done"
+                onPress={() => setShowGallery(false)}
+                size="px-4 py-2 mt-4"
+                color="bg-accent"
+                textClassName="text-white text-center"
+              />
+            </View>
+          </View>
+        </Modal>
+        {/* ─── Main Form ─── */}
         <ScrollView className="flex-1 px-6 pt-4" keyboardShouldPersistTaps="handled">
           {/* ─── Title Input ─── */}
           <Text className="text-base font-medium text-gray-700 mb-1">Memory title</Text>
@@ -313,12 +408,16 @@ export default function EntryForm({
               <Ionicons name="camera-outline" size={28} color="#4B5563" />
             </Pressable>
 
-            <Pressable onPress={handleImagePicker} className="mr-6">
-              <Ionicons name="image-outline" size={28} color="#4B5563" />
-            </Pressable>
-
-            <Pressable onPress={handleVideoPicker} className="mr-6">
-              <Ionicons name="videocam-outline" size={28} color="#4B5563" />
+            <Pressable
+              onPress={() => setShowGallery(true)}
+              className="mr-6"
+              disabled={galleryLoading}
+            >
+              {galleryLoading ? (
+                <ActivityIndicator size="small" color="#4B5563" />
+              ) : (
+                <Ionicons name="image-outline" size={28} color="#4B5563" />
+              )}
             </Pressable>
 
             <Pressable onPress={handleLocationPicker} className="mr-40" disabled={locationLoading}>

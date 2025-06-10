@@ -7,7 +7,7 @@ import {
 } from '@/types/users';
 import { BASE_URL } from './apiClient';
 
-console.log('BASE_URL:', BASE_URL);
+console.log('BASE_URL in api user:', BASE_URL);
 
 // This function is responsible for making the API call to create a user
 export async function createUser(request: UserRequest): Promise<CreatedUser> {
