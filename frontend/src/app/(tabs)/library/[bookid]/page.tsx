@@ -6,15 +6,13 @@ import {
   Text,
   Image,
   ScrollView,
-  Pressable,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
 import images from '@/constants/images';
-import { Ionicons } from '@expo/vector-icons';
-import EntryCard from '@/components/EntryCard';
+//import EntryCard from '@/components/EntryCard';
 
 export default function BookPage() {
   const { bookId: rawId } = useLocalSearchParams<{ bookId: string }>();
@@ -118,18 +116,48 @@ export default function BookPage() {
   return (
     <View className="flex-1">
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {entries.map((entry) => (
+        {/* {entries.map((entry) => (
           <EntryCard
             key={entry.id}
             title={entry.title}
             body={entry.body}
             createdAt={entry.created_at}
-            media={entry.media}
+            media={entry.media_paths[0] || ''}
             location={entry.location}
             onDelete={() => deleteEntry(bookId, entry.id)}
             onEdit={() => editEntry(entry)}
           />
+        ))} */}
+        {entries.map((entry) => (
+          <View key={entry.id} className="mx-4 bg-white rounded-2xl shadow-md mb-4">
+            <View className="p-4">
+              <Text className="text-lg font-semibold mb-2">{entry.title}</Text>
+              <Text className="text-sm text-gray-500 mb-2" numberOfLines={3}>
+                {entry.body}
+              </Text>
+              <Text className="text-xs text-gray-400 mb-2">
+                {new Date(entry.created_at).toLocaleDateString()}
+              </Text>
+              {entry.location?.address && (
+                <Text className="text-xs text-gray-400">
+                  {entry.location.address}
+                </Text>
+              )}
+            </View>
+            <View className="flex-row justify-end p-2">
+              <TouchableOpacity
+                onPress={() => editEntry(entry)}
+                className="mr-2"
+              >
+                <Text className="text-blue-500">Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => deleteEntry(bookId, entry.id)}>
+                <Text className="text-red-500">Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         ))}
+
         <TouchableOpacity
           onPress={goCreate}
           className="

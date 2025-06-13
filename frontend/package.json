@@ -23,6 +23,7 @@
     "@rn-primitives/slot": "^1.2.0",
     "@supabase/supabase-js": "^2.49.4",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.6.1",
     "expo": "^53.0.9",
     "expo-auth-session": "~6.1.5",
     "expo-blur": "~14.1.4",

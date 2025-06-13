@@ -29,7 +29,7 @@ export async function CreateEntry(entryData: {
   title: string;
   body: string | null;
   location: { address: string } | null;
-  media: { uri: string; type: 'image' | 'video' }[];
+  media_paths: string[];
   created_at: string;
 }): Promise<any[]> {
   try {
@@ -74,17 +74,20 @@ export async function updateEntryApi(updatedEntryData: {
   title: string;
   body: string | null;
   location: { address: string | string[] } | null;
-  media: { uri: string; type: 'image' | 'video' }[];
-  updated_at?: string; 
+  media_paths: string[];
+  updated_at?: string;
 }) {
   try {
-    const response = await fetch(`${BASE_URL}/entries/${updatedEntryData.book_id}/${updatedEntryData.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${BASE_URL}/entries/${updatedEntryData.book_id}/${updatedEntryData.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedEntryData),
       },
-      body: JSON.stringify(updatedEntryData),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to update entry: ${response.statusText}`);

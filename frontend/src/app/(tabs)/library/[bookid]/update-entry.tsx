@@ -48,7 +48,7 @@ export default function UpdateEntryScreen() {
     body: string | null;
     location: { address: string } | null;
     pin: boolean;
-    media: { uri: string; type: 'image' | 'video' }[];
+    media_paths: string[];
     created_at?: string;
     updated_at?: string;
   }) => {

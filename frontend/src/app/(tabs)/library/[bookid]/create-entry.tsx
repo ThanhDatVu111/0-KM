@@ -20,7 +20,7 @@ export default function NewEntryScreen() {
     title: string;
     body: string | null;
     location: { address: string } | null;
-    media: { uri: string; type: 'image' | 'video' }[];
+    media_paths: string[];
     created_at?: string;
   }) => {
     try {

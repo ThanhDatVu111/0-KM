@@ -52,7 +52,7 @@ export interface EntryFormProps {
     body: string | null;
     location: { address: string } | null;
     pin: boolean;
-    media: { uri: string; type: 'image' | 'video' }[];
+    media_paths: string[];
     created_at?: string;
     updated_at?: string;
   }) => Promise<void>;
@@ -164,7 +164,6 @@ export default function EntryForm({
       const { contentOffset, layoutMeasurement, contentSize } = nativeEvent;
       const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
 
-      // when you’re within one screen’s height from bottom, start loading the next page
       if (distanceFromBottom < layoutMeasurement.height && !loadingRef.current) {
         loadMoreImages();
       }
@@ -284,38 +283,38 @@ export default function EntryForm({
       return;
     }
 
-    // Build the payload
-    const entryData: {
-      id: string;
-      book_id: string;
-      title: string;
-      body: string | null;
-      location: { address: string } | null;
-      pin: boolean;
-      media: { uri: string; type: 'image' | 'video' }[];
-      created_at?: string;
-      updated_at?: string;
-    } = {
-      id: entryId || '', // if editing, entryId is set; if creating, parent will choose a new ID
-      book_id: bookId,
-      title: title.trim(),
-      body: body.trim() || null,
-      location: locationAddress ? { address: locationAddress } : null,
-      pin: false,
-      media: selectedMedia.map((item) => ({ uri: item.uri, type: item.type })),
-    };
-
-    if (entryId) {
-      entryData.updated_at = new Date().toISOString();
-      entryData.id = entryId;
-    } else {
-      entryData.created_at = new Date().toISOString();
-    }
-
     try {
-      await onSubmit(entryData);
+      // Build the payload
+      const entryData: {
+        id: string;
+        book_id: string;
+        title: string;
+        body: string | null;
+        location: { address: string } | null;
+        pin: boolean;
+        media_paths: string[];
+        created_at?: string;
+        updated_at?: string;
+      } = {
+        id: entryId || '', // if editing, entryId is set; if creating, parent will choose a new ID
+        book_id: bookId,
+        title: title.trim(),
+        body: body.trim() || null,
+        location: locationAddress ? { address: locationAddress } : null,
+        pin: false,
+        media_paths: selectedMedia.map((media) => media.uri), 
+      };
+
+      if (entryId) {
+        entryData.updated_at = new Date().toISOString();
+      } else {
+        entryData.created_at = new Date().toISOString();
+      }
+
+      await onSubmit(entryData); // Send the entry data to the backend
     } catch (err: any) {
-      console.error('EntryForm onSubmit error:', err);
+      console.error('Error uploading media or submitting entry:', err);
+      alert('Failed to save entry. Please try again.');
     }
   };
 
