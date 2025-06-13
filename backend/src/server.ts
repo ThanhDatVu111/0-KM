@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import supabase from '../supabase/db';
+import supabase from '../utils/supabase';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
@@ -21,7 +21,6 @@ app.use(
     origin: [LOCAL_URL, PUBLIC_URL].filter((u): u is string => !!u),
   }),
 );
-
 
 // Route mounting
 app.use('/users', UserRouter);

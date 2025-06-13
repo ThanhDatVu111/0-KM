@@ -1,4 +1,5 @@
 import * as entriesModel from '../models/entriesModel';
+import { uploadToCloudinary } from './cloudinaryService';
 
 // Service function to fetch entries by book_id
 export async function fetchEntries(input: { book_id: string }) {
@@ -23,17 +24,38 @@ export async function createEntries(input: {
   body?: string | null;
   location?: object | null;
   pin: boolean;
-  media: object[];
+  media_paths: string[];
   created_at: string;
 }) {
   try {
-    const entry = await entriesModel.insertEntries(input);
+    console.log('media_paths in entriesService createEntries', input.media_paths);
+
+    // Transform local media paths into Cloudinary URLs
+    const cloudinaryUrls = await Promise.all(
+      input.media_paths.map(async (localPath, index) => {
+        const fileName = `${input.book_id}/${Date.now()}-${index}`; 
+        const fileBuffer = await fetch(localPath).then((res) => res.arrayBuffer()); //currently bug at fetch here
+        const cloudinaryUrl = await uploadToCloudinary(Buffer.from(fileBuffer), fileName); 
+        return cloudinaryUrl; // Return the Cloudinary URL
+      }),
+    );
+
+    console.log('cloudinaryUrls in entriesService createEntries', cloudinaryUrls);
+
+    // Replace local media paths with Cloudinary URLs
+    const transformedInput = {
+      ...input,
+      media_paths: cloudinaryUrls, // Use Cloudinary URLs
+    };
+
+    // Save the transformed entry to the database
+    const entry = await entriesModel.insertEntries(transformedInput);
     return entry;
   } catch (error) {
     if (error instanceof Error) {
-      console.error('❌ Error in entriesModel createEntries:', error.message);
+      console.error('❌ Error in entriesService createEntries:', error.message);
     } else {
-      console.error('❌ Unknown error in entriesModel createEntries:', error);
+      console.error('❌ Unknown error in entriesService createEntries:', error);
     }
     throw error;
   }

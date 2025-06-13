@@ -28,11 +28,11 @@ export async function createEntries(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { id, book_id, title, body, location, pin, media, created_at } = req.body;
+    const {id, book_id, title, body, location, pin, media_paths, created_at } = req.body;
 
     // Validate required fields
-    if (!book_id || !title) {
-      res.status(400).json({ error: 'Missing required fields: book_id or title' });
+    if (!book_id || !title || !media_paths) {
+      res.status(400).json({ error: 'Missing required fields: book_id or title or media_paths' });
       return;
     }
 
@@ -43,7 +43,7 @@ export async function createEntries(
       body,
       location,
       pin,
-      media,
+      media_paths,
       created_at,
     });
 

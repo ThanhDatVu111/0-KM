@@ -1,4 +1,4 @@
-import supabase from '../../supabase/db';
+import supabase from '../../utils/supabase';
 
 export async function getEntries(book_id: string) {
   const { data, error } = await supabase
@@ -23,7 +23,7 @@ export async function insertEntries(attrs: {
   body?: string | null;
   location?: object | null;
   pin: boolean;
-  media: object[];
+  media_paths: string[];
   created_at: string;
 }) {
   const { data, error } = await supabase
