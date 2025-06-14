@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,11 @@ import { BlurView } from 'expo-blur';
 import Button from '@/components/Button';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import * as MediaLibrary from 'expo-media-library';
-import { FlatList } from 'react-native';
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
+const CLOUDINARY_SIGN_URL = process.env.EXPO_PUBLIC_CLOUDINARY_SIGN_URL;
 
+// ─── MediaItem type ──────────────────────────────────────────────────────────────────────────────────────────────
 export type MediaItem = {
   uri: string;
   type: 'image' | 'video';
@@ -74,104 +76,94 @@ export default function EntryForm({
   const [body, setBody] = useState<string>(initialBody);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>(initialMedia);
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
-  const [allImages, setAllImages] = useState<MediaLibrary.Asset[]>([]);
-  const [showGallery, setShowGallery] = useState(false);
-  const [galleryLoading, setGalleryLoading] = useState(false);
-  const [endCursor, setEndCursor] = useState<string | null>(null);
-  const [hasNextPage, setHasNextPage] = useState(true);
-  const loadingRef = useRef(false);
 
   // For location modal
   const [tempAddress, setTempAddress] = useState<string>('');
   const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
   const [locationLoading, setLocationLoading] = useState<boolean>(false);
-  const [initialFetchComplete, setInitialFetchComplete] = useState(false);
 
-  const MAX_MEDIA = 15;
-  const PAGE_SIZE = 100;
+  const MAX_MEDIA = 16; // Maximum number of media items allowed
 
-  const loadMoreImages = async () => {
-    if (!hasNextPage || loadingRef.current) return;
-
-    // Prevent multiple loads at once
-    loadingRef.current = true;
-    setGalleryLoading(true);
-
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Need photo permissions.');
-      setShowGallery(false);
-      setGalleryLoading(false);
-      loadingRef.current = false;
+  const handlePickImage = async () => {
+    if (selectedMedia.length >= MAX_MEDIA) {
+      alert(`You can only select up to ${MAX_MEDIA} images.`);
       return;
     }
 
-    // fetch a page, starting after whatever cursor we left off
-    const res = await MediaLibrary.getAssetsAsync({
-      first: PAGE_SIZE,
-      after: endCursor ?? undefined, 
-      mediaType: ['photo'],
-      sortBy: ['creationTime'],
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access photos is required!');
+      return;
+    }
+
+    const remainingSlots = MAX_MEDIA - selectedMedia.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      quality: 1,
+      selectionLimit: remainingSlots,
     });
 
-    // convert ph:// to file://
-    const newAssets = await Promise.all(
-      res.assets.map(async (asset) => {
-        const info = await MediaLibrary.getAssetInfoAsync(asset.id);
-        return { ...asset, uri: info.localUri ?? asset.uri };
-      }),
-    );
+    if (!result.canceled && result.assets.length > 0) {
+      const remainingSlots = MAX_MEDIA - selectedMedia.length;
+      const newAssets = result.assets.slice(0, remainingSlots);
 
-    setAllImages((prev) => [...prev, ...newAssets]);
-    setEndCursor(res.endCursor);
-    setHasNextPage(res.hasNextPage); //if res is empty, hasNextPage will be false
-    setInitialFetchComplete(true);
-    setGalleryLoading(false);
-    loadingRef.current = false;
+      const newMedia = newAssets.map((asset) => ({
+        uri: asset.uri,
+        type: 'image' as const,
+      }));
+
+      setSelectedMedia((prev) => [...prev, ...newMedia]);
+    }
   };
+  // ─── Validation ─────────────────────────────────────────────────────────────────────────────────────────────────
+  async function uploadToCloudinary(uri: string): Promise<string> {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_SIGN_URL) {
+      throw new Error(
+        'Define EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_API_KEY & EXPO_PUBLIC_CLOUDINARY_SIGN_URL in .env',
+      );
+    }
+    // 1) Get the signature + timestamp
+    let signature: string, timestamp: number;
+    try {
+      const sigRes = await fetch(CLOUDINARY_SIGN_URL);
+      const sigJson = await sigRes.json();
+      signature = sigJson.signature;
+      timestamp = sigJson.timestamp;
+    } catch (err: any) {
+      console.error('❌ Error fetching signature', err);
+      throw err;
+    }
 
-  useEffect(() => {
-    if (!showGallery) return;
+    // 2) Build the multipart/form-data
+    const form = new FormData();
+    form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
+    form.append('api_key', CLOUDINARY_API_KEY);
+    form.append('timestamp', timestamp.toString());
+    form.append('signature', signature);
 
-    // Reset state
-    setAllImages([]);
-    setEndCursor(null);
-    setHasNextPage(true);
-    setInitialFetchComplete(false); // Reset fetch state
+    // 3) Upload to Cloudinary
+    let uploadRes: Response, uploadJson: any;
+    try {
+      uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: form },
+      );
+      uploadJson = await uploadRes.json();
+    } catch (err: any) {
+      console.error('❌ Network error uploading to Cloudinary', err);
+      throw err;
+    }
+    if (!uploadRes.ok) {
+      console.error('❌ Cloudinary returned an error', uploadJson.error);
+      throw new Error(uploadJson.error?.message || 'Cloudinary upload failed');
+    }
+    console.log('✅ Image uploaded to Cloudinary secure_url =', uploadJson.secure_url);
+    return uploadJson.secure_url;
+  }
 
-    // Load the first page of images
-    loadMoreImages();
-  }, [showGallery]);
-
-  const toggleMedia = (asset: MediaLibrary.Asset) => {
-    setSelectedMedia((prev) => {
-      const exists = prev.some((m) => m.uri === asset.uri);
-      if (exists) {
-        // remove
-        return prev.filter((m) => m.uri !== asset.uri);
-      }
-      // add (with MAX_MEDIA guard)
-      if (prev.length >= MAX_MEDIA) {
-        alert(`You can only select up to ${MAX_MEDIA} items.`);
-        return prev;
-      }
-      return [...prev, { uri: asset.uri, type: 'image' }];
-    });
-  };
-
-  const handleScroll = useCallback(
-    ({ nativeEvent }: { nativeEvent: any }) => {
-      const { contentOffset, layoutMeasurement, contentSize } = nativeEvent;
-      const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-
-      if (distanceFromBottom < layoutMeasurement.height && !loadingRef.current) {
-        loadMoreImages();
-      }
-    },
-    [loadMoreImages],
-  );
-
-  // Format date (read‐only). If editing, show initialCreatedAt; if creating, show “now.”
+  // ─── Format date ─────────────────────────────────────────────────────────────────────────────────────────────────
   const now = new Date();
   const formattedDate = initialCreatedAt
     ? new Date(initialCreatedAt).toLocaleString('en-US', {
@@ -189,7 +181,7 @@ export default function EntryForm({
         minute: '2-digit',
       });
 
-  // ─── Media Pickers ────────────────────────────────────────────────────────────────────────────────────────────────
+  // ─── Camera Pickers ────────────────────────────────────────────────────────────────────────────────────────────────
   const handleCameraPicker = async () => {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
     if (!granted) {
@@ -284,7 +276,7 @@ export default function EntryForm({
     }
 
     try {
-      // Build the payload
+      const uploadedUrls = await Promise.all(selectedMedia.map((m) => uploadToCloudinary(m.uri)));
       const entryData: {
         id: string;
         book_id: string;
@@ -302,19 +294,16 @@ export default function EntryForm({
         body: body.trim() || null,
         location: locationAddress ? { address: locationAddress } : null,
         pin: false,
-        media_paths: selectedMedia.map((media) => media.uri), 
+        media_paths: uploadedUrls,
       };
-
       if (entryId) {
         entryData.updated_at = new Date().toISOString();
       } else {
         entryData.created_at = new Date().toISOString();
       }
-
       await onSubmit(entryData); // Send the entry data to the backend
     } catch (err: any) {
       console.error('Error uploading media or submitting entry:', err);
-      alert('Failed to save entry. Please try again.');
     }
   };
 
@@ -324,57 +313,6 @@ export default function EntryForm({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <Modal
-          visible={showGallery && initialFetchComplete}
-          transparent
-          presentationStyle="overFullScreen"
-          animationType="fade"
-        >
-          {/* 1) Full-screen blur overlay */}
-          <BlurView intensity={50} tint="light" className="absolute inset-0" />
-
-          {/* 2) Centered popup container */}
-          <View className="flex-1 justify-center items-center">
-            <View className="w-11/12 h-3/6 bg-white rounded-lg p-4 shadow-lg">
-              {/* 3) Even 4-column grid */}
-              <FlatList
-                className="flex-1" //Fill the remaining vertical space of your parent container, and be that height.”
-                data={allImages}
-                keyExtractor={(img) => img.id}
-                numColumns={4}
-                columnWrapperStyle={{ justifyContent: 'flex-start' }} // left align
-                contentContainerStyle={{ paddingVertical: 10 }} // vertical padding
-                onScroll={handleScroll}
-                ListFooterComponent={galleryLoading ? <ActivityIndicator /> : null}
-                renderItem={({ item: img }) => {
-                  const isSel = selectedMedia.some((m) => m.uri === img.uri);
-                  return (
-                    <Pressable onPress={() => toggleMedia(img)} className="basis-1/4 p-1">
-                      <Image
-                        source={{ uri: img.uri }}
-                        className={`w-full aspect-square rounded-md ${isSel ? 'opacity-50' : ''}`}
-                      />
-                      {isSel && (
-                        <View className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/80 flex items-center justify-center">
-                          <Text>✓</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                }}
-              />
-
-              {/* 4) Done button */}
-              <Button
-                label="Done"
-                onPress={() => setShowGallery(false)}
-                size="px-4 py-2 mt-4"
-                color="bg-accent"
-                textClassName="text-white text-center"
-              />
-            </View>
-          </View>
-        </Modal>
         {/* ─── Main Form ─── */}
         <ScrollView className="flex-1 px-6 pt-4" keyboardShouldPersistTaps="handled">
           {/* ─── Title Input ─── */}
@@ -407,16 +345,8 @@ export default function EntryForm({
               <Ionicons name="camera-outline" size={28} color="#4B5563" />
             </Pressable>
 
-            <Pressable
-              onPress={() => setShowGallery(true)}
-              className="mr-6"
-              disabled={galleryLoading}
-            >
-              {galleryLoading ? (
-                <ActivityIndicator size="small" color="#4B5563" />
-              ) : (
-                <Ionicons name="image-outline" size={28} color="#4B5563" />
-              )}
+            <Pressable onPress={handlePickImage} className="mr-6">
+              <Ionicons name="image-outline" size={28} color="#4B5563" />
             </Pressable>
 
             <Pressable onPress={handleLocationPicker} className="mr-40" disabled={locationLoading}>
@@ -476,49 +406,25 @@ export default function EntryForm({
                 Selected Photos & Videos:
               </Text>
               <View className="flex-row flex-wrap justify-start">
-                {selectedMedia.slice(0, 3).map((item, index) => (
+                {selectedMedia.map((item, index) => (
                   <View
                     key={index}
-                    className="w-24 h-24 m-1 border border-gray-300 overflow-hidden rounded-2xl"
+                    className="relative w-24 h-24 m-1 border border-gray-300 overflow-hidden rounded-2xl"
                   >
                     <Image
                       source={{ uri: item.uri }}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
-                    {item.type === 'video' && (
-                      <View className="absolute bottom-1 right-1 bg-opacity-50 rounded-2xl p-1 overflow-hidden">
-                        <BlurView
-                          intensity={50}
-                          tint="default"
-                          className="absolute inset-0 rounded-full"
-                        />
-                        <Ionicons
-                          name="play"
-                          size={16}
-                          color="#fff"
-                          className="absolute inset-0 flex items-center justify-center"
-                        />
-                      </View>
-                    )}
+                    {/* ❌ Remove Button */}
+                    <Pressable
+                      onPress={() => setSelectedMedia((prev) => prev.filter((_, i) => i !== index))}
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full items-center justify-center z-10"
+                    >
+                      <Text className="text-white text-xs font-bold">✕</Text>
+                    </Pressable>
                   </View>
                 ))}
-
-                {selectedMedia.length > 3 && (
-                  <View className="relative w-24 h-24 m-1 border border-gray-300 rounded-2xl overflow-hidden">
-                    <Image
-                      source={{ uri: selectedMedia[3].uri }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                    <BlurView intensity={10} tint="default" className="absolute inset-0" />
-                    <View className="absolute inset-0 flex items-center justify-center">
-                      <Text className="text-white font-semibold text-lg">
-                        +{selectedMedia.length - 3}
-                      </Text>
-                    </View>
-                  </View>
-                )}
               </View>
             </View>
           )}
