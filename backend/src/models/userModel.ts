@@ -1,4 +1,4 @@
-import supabase from '../../supabase/db';
+import supabase from '../../utils/supabase';
 
 //ROLE: Database access layer
 
