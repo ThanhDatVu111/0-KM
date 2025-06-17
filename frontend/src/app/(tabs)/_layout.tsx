@@ -1,37 +1,29 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
+import { Image, ImageBackground, ImageSourcePropType, Platform, View } from 'react-native';
 import icons from '@/constants/icons';
 import images from '@/constants/images';
-import { ImageBackground, Image, Text, View, ImageSourcePropType, Platform } from 'react-native';
 
 function TabIcon({
   focused,
   icon,
-  title,
 }: {
   focused: boolean;
   icon: ImageSourcePropType;
-  title: string;
 }) {
-  if (focused) {
-    return (
-      <ImageBackground
-        source={images.highlight}
-        className="flex flex-row w-full flex-1 min-w-[112px] min-h-14 mt-4 justify-center items-center rounded-full overflow-hidden"
-      >
-        <Image source={icon} tintColor="#F5829B" className="size-5" />
-        <Text className="text-secondary text-base font-semibold ml-2 text-accent">{title}</Text>
-      </ImageBackground>
-    );
-  }
-
   return (
-    <View className="size-full justify-center items-center mt-4 rounded-full">
-      <Image source={icon} tintColor="#151312" className="size-5" />
-    </View>
+    <Image
+      source={icon}
+      style={{
+        width: 36, // ⬆️ Bigger
+        height: 36,
+        marginTop: 60, // ⬇️ Pushes it downward within tab
+        tintColor: focused ? '#ED4C90' : '#000000',
+      }}
+      resizeMode="contain"
+    />
   );
 }
-
 export default function TabsLayout() {
   return (
     <Tabs
@@ -44,11 +36,7 @@ export default function TabsLayout() {
           alignItems: 'center',
         },
         tabBarStyle: {
-          backgroundColor: '#F5CDDE',
-          borderRadius: 50,
-          marginHorizontal: 10,
-          marginBottom: 36,
-          height: 54,
+          height: 100,
           position: 'absolute',
           overflow: 'hidden',
           borderWidth: 1,
@@ -66,6 +54,13 @@ export default function TabsLayout() {
             },
           }),
         },
+        tabBarBackground: () => (
+          <ImageBackground
+            source={images.navBarBackground} // 👈 your retro pink background image
+            resizeMode="stretch"
+            style={{ width: '100%', height: '100%' }}
+          />
+        ),
       }}
     >
       {/*The focused prop is passed in by the tab navigator to let your tabBarIcon know 
@@ -75,9 +70,7 @@ export default function TabsLayout() {
         options={{
           title: 'home',
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={icons.home_page} title="Home" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.home_page} />,
         }}
       />
       <Tabs.Screen
@@ -85,9 +78,7 @@ export default function TabsLayout() {
         options={{
           title: 'library',
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={icons.books} title="Library" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.books} />,
         }}
       />
       <Tabs.Screen
@@ -95,9 +86,7 @@ export default function TabsLayout() {
         options={{
           title: 'calendar',
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={icons.calendar} title="Calendar" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.calendar} />,
         }}
       />
       <Tabs.Screen
@@ -105,9 +94,7 @@ export default function TabsLayout() {
         options={{
           title: 'chat',
           headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={icons.speech_bubble} title="Chat" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.speech_bubble} />,
         }}
       />
     </Tabs>
