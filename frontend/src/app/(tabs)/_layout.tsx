@@ -4,13 +4,7 @@ import { Image, ImageBackground, ImageSourcePropType, Platform, View } from 'rea
 import icons from '@/constants/icons';
 import images from '@/constants/images';
 
-function TabIcon({
-  focused,
-  icon,
-}: {
-  focused: boolean;
-  icon: ImageSourcePropType;
-}) {
+function TabIcon({ focused, icon }: { focused: boolean; icon: ImageSourcePropType }) {
   return (
     <Image
       source={icon}
@@ -95,9 +89,7 @@ export default function TabsLayout() {
           title: 'chat',
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={icons.speech_bubble} title="Chat" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.speech_bubble} />,
         }}
       />
     </Tabs>
