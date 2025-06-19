@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { libraryApi } from '@/apis/library';
 import type { Book } from '@/types/library';
-import Button from '@/components/Button';
-import { BookColor, BOOK_COLORS, COLOR_OPTIONS } from '@/constants/books';
+import { BookColor, BOOK_IMAGES } from '@/constants/books';
 
 interface EditBookProps {
   book: Book;
@@ -12,9 +11,18 @@ interface EditBookProps {
   onCancel?: () => void;
 }
 
+const BOOK_COLOR_OPTIONS: { color: BookColor; label: string; image: any }[] = [
+  { color: 'pink', label: 'Pink', image: BOOK_IMAGES.pink },
+  { color: 'purple', label: 'Purple', image: BOOK_IMAGES.purple },
+];
+
 export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, onCancel }) => {
   const [title, setTitle] = useState(book.title);
   const [selectedColor, setSelectedColor] = useState<BookColor>(book.color as BookColor);
+  const screenWidth = Dimensions.get('window').width;
+    const modalWidth = screenWidth * 0.7;
+    const itemWidth = (modalWidth - 32) / 3;
+    const imageSize = itemWidth - 16;
 
   const handleEditBook = async () => {
     try {
@@ -35,119 +43,115 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
   };
 
   return (
-    <View className="p-4">
+    <View style={{ padding: 16 }}>
+      {/* Retro Input */}
       <TextInput
-        className="border border-gray-300 rounded-lg px-3 py-2 mb-4"
-        placeholder="Book title"
         value={title}
         onChangeText={setTitle}
         maxLength={30}
+        placeholder="Enter book title"
+        placeholderTextColor="#999"
+        style={{
+          borderWidth: 2,
+          borderColor: '#000',
+          backgroundColor: '#FFF5F8',
+          padding: 10,
+          fontFamily: 'PixelifySans',
+          marginBottom: 16,
+          fontSize: 14,
+        }}
       />
 
-      <Text style={styles.label}>Color</Text>
-      <View style={styles.colorSelector}>
-        {COLOR_OPTIONS.map((option) => (
-          <TouchableOpacity
-            key={option.color}
-            style={styles.colorOptionContainer}
-            onPress={() => setSelectedColor(option.color)}
-          >
-            <View
-              style={[
-                styles.colorCircle,
-                { backgroundColor: BOOK_COLORS[option.color] },
-                selectedColor === option.color && styles.selectedColor,
-              ]}
+      {/* Book Color Picker */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+        {BOOK_COLOR_OPTIONS.map((option) => (
+          <View key={option.color} style={{ alignItems: 'center' }}>
+            <Image
+              source={option.image}
+              style={{
+                width: imageSize,
+                height: imageSize * 1.33,
+              }}
+              resizeMode="contain"
             />
-            <Text
-              style={[styles.colorText, selectedColor === option.color && styles.selectedColorText]}
+            <TouchableOpacity
+              onPress={() => setSelectedColor(option.color)}
+              activeOpacity={0.8}
+              style={{
+                backgroundColor: selectedColor === option.color ? '#FCD6E7' : '#FFF',
+                borderColor: '#000',
+                borderWidth: 2,
+                paddingVertical: 4,
+                paddingHorizontal: 10,
+              }}
             >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  fontFamily: 'PixelifySans',
+                  fontSize: 10,
+                  color: '#000',
+                  textAlign: 'center',
+                }}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ))}
       </View>
 
-      <View className="flex-row justify-end gap-2 mt-4">
-        <Button
+      {/* Retro Action Buttons */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+        <TouchableOpacity
           onPress={onCancel}
-          label="Cancel"
-          className="bg-gray-100 px-4 py-2"
-          textClassName="text-gray-600"
-        />
-        <Button
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: '#FFF',
+            paddingHorizontal: 20,
+            paddingVertical: 8,
+            borderWidth: 3,
+            borderColor: '#000',
+            shadowColor: '#000',
+            shadowOffset: { width: 3, height: 3 },
+            shadowOpacity: 1,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 13,
+              color: '#000',
+            }}
+          >
+            CANCEL
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={handleEditBook}
-          label="Save Changes"
-          className="bg-[#F5829B] px-4 py-2"
-          textClassName="text-white"
-        />
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: '#ED4C90',
+            paddingHorizontal: 20,
+            paddingVertical: 8,
+            borderWidth: 3,
+            borderColor: '#000',
+            shadowColor: '#000',
+            shadowOffset: { width: 3, height: 3 },
+            shadowOpacity: 1,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 13,
+              color: '#FAD3E4',
+            }}
+          >
+            SAVE
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#333',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginBottom: 8,
-  },
-  colorSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 20,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  colorOptionContainer: {
-    alignItems: 'center',
-    width: '28%',
-    marginBottom: 12,
-  },
-  colorCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginBottom: 4,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedColor: {
-    borderColor: '#333',
-  },
-  colorText: {
-    fontSize: 11,
-    color: '#666',
-    textAlign: 'center',
-  },
-  selectedColorText: {
-    color: '#333',
-    fontWeight: '500',
-  },
-  button: {
-    backgroundColor: '#FF69B4',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

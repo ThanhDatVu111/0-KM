@@ -4,12 +4,9 @@ import { Slot, useLocalSearchParams } from 'expo-router';
 import EntryHeader from '@/components/EntryHeader';
 
 export default function Layout() {
-  const { title } = useLocalSearchParams<{ title: string }>(); // Retrieve the title parameter
-  console.log('Layout title:', title); // Log the title for debugging
-
+  const { title } = useLocalSearchParams<{ title: string }>(); 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Your reusable header */}
+    <SafeAreaView className="flex-1"> #need to fix this
       <EntryHeader title={title} />
       <Slot />
     </SafeAreaView>

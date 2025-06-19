@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  ImageBackground
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
@@ -88,27 +89,43 @@ export default function BookPage() {
   // — Empty state —
   if (entries.length === 0) {
     return (
-      <View className="flex-1 items-center px-6 mt-16">
-        <Image source={images.logo} className="w-45 h-28" resizeMode="contain" />
-        <Text className="text-2xl font-bold mb-2">Create an entry</Text>
-        <Text className="text-center text-sm text-gray-500">
-          Tap the plus button to create your entry
-        </Text>
-        <TouchableOpacity
-          onPress={goCreate}
-          className="
-            w-20 h-20            
-            rounded-full          
-            bg-accent          
-            items-center justify-center 
-            shadow-lg         
-            mt-24
-            active:scale-95
-            active:shadow-none"
-        >
-          <Text className="text-white text-4xl">+</Text>
-        </TouchableOpacity>
-      </View>
+      <ImageBackground
+        source={images.createEntryBg} // replace with your actual image (e.g., images.bgEmpty or whatever you named it)
+        resizeMode="cover"
+        className="flex-1"
+      >
+        <View className="flex-1 items-center px-6 mt-16">
+          <Image source={images.logo} className="w-45 h-28" resizeMode="contain" />
+          <Text className="text-2xl font-bold mb-2" style={{ fontFamily: 'PixelifySans' }}>
+            Create an entry
+          </Text>
+          <Text
+            className="text-center text-sm text-gray-500"
+            style={{ fontFamily: 'PixelifySans' }}
+          >
+            Tap the plus button to create your entry
+          </Text>
+          <TouchableOpacity
+            onPress={goCreate}
+            activeOpacity={0.8}
+            className="w-20 h-20 rounded-full bg-accent items-center justify-center shadow-lg mt-24"
+            style={{
+              borderColor: '#000',
+              borderWidth: 3,
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+            }}
+          >
+            <Text
+              className="text-white text-4xl"
+              style={{ fontFamily: 'PixelifySans', color: '#fff' }}
+            >
+              +
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ImageBackground>
     );
   }
 
