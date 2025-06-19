@@ -110,6 +110,7 @@ export default function ChatScreen() {
 
       // Restore the message text so user can retry
       setMessage(trimmed);
+      
     }
   };
 
