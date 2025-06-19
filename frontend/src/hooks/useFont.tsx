@@ -11,6 +11,7 @@ const useFont = () => {
         'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
         'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'),
         'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'),
+        'PixelifySans': require('../assets/fonts/PixelifySans.ttf'),
       });
       setFontsLoaded(true);
     }

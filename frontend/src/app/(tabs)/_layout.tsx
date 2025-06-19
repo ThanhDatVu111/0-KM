@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Image, ImageBackground, ImageSourcePropType, Platform, View } from 'react-native';
+import { Image, ImageBackground, ImageSourcePropType, Platform} from 'react-native';
 import icons from '@/constants/icons';
 import images from '@/constants/images';
 
@@ -39,8 +39,8 @@ export default function TabsLayout() {
           height: 100,
           position: 'absolute',
           overflow: 'hidden',
-          borderWidth: 1,
-          // === Drop shadow for iOS ===
+          borderTopWidth: 0,
+          // === Drop shadow foriOS ===
           ...Platform.select({
             ios: {
               shadowColor: '#000',

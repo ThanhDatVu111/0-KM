@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import supabase from '../supabase/db';
+import supabase from '../utils/supabase';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
-// import other routers like TripRouter, NotificationRouter if needed
+import EntriesRouter from './routes/entriesRoutes';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
 
@@ -22,11 +23,19 @@ app.use(
   }),
 );
 
-
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
+app.use('/entries', EntriesRouter);
+app.get('/cloudinary-sign', (_req, res) => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    { timestamp },
+    process.env.CLOUDINARY_API_SECRET!,
+  );
+  res.json({ signature, timestamp });
+});
 
 const startServer = async () => {
   try {
