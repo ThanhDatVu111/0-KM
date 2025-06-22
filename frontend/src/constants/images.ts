@@ -8,6 +8,8 @@ import libraryBg from '@/assets/images/libraryBg.png';
 import libraryTitle from '@/assets/images/libraryTitle.png';
 import sortButtonBg from '@/assets/images/sortButtonBg.png';
 import createEntryBg from '@/assets/images/createEntryBg.png';
+import entryFormBg from '@/assets/images/entryFormBg.png';
+
 
 export default {
   polaroid,
@@ -19,5 +21,6 @@ export default {
   libraryBg,
   libraryTitle,
   sortButtonBg,
-  createEntryBg
+  createEntryBg,
+  entryFormBg
 };

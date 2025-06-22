@@ -12,32 +12,19 @@ export default function UpdateEntryScreen() {
   // Extract required route params
   const rawBookId = params.bookId!;
   const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId;
-  if (bookId) {
-    console.log('bookId provided in params in UpdateEntryScreen', bookId);
-  }
   const rawEntryId = params.entryId!;
   const entryId = Array.isArray(rawEntryId) ? rawEntryId[0]! : rawEntryId;
-  if (entryId) {
-    console.log('enryId provided in params in UpdateEntryScreen', entryId);
-  }
-
+  
   const initialTitle = params.title || '';
   const initialBody = params.body || '';
-
-  // media is JSON‐stringified, so parse it back
-  let parsedMedia: MediaItem[] = [];
-  if (params.media) {
-    try {
-      const s = Array.isArray(params.media) ? params.media[0]! : params.media;
-      parsedMedia = JSON.parse(s);
-    } catch (e) {
-      console.error('Failed to parse initial media:', e);
-      parsedMedia = [];
-    }
-  }
   const initialLocation = params.location || '';
-  const initialCreatedAt = params.updatedAt || new Date().toISOString();
-
+  const initialUpdatedAt = new Date().toISOString();
+  const initialMedia: MediaItem[] = params.media
+    ? params.media
+        .split(',')
+        .filter((url) => url.trim() !== '')
+        .map((url) => ({ uri: url.trim(), type: 'image' }))
+    : [];
   const [saving, setSaving] = useState(false);
 
   /** Called by EntryForm when “Done” is tapped */
@@ -49,7 +36,6 @@ export default function UpdateEntryScreen() {
     location: { address: string } | null;
     pin: boolean;
     media_paths: string[];
-    created_at?: string;
     updated_at?: string;
   }) => {
     try {
@@ -67,9 +53,10 @@ export default function UpdateEntryScreen() {
       entryId={entryId}
       initialTitle={initialTitle}
       initialBody={initialBody}
-      initialMedia={parsedMedia}
+      initialMedia={initialMedia}
       initialLocation={initialLocation}
-      initialCreatedAt={initialCreatedAt}
+      initialCreatedAt={undefined}  // not required for updating an entry; set to undefined
+      initialUpdatedAt={initialUpdatedAt}
       saving={saving}
       onSubmit={async (data) => {
         setSaving(true);

@@ -9,9 +9,9 @@ import { CreateEntry } from '@/apis/entries';
 export default function NewEntryScreen() {
   const router = useRouter();
   const { bookId: rawBookId } = useLocalSearchParams<{ bookId: string }>();
-  const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId!;
-
   const [saving, setSaving] = useState(false);
+  const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId!;
+  const now = new Date();
 
   /** Called by EntryForm when “Done” is tapped with the new entry’s data */
   const handleCreate = async (data: {
@@ -39,6 +39,7 @@ export default function NewEntryScreen() {
     <EntryForm
       bookId={bookId}
       saving={saving}
+      initialCreatedAt={now.toISOString()}
       onSubmit={async (entryData) => {
         setSaving(true);
         await handleCreate(entryData);

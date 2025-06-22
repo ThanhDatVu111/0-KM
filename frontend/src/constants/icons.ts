@@ -6,6 +6,11 @@ import topic from '@/assets/icons/topic.png';
 import user_icon_female from '@/assets/icons/userIconFemale.png';
 import google from '@/assets/icons/google.png';
 import person from '@/assets/icons/person.png';
+import photo from '@/assets/icons/photo.png';
+import location from '@/assets/icons/location.png';
+import camera from '@/assets/icons/camera.png';
+import location2 from '@/assets/icons/location2.png';
+import time from '@/assets/icons/time.png';
 
 export default {
   books,
@@ -15,5 +20,10 @@ export default {
   topic,
   user_icon_female,
   google,
-  person
+  person,
+  photo,
+  location,
+  camera,
+  location2,
+  time
 };
