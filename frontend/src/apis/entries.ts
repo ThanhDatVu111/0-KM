@@ -78,6 +78,7 @@ export async function updateEntryApi(updatedEntryData: {
   updated_at?: string;
 }) {
   try {
+    console.log('Updating entry in api entries:', updatedEntryData.media_paths);
     const response = await fetch(
       `${BASE_URL}/entries/${updatedEntryData.book_id}/${updatedEntryData.id}`,
       {

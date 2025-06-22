@@ -58,7 +58,7 @@ export async function updateEntries(input: {
   title: string;
   body?: string | null;
   location?: object | null;
-  media: object[];
+  media_paths: string[];
   updated_at: string;
 }) {
   try {

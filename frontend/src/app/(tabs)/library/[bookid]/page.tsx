@@ -33,7 +33,6 @@ export default function BookPage() {
         setLoading(true);
         try {
           const data = await fetchEntries(bookId);
-          console.log('Fetched entries in BookPage:', data);
           setEntries(data);
         } catch (error) {
           console.error(error);

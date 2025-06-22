@@ -15,11 +15,10 @@ const router = Router();
 
 router.get('/:book_id', fetchEntries);
 
-// now accept up to 15 files under the field name "mediaFiles"
-router.post('/:book_id', upload.array('mediaFiles', 15), createEntries);
+router.post('/:book_id', upload.array('mediaFiles', 16), createEntries);
 
 router.delete('/:book_id/:entry_id', deleteEntries);
 
-router.put('/:book_id/:entry_id', upload.array('mediaFiles', 15), updateEntries);
+router.put('/:book_id/:entry_id', upload.array('mediaFiles', 16), updateEntries);
 
 export default router;

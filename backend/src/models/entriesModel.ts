@@ -61,7 +61,7 @@ export async function updateEntries(attrs: {
   title: string;
   body?: string | null;
   location?: object | null;
-  media: object[];
+  media_paths: string[];
   updated_at: string;
 }) {
   const { data, error } = await supabase
@@ -70,7 +70,7 @@ export async function updateEntries(attrs: {
       title: attrs.title,
       body: attrs.body,
       location: attrs.location,
-      media: attrs.media,
+      media_paths: attrs.media_paths,
       updated_at: attrs.updated_at,
     })
     .eq('id', attrs.id)
