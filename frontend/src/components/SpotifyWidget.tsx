@@ -28,6 +28,7 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
   const [topTracks, setTopTracks] = useState<SpotifyTrack[]>([]);
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   const [activeTab, setActiveTab] = useState<'current' | 'recent' | 'top'>('current');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const syncInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -58,6 +59,17 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
       }
     };
   }, [isAuthenticated, currentTrack, isHost, onSync]);
+
+  // Poll for current playback state
+  useEffect(() => {
+    if (isAuthenticated) {
+      const pollInterval = setInterval(() => {
+        fetchCurrentPlayback();
+      }, 5000); // Poll every 5 seconds
+
+      return () => clearInterval(pollInterval);
+    }
+  }, [isAuthenticated]);
 
   const checkAuthentication = async () => {
     const authenticated = spotifyAPI.isAuthenticated();
@@ -95,9 +107,15 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
       if (state) {
         setPlaybackState(state);
         setCurrentTrack(state.item);
+        setIsPlaying(state.is_playing);
+      } else {
+        setCurrentTrack(null);
+        setIsPlaying(false);
       }
     } catch (error) {
       console.error('Failed to fetch playback state:', error);
+      setCurrentTrack(null);
+      setIsPlaying(false);
     }
   };
 
@@ -157,20 +175,23 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
     </TouchableOpacity>
   );
 
+  // Not authenticated state
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
         <View style={styles.authContainer}>
           <Ionicons name="musical-notes" size={48} color="#1DB954" />
-          <Text style={styles.authTitle}>Connect to Spotify</Text>
-          <Text style={styles.authSubtitle}>Share your music taste with your partner</Text>
+          <Text style={styles.authTitle}>Link with your Spotify account</Text>
+          <Text style={styles.authSubtitle}>
+            Connect your Spotify to share music and discover what your partner is listening to
+          </Text>
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
               <>
                 <Ionicons name="musical-notes" size={20} color="white" />
-                <Text style={styles.loginButtonText}>Connect Spotify</Text>
+                <Text style={styles.loginButtonText}>Sign in with Spotify</Text>
               </>
             )}
           </TouchableOpacity>
@@ -179,11 +200,34 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
     );
   }
 
+  // Authenticated but no music playing
+  if (!currentTrack) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.authContainer}>
+          <Ionicons name="musical-notes" size={48} color="#1DB954" />
+          <Text style={styles.authTitle}>Listen to music together</Text>
+          <Text style={styles.authSubtitle}>
+            Start playing music on Spotify to share what you're listening to with your partner
+          </Text>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => spotifyAPI.openTrackInSpotify('spotify:app:home')}
+          >
+            <Ionicons name="play-circle" size={20} color="#1DB954" />
+            <Text style={styles.secondaryButtonText}>Open Spotify</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Music is playing - show current track
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Music Together</Text>
+        <Text style={styles.title}>Now Playing</Text>
         {isHost && (
           <TouchableOpacity
             style={styles.playlistButton}
@@ -195,16 +239,35 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
         )}
       </View>
 
+      {/* Current Track Display */}
+      <View style={styles.currentTrackContainer}>
+        <Image
+          source={{ uri: getAlbumArt(currentTrack) }}
+          style={styles.currentTrackImage}
+          defaultSource={require('@/assets/images/blue book.png')}
+        />
+        <View style={styles.currentTrackInfo}>
+          <Text style={styles.currentTrackName} numberOfLines={2}>
+            {currentTrack.name}
+          </Text>
+          <Text style={styles.currentTrackArtist} numberOfLines={1}>
+            {currentTrack.artists.map((artist) => artist.name).join(', ')}
+          </Text>
+          <Text style={styles.currentTrackAlbum} numberOfLines={1}>
+            {currentTrack.album.name}
+          </Text>
+          <View style={styles.playingIndicator}>
+            <Ionicons name={isPlaying ? 'play-circle' : 'pause-circle'} size={16} color="#1DB954" />
+            <Text style={styles.playingText}>{isPlaying ? 'Now playing' : 'Paused'}</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.openButton} onPress={() => handleTrackPress(currentTrack)}>
+          <Ionicons name="open-outline" size={24} color="#1DB954" />
+        </TouchableOpacity>
+      </View>
+
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'current' && styles.activeTab]}
-          onPress={() => setActiveTab('current')}
-        >
-          <Text style={[styles.tabText, activeTab === 'current' && styles.activeTabText]}>
-            Now Playing
-          </Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'recent' && styles.activeTab]}
           onPress={() => setActiveTab('recent')}
@@ -225,45 +288,6 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'current' && (
-          <View>
-            {currentTrack ? (
-              <View style={styles.currentTrackContainer}>
-                <Image
-                  source={{ uri: getAlbumArt(currentTrack) }}
-                  style={styles.currentTrackImage}
-                  defaultSource={require('@/assets/images/blue book.png')}
-                />
-                <View style={styles.currentTrackInfo}>
-                  <Text style={styles.currentTrackName} numberOfLines={2}>
-                    {currentTrack.name}
-                  </Text>
-                  <Text style={styles.currentTrackArtist} numberOfLines={1}>
-                    {currentTrack.artists.map((artist) => artist.name).join(', ')}
-                  </Text>
-                  <Text style={styles.currentTrackAlbum} numberOfLines={1}>
-                    {currentTrack.album.name}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.openButton}
-                  onPress={() => handleTrackPress(currentTrack)}
-                >
-                  <Ionicons name="open-outline" size={24} color="#1DB954" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.noTrackContainer}>
-                <Ionicons name="musical-notes" size={48} color="#666" />
-                <Text style={styles.noTrackText}>No track playing</Text>
-                <Text style={styles.noTrackSubtext}>
-                  Start playing music on Spotify to see it here
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
         {activeTab === 'recent' && (
           <View>
             <Text style={styles.sectionTitle}>Recently Played</Text>
@@ -502,5 +526,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1DB954',
     fontWeight: '500',
+  },
+  playingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  playingText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#1DB954',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+  },
+  secondaryButtonText: {
+    color: '#1DB954',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
