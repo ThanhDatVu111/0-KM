@@ -6,6 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, CodeChallengeMethod, Prompt } from 'expo-auth-session';
+import { useAuth } from '@clerk/clerk-expo';
 
 import {
   createRefreshToken,
@@ -54,6 +55,7 @@ const FAKE_EVENTS: Record<string, FakeEvent[]> = {
 };
 
 function GGCalendar() {
+  const [userId] = useAuth();
   const todayKey = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
 
