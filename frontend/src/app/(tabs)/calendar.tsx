@@ -5,7 +5,7 @@ import useFont from '@/hooks/useFont';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri, CodeChallengeMethod } from 'expo-auth-session';
+import { makeRedirectUri, CodeChallengeMethod, Prompt } from 'expo-auth-session';
 
 import {
   createRefreshToken,
@@ -55,40 +55,12 @@ const FAKE_EVENTS: Record<string, FakeEvent[]> = {
 
 function GGCalendar() {
   const todayKey = new Date().toISOString().split('T')[0];
-
-  // 2) Keep track of the currently selected date (YYYY-MM-DD):
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
 
-  // 3) Build a “markedDates” object so the two days appear highlighted:
-  const markedDates: Record<string, any> = {};
-  Object.keys(FAKE_EVENTS).forEach((dateKey) => {
-    markedDates[dateKey] = {
-      marked: true,
-      dotColor: '#E91E63',
-      activeOpacity: 0,
-    };
-  });
-  // Also highlight the currently selected date
-  markedDates[selectedDate] = {
-    ...(markedDates[selectedDate] || {}),
-    selected: true,
-    selectedColor: '#E91E63',
-  };
-
-  // 4) When the user taps a day, update selectedDate:
-  const onDayPress = (day: DateData) => {
-    setSelectedDate(day.dateString);
-  };
-
-  // 5) Pull out “fake” events for that date (if any):
-  const eventsForDate = FAKE_EVENTS[selectedDate] || [];
-
-  const redirectUri = makeRedirectUri();
-  const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
-  const iosClientId = process.env.EXPO_PUBLIC_IOS_CLIENT_ID!;
-  const clientSecret = process.env.EXPO_PUBLIC_CLIENT_SECRET!;
-  const { user_id } = useLocalSearchParams();
-  const userId = 'user_2xpzayL53QL1tzrGzLoCXXF0FIz';
+  // --- NEW STATE FOR REAL EVENTS ---
+  const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Room and partner IDs
   const [room_id, setRoomId] = useState('');
@@ -105,14 +77,6 @@ function GGCalendar() {
   // Tokens for partner
   const [other_refresh_token, setOtherRefreshToken] = useState('');
   const [other_access_token, setOtherAccessToken] = useState('');
-
-  // Fetched events (we’ll ignore these once we switch to fake data)
-  // const [myEvents, setMyEvents] = useState<CalendarEvent[]>([]);
-  // const [partnerEvents, setPartnerEvents] = useState<CalendarEvent[]>([]);
-  // const [loadingEvents, setLoadingEvents] = useState(false);
-
-  // Agenda items (only used if we were doing real fetches)
-  // const [itemsByDate, setItemsByDate] = useState<Record<string, AgendaItem[]>>({});
 
   // A small set of hard‐coded events to show once both are connected:
   // const fakeItems: Record<string, AgendaItem[]> = {
@@ -158,8 +122,12 @@ function GGCalendar() {
   //   ],
   // };
 
-  console.log('user id:', userId);
-  console.log('redirect:', redirectUri);
+  const redirectUri = makeRedirectUri();
+  const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
+  const iosClientId = process.env.EXPO_PUBLIC_IOS_CLIENT_ID!;
+  const clientSecret = process.env.EXPO_PUBLIC_CLIENT_SECRET!;
+  const { user_id } = useLocalSearchParams();
+  const userId = 'user_2xpzayL53QL1tzrGzLoCXXF0FIz';
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     redirectUri,
@@ -169,10 +137,22 @@ function GGCalendar() {
     responseType: 'code',
     clientSecret: clientSecret,
     codeChallengeMethod: CodeChallengeMethod.S256,
+    extraParams: {
+      access_type: 'offline',
+      prompt: Prompt.Consent,
+    },
   });
 
-  console.log('code verifier: ', request?.codeVerifier);
-  console.log('code challenge: ', request?.codeChallenge);
+  console.log(response);
+  if (response?.type === 'success') {
+    console.log('refresh token:', response.authentication?.refreshToken);
+  }
+  // useEffect(() => {
+  //   if (response?.type === 'success' && response.authentication) {
+  //     // This is the correct place to access the refresh token
+  //     console.log('refresh token:', response.authentication.refreshToken);
+  //   }
+  // }, [response]);
 
   // 1) Fetch room and partner ID on mount
   useEffect(() => {
@@ -187,6 +167,8 @@ function GGCalendar() {
       }
     })();
   }, [userId]);
+
+  console.log(room_id);
 
   // 2) Check if partner is synced
   useEffect(() => {
@@ -207,7 +189,10 @@ function GGCalendar() {
     (async () => {
       try {
         const partnerRT = await fetchRefreshToken({ user_id: other_user_id });
-        setOtherRefreshToken(partnerRT?.refresh_token ?? '');
+        // Fix: unwrap .data if present
+        const refreshTokenValue =
+          (partnerRT as any)?.data?.refresh_token || partnerRT?.refresh_token || '';
+        setOtherRefreshToken(refreshTokenValue);
       } catch (err) {
         console.error('Error fetching partner refresh token:', err);
       }
@@ -247,26 +232,58 @@ function GGCalendar() {
     (async () => {
       try {
         const myRT = await fetchRefreshToken({ user_id: userId });
-        setRefreshToken(myRT?.refresh_token ?? '');
+        // Fix: unwrap .data if present
+        const refreshTokenValue = (myRT as any)?.data?.refresh_token || myRT?.refresh_token || '';
+        setRefreshToken(refreshTokenValue);
       } catch (err) {
         console.error('Error fetching my refresh token:', err);
       }
     })();
-  }, [syncWithCalendar, userId]);
+  }, [syncWithCalendar]);
+
+  console.log('refresh token: ', refresh_token);
 
   // 7) Exchange my refresh token for an access token
   useEffect(() => {
     if (!syncWithCalendar || !refresh_token) return;
     (async () => {
       try {
-        console.log('fetching user new access token');
-        // Skip real fetch; just hard‐code:
-        setAccessToken('user_access_token');
+        setLoadingEvents(true);
+        // Get a real access token from Google
+        const tokenResp = await fetchNewAccessToken({
+          client_id: webClientId,
+          client_secret: clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token,
+        });
+        setAccessToken(tokenResp.access_token);
+        console.log('access token: ', tokenResp.access_token);
       } catch (err) {
+        setFetchError('Failed to get access token');
         console.error('Error fetching my access token:', err);
+      } finally {
+        setLoadingEvents(false);
       }
     })();
   }, [refresh_token, syncWithCalendar]);
+
+  // --- FETCH EVENTS WHEN ACCESS TOKEN IS AVAILABLE ---
+  useEffect(() => {
+    if (!access_token || !syncWithCalendar || !partnerSyncedWithCalendar) return;
+    (async () => {
+      setLoadingEvents(true);
+      setFetchError(null);
+      try {
+        const events = await fetchCalendarEvents({ partnerAccessToken: access_token });
+        setMyEvents(events);
+      } catch (err) {
+        setFetchError('Failed to fetch calendar events');
+        setMyEvents([]);
+      } finally {
+        setLoadingEvents(false);
+      }
+    })();
+  }, [access_token, syncWithCalendar, partnerSyncedWithCalendar]);
 
   // 8) Handle OAuth “code” response from Google
   useEffect(() => {
@@ -276,77 +293,76 @@ function GGCalendar() {
     }
     (async () => {
       try {
-        const authCode = response.params.code;
-        console.log('Authorization Code:', authCode);
-
-        if (!webClientId) throw new Error('Missing Google Web Client ID');
-
-        console.log('Redirect URI:', redirectUri);
-        console.log('Code Verifier:', request?.codeVerifier);
-
-        // Skip real token exchange; just hard‐code a new refresh token:
-        const fakeRT = 'abcxyz';
-        await updateRefreshToken({
-          user_id: userId,
-          refresh_token: fakeRT,
-        });
-        setRefreshToken(fakeRT);
+        const refToken = response.authentication?.refreshToken;
+        if (response.authentication?.refreshToken) {
+          await updateRefreshToken({
+            user_id: userId,
+            refresh_token: refToken ?? '',
+          });
+          setRefreshToken(refToken ?? '');
+          console.log('New refresh token:', refToken);
+        } else {
+          console.warn('No refresh_token in token response');
+        }
       } catch (err) {
         console.error('Error exchanging code for tokens:', err);
       }
     })();
   }, [response, room_id, redirectUri, webClientId]);
 
-  // (We’ve commented out the “fetch events” step entirely, since we’re showing fakeItems.)
+  const markedDates: Record<string, any> = {};
+  if (syncWithCalendar && partnerSyncedWithCalendar && myEvents.length > 0) {
+    myEvents.forEach((ev) => {
+      const dateKey = ev.start?.dateTime ? ev.start.dateTime.split('T')[0] : ev.start?.date;
+      if (dateKey) {
+        markedDates[dateKey] = {
+          marked: true,
+          dotColor: '#E91E63',
+          activeOpacity: 0,
+        };
+      }
+    });
+  } else {
+    Object.keys(FAKE_EVENTS).forEach((dateKey) => {
+      markedDates[dateKey] = {
+        marked: true,
+        dotColor: '#E91E63',
+        activeOpacity: 0,
+      };
+    });
+  }
+  // Also highlight the currently selected date
+  markedDates[selectedDate] = {
+    ...(markedDates[selectedDate] || {}),
+    selected: true,
+    selectedColor: '#E91E63',
+  };
 
-  // 10) Build itemsByDate for Agenda (only if we had real events)
-  // useEffect(() => {
-  //   const items: Record<string, AgendaItem[]> = {};
+  // 5) Pull out events for that date (real or fake):
+  let eventsForDate: any[] = [];
+  if (syncWithCalendar && partnerSyncedWithCalendar && myEvents.length > 0) {
+    // Group events by date
+    eventsForDate = myEvents
+      .filter((ev) => {
+        const dateKey = ev.start?.dateTime ? ev.start.dateTime.split('T')[0] : ev.start?.date;
+        return dateKey === selectedDate;
+      })
+      .map((ev) => ({
+        id: ev.id,
+        title: ev.summary || '(No title)',
+        time:
+          ev.start?.dateTime && ev.end?.dateTime
+            ? `${new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${new Date(ev.end.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : 'All Day',
+      }));
+  } else {
+    // fallback to fake events
+    eventsForDate = FAKE_EVENTS[selectedDate] || [];
+  }
 
-  //   function isoToYmd(iso: string) {
-  //     return iso.split('T')[0];
-  //   }
-  //   function isoToTime(iso: string) {
-  //     const t = iso.split('T')[1] || '';
-  //     return t.substring(0, 5);
-  //   }
-  //   function addEventToDate(ev: CalendarEvent, owner: 'me' | 'partner') {
-  //     const startIso = ev.start.dateTime ?? ev.start.date ?? '';
-  //     if (!startIso) return;
-  //     const dateKey = isoToYmd(startIso);
-
-  //     const sTime = ev.start.dateTime ? isoToTime(ev.start.dateTime) : 'All Day';
-  //     const eTime = ev.end.dateTime ? isoToTime(ev.end.dateTime) : '';
-
-  //     const item: AgendaItem = {
-  //       name: ev.summary || '(No title)',
-  //       owner,
-  //       startTime: sTime,
-  //       endTime: eTime,
-  //       eventId: ev.id,
-  //       height: 60,
-  //       day: dateKey,
-  //     };
-
-  //     if (!items[dateKey]) {
-  //       items[dateKey] = [];
-  //     }
-  //     items[dateKey].push(item);
-  //   }
-
-  //   myEvents.forEach((ev) => addEventToDate(ev, 'me'));
-  //   partnerEvents.forEach((ev) => addEventToDate(ev, 'partner'));
-
-  //   Object.keys(items).forEach((dateKey) => {
-  //     items[dateKey].sort((a, b) => {
-  //       if (a.startTime === 'All Day') return -1;
-  //       if (b.startTime === 'All Day') return 1;
-  //       return a.startTime.localeCompare(b.startTime);
-  //     });
-  //   });
-
-  //   setItemsByDate(items);
-  // }, [myEvents, partnerEvents]);
+  const onDayPress = (day: DateData) => {
+    setSelectedDate(day.dateString);
+  };
 
   const connectCalendar = async () => {
     try {
@@ -406,6 +422,23 @@ function GGCalendar() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ fontSize: 16 }}>You’re synced. Waiting for your partner…</Text>
+      </View>
+    );
+  }
+
+  // In the render section, show loading/error if needed
+  if (loadingEvents) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#E91E63" />
+        <Text style={{ marginTop: 12 }}>Loading events…</Text>
+      </View>
+    );
+  }
+  if (fetchError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'red' }}>{fetchError}</Text>
       </View>
     );
   }
