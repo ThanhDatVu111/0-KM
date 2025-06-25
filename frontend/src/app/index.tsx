@@ -1,54 +1,36 @@
 import React from 'react';
-import { Text, View, Image, SafeAreaView } from 'react-native';
+import { ImageBackground, TouchableOpacity, Image, View } from 'react-native';
 import { router } from 'expo-router';
-import useFont from '../hooks/useFont';
-
-//constants
 import images from '@/constants/images';
-import Button from '../components/Button';
-import { SignOutButton } from '@/components/SignOutButton';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function Index() {
-  const fontsLoaded = useFont();
-
-  if (!fontsLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center bg-primary">
-        <Text className="text-lg text-white">Loading...</Text>
-      </View>
-    );
-  }
-
+  const { isSignedIn } = useAuth();
   return (
-    <SafeAreaView className="flex h-full bg-primary items-center justify-between">
-      <View className="flex-1 items-center justify-center">
-        <SignOutButton />
-        {/* Logo */}
-        <View className="w-full items-center">
-          <Image source={images.logo} className="w-40 h-28" resizeMode="contain" />
+    <ImageBackground
+      source={images.entry}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <View className="flex-1 items-center">
+        <View className="w-full items-center mt-44">
+          <Image source={images.logo} className="w-60 h-28" resizeMode="contain" />
         </View>
 
-        <View className="w-full h-3/4 items-center">
-          <Image source={images.polaroid} className="justify-center h-2/3" resizeMode="contain" />
-
-          {/* Login Button */}
-          <Button
-            label="Let’s login"
+        <View className="items-center mt-96 py-16">
+          <TouchableOpacity
             onPress={() => router.push('../(auth)/authscreen')}
-            size="w-72 mt-8 px-6 py-4"
-            color="bg-accent"
-            textClassName="text-white text-lg text-center"
-          />
-
-          {/* Subtitle */}
-          <Text
-            className="text-center text-base text-accent mt-2"
-            style={{ fontFamily: 'Poppins-Regular' }}
+            disabled={isSignedIn}
+            style={{ marginTop: 32 }}
           >
-            One journey, two hearts, zero distance
-          </Text>
+            <Image
+              source={images.startButton}
+              style={{ width: 288, height: 56 }} // Adjust as needed
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </ImageBackground>
   );
 }
