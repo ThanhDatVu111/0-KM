@@ -46,7 +46,7 @@ export const BookCard: React.FC<BookCardProps> = ({
             justifyContent: 'center',
             shadowColor: '#000',
             shadowOffset: { width: 3, height: 3 },
-            shadowOpacity: 1,
+            shadowOpacity: 0.4,
             padding: 12,
           }}
         >

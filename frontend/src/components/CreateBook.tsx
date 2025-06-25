@@ -122,9 +122,9 @@ export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onE
           paddingHorizontal: 24,
           paddingVertical: 10,
           borderColor: '#000',
-          borderWidth: 3,
+          borderWidth: 2,
           shadowColor: '#000',
-          shadowOffset: { width: 3, height: 3 },
+          shadowOffset: { width: 2, height: 2 },
           shadowOpacity: 1,
         }}
       >

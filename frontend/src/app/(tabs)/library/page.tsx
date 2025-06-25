@@ -5,7 +5,6 @@ import {
   ScrollView,
   Dimensions,
   Modal,
-  Pressable,
   ImageBackground,
   Image,
   ActivityIndicator,
@@ -18,7 +17,6 @@ import { libraryApi } from '@/apis/library';
 import type { Book } from '@/types/library';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
-import Button from '@/components/Button';
 import { BookCard } from '@/components/BookCard';
 import { useRouter } from 'expo-router';
 import images from '@/constants/images';
@@ -30,7 +28,6 @@ export default function Library() {
   const [books, setBooks] = useState<Book[]>([]);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -53,7 +50,7 @@ export default function Library() {
         const room = await fetchRoom({ user_id: userId });
         setRoomId(room.room_id);
       } catch (err) {
-        setError('Failed to fetch room. Please try again later.');
+        console.error('Failed to fetch room. Please try again later.');
       }
     };
     loadRoom();
@@ -66,9 +63,9 @@ export default function Library() {
     try {
       const fetchedBooks = await libraryApi.getBooks(roomId);
       setBooks(fetchedBooks);
-      setError(null);
+          (null);
     } catch (error: any) {
-      setError(error.message);
+      console.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -145,9 +142,9 @@ export default function Library() {
       await libraryApi.deleteBook(bookToDelete.id);
       await fetchBooks();
       setBookToDelete(null);
-      setError(null);
+      console.error(null);
     } catch (error: any) {
-      setError(error.message || 'Failed to delete book');
+      console.error(error.message || 'Failed to delete book');
     }
   };
 
@@ -238,12 +235,11 @@ export default function Library() {
         >
           <View className="flex-1 justify-center items-center bg-black/30">
             <View
-              className="w-[80%] max-h-[80%] bg-[#FFF0F5] border-4 border-black"
+              className="w-[80%] max-h-[80%] bg-[#FFF0F5] border-2 border-black"
               style={{
                 shadowColor: '#000',
-                shadowOffset: { width: 15, height: 15 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
+                shadowOffset: { width: 6, height: 6 },
+                shadowOpacity: 0.5,
               }}
             >
               {/* Header */}
@@ -274,7 +270,6 @@ export default function Library() {
                     shadowColor: '#000',
                     shadowOffset: { width: 2, height: 2 },
                     shadowOpacity: 1,
-                    shadowRadius: 0,
                   }}
                 >
                   <Text
@@ -334,12 +329,11 @@ export default function Library() {
         >
           <View className="flex-1 justify-center items-center bg-black/30">
             <View
-              className="w-[80%] max-h-[80%] bg-[#FFF0F5] border-4 border-black"
+              className="w-[80%] max-h-[80%] bg-[#FFF0F5] border-2 border-black"
               style={{
                 shadowColor: '#000',
-                shadowOffset: { width: 15, height: 15 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
+                shadowOffset: { width: 6, height: 6 },
+                shadowOpacity: 0.5,
               }}
             >
               {/* Header */}
@@ -427,9 +421,8 @@ export default function Library() {
               className="w-[80%] bg-[#FFF0F5] border-4 border-black"
               style={{
                 shadowColor: '#000',
-                shadowOffset: { width: 15, height: 15 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
+                shadowOffset: { width: 6, height: 6 },
+                shadowOpacity: 0.5,
               }}
             >
               {/* Header */}

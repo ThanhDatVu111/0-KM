@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ImageBackground,
+  StyleSheet,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { deleteEntryApi, fetchEntries } from '@/apis/entries';
@@ -19,9 +20,7 @@ import EntryCard from '@/components/EntryCard';
 export default function BookPage() {
   const { bookId: rawId } = useLocalSearchParams<{ bookId: string }>();
   const bookId = Array.isArray(rawId) ? rawId[0] : rawId;
-  console.log('Book ID:', bookId);
   const router = useRouter();
-
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,49 +76,108 @@ export default function BookPage() {
     router.push(`/library/${bookId}/create-entry`);
   };
 
-  if (loading) {
-    if (loading) {
-      return (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" />
-        </View>
-      );
-    }
-  }
-
-  if (entries.length === 0) {
+  function renderPlusButton(onPress: () => void) {
     return (
-      <ImageBackground source={images.createEntryBg} resizeMode="cover" className="flex-1">
-        {/* Pixel-style back button at the top */}
-        <View
-          className="absolute z-10 mt-12 ml-6"
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        style={{
+          width: 80,
+          height: 80,
+          borderRadius: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginTop: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <LinearGradient
+          colors={['#FAD3E4', '#A270E6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
-            // Pixel shadow
-            shadowColor: '#000',
-            shadowOffset: { width: 3, height: 3 },
-            shadowOpacity: 1,
-            shadowRadius: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: 16,
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="w-11 h-11 bg-[#FAD3E4] border-2 border-black rounded-lg justify-center items-center mt-10"
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 48,
+              color: '#fff',
+              lineHeight: 52,
+            }}
           >
-            <Text
-              style={{
-                fontFamily: 'PixelifySans',
-                fontSize: 24,
-                color: '#000',
-                lineHeight: 28,
-              }}
-            >
-              ←
-            </Text>
-          </TouchableOpacity>
-        </View>
+            +
+          </Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+  // — List of entries + FAB —
+  return (
+    <ImageBackground
+      source={
+        loading
+          ? images.loadingScreen
+          : entries.length === 0
+            ? images.createEntryBg
+            : images.entryCardBg
+      }
+      resizeMode="cover"
+      style={{ flex: 1 }}
+    >
+      {/* Back button */}
+      <View
+        className="absolute z-10 mt-12 ml-6"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 3, height: 3 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+          className="w-11 h-11 bg-[#FAD3E4] border-2 border-black rounded-lg justify-center items-center mt-10"
+        >
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 24,
+              color: '#000',
+              lineHeight: 28,
+            }}
+          >
+            ←
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Centered content */}
+      {/* Loading overlay */}
+      {loading && (
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 20,
+            backgroundColor: 'rgba(255,255,255,0.2)', // optional: slight overlay
+          }}
+        >
+          <ActivityIndicator size="large" color="#A270E6" />
+        </View>
+      )}
+
+      {/* Main content */}
+      {!loading && entries.length === 0 && (
         <View className="flex-1 items-center px-6 py-64">
           <Image source={images.logo} className="w-64 h-32 mb-4" resizeMode="contain" />
           <Text
@@ -146,62 +204,27 @@ export default function BookPage() {
           >
             Tap the plus button to create your entry
           </Text>
-          <TouchableOpacity
-            onPress={goCreate}
-            activeOpacity={0.8}
-            className="w-20 h-20 rounded-xljustify-center items-center mt-4"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 4, height: 4 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-            }}
-          >
-            <LinearGradient
-              colors={['#FAD3E4', '#A270E6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: 16,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: 'PixelifySans',
-                  fontSize: 48,
-                  color: '#fff',
-                  lineHeight: 52,
-                }}
-              >
-                +
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <View className="items-center">{renderPlusButton(goCreate)}</View>
         </View>
-      </ImageBackground>
-    );
-  }
-  // — List of entries + FAB —
-  return (
-    <View className="flex-1">
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {entries.map((entry) => (
-          <EntryCard
-            key={entry.id}
-            title={entry.title}
-            body={entry.body}
-            createdAt={entry.created_at}
-            media={entry.media_paths}
-            location={entry.location}
-            onDelete={() => deleteEntry(bookId, entry.id)}
-            onEdit={() => updateEntry(entry)}
-          />
-        ))}
-      </ScrollView>
-    </View>
+      )}
+
+      {!loading && entries.length > 0 && (
+        <ScrollView className="py-36" contentContainerStyle={{ paddingBottom: 100 }}>
+          {entries.map((entry) => (
+            <EntryCard
+              key={entry.id}
+              title={entry.title}
+              body={entry.body}
+              createdAt={entry.created_at}
+              media={entry.media_paths}
+              location={entry.location}
+              onDelete={() => deleteEntry(bookId, entry.id)}
+              onEdit={() => updateEntry(entry)}
+            />
+          ))}
+          <View className="items-center mt-4">{renderPlusButton(goCreate)}</View>
+        </ScrollView>
+      )}
+    </ImageBackground>
   );
 }

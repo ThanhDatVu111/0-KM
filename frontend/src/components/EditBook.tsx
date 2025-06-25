@@ -109,10 +109,10 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
             backgroundColor: '#FFF',
             paddingHorizontal: 20,
             paddingVertical: 8,
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: '#000',
             shadowColor: '#000',
-            shadowOffset: { width: 3, height: 3 },
+            shadowOffset: { width: 2, height: 2 },
             shadowOpacity: 1,
           }}
         >
@@ -134,10 +134,10 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
             backgroundColor: '#ED4C90',
             paddingHorizontal: 20,
             paddingVertical: 8,
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: '#000',
             shadowColor: '#000',
-            shadowOffset: { width: 3, height: 3 },
+            shadowOffset: { width: 2, height: 2 },
             shadowOpacity: 1,
           }}
         >
