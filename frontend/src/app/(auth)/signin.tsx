@@ -1,9 +1,8 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text, View, TouchableOpacity } from 'react-native';
 import FormInput from '@/components/FormInput';
 import React from 'react';
-import Button from '@/components/Button';
 import { useState } from 'react';
 
 export default function SignInForm() {
@@ -45,71 +44,84 @@ export default function SignInForm() {
   };
 
   return (
-    <View>
-      <View className="w-[300px]">
-        {/* Input Fields */}
-        <FormInput
-          label="Email"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder=""
-          onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-        />
-
-        <FormInput
-          label="Password"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={password}
-          placeholder=""
-          secureTextEntry={true}
-          onChangeText={(password) => setPassword(password)}
-        />
-      </View>
-
-      {/* Login Button */}
-      <Button
-        label="Login"
-        onPress={onSignInPress}
-        size="py-3 px-4"
-        color="bg-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
+    <View className="w-full">
+      {/* Input Fields */}
+      <FormInput
+        label="Email Address"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={emailAddress}
+        placeholder=""
+        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
       />
 
-      {/* Display the error message using error state */}
+      <FormInput
+        label="Password"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={password}
+        placeholder=""
+        secureTextEntry={true}
+        onChangeText={(password) => setPassword(password)}
+      />
       {error ? (
-        <Text
-          className="text-red-600 text-center mb-2 w-[300px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
+        <Text className="text-red-600 text-center mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
           {error}
         </Text>
       ) : null}
 
+      {/* Login Button */}
+      <TouchableOpacity
+        onPress={onSignInPress}
+        className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-[#6536DD] px-4 py-3">
+          <Text
+            className="text-white text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            LOGIN
+          </Text>
+        </View>
+      </TouchableOpacity>
       {/* Sign in with Google Button */}
-      <Button
-        label="Sign in with Google"
+      <TouchableOpacity
         onPress={onGoogleSignInPress}
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+        className="w-full mb-4 bg-white border-4 border-[#6536DD]"
+        style={{
+          shadowColor: '#6536DD',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-white px-4 py-3">
+          <Text
+            className="text-[#6536DD] text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            SIGN IN WITH GOOGLE
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Forgot Password Link */}
-      <Button
-        label="Forget Password?"
-        onPress={() => router.push('../forgot-password')}
-        size=""
-        color=""
-        className="mb-4"
-        textClassName="text-[16px] underline text-accent"
-        textStyle={{ fontFamily: 'Poppins-Medium' }}
-      />
+      <TouchableOpacity onPress={() => router.push('../forgot-password')} className="mt-2">
+        <Text
+          className="text-[#6536DD] text-center text-[16px] underline"
+          style={{ fontFamily: 'Poppins-Medium' }}
+        >
+          Forgot Password?
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }

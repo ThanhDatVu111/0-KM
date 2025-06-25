@@ -10,18 +10,25 @@ export default function FormInput({ label, borderColor, ...props }: FormInputPro
   return (
     <View className="mb-2.5 w-full">
       <Text
-        className="text-left mb-2.5 text-base text-black"
+        className="text-left mb-2.5 text-base text-black font-bold"
         style={{ fontFamily: 'Poppins-Regular' }}
       >
         {label}
       </Text>
       <TextInput
         {...props}
-        className="text-base border-2 p-2.5 rounded mb-2.5 text-[#7D7E83] bg-transparent"
+        className="text-base border-2 rounded mb-2.5 text-black bg-[#F3EEFF]"
         style={[
           {
             borderColor: borderColor || '#D1D5DB',
             fontFamily: 'Poppins-Regular',
+            minHeight: 48,
+            paddingHorizontal: 12,
+            paddingVertical: 14, // Increased to prevent cutting
+            fontSize: 16,
+            lineHeight: 20,
+            textAlignVertical: 'center',
+            includeFontPadding: false, // Android: removes extra font padding
           },
           props.style,
         ]}

@@ -21,7 +21,10 @@ export default function Index() {
           <TouchableOpacity
             onPress={() => router.push('../(auth)/authscreen')}
             disabled={isSignedIn}
-            style={{ marginTop: 32 }}
+            style={{
+              marginTop: 32,
+              opacity: isSignedIn ? 0.5 : 1,
+            }}
           >
             <Image
               source={images.startButton}

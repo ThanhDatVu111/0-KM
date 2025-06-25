@@ -1,11 +1,9 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
-import Button from '@/components/Button';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
-import { SimpleSignOutButton } from '@/components/SignOutButton';
 
 export default function SignUpForm() {
   const { isLoaded, signUp } = useSignUp();
@@ -46,60 +44,76 @@ export default function SignUpForm() {
   };
 
   return (
-    <View>
-      <View className="w-[300px]">
-        <View className="flex-row justify-end mb-4">
-          <SimpleSignOutButton />
-        </View>
-        <FormInput
-          label="Email"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder=""
-          onChangeText={setEmailAddress}
-        />
-        <FormInput
-          label="Password"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={password}
-          placeholder=""
-          secureTextEntry={true}
-          onChangeText={setPassword}
-        />
-      </View>
+    <View className="w-full">
+      {/* Input Fields */}
+      <FormInput
+        label="Email Address"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={emailAddress}
+        placeholder=""
+        onChangeText={setEmailAddress}
+      />
+      <FormInput
+        label="Password"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={password}
+        placeholder=""
+        secureTextEntry={true}
+        onChangeText={setPassword}
+      />
 
+      {/* Display the error message using error state */}
       {error ? (
-        <Text
-          className="text-red-600 text-center mb-2 w-[300px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
+        <Text className="text-red-600 text-center mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
           {error}
         </Text>
       ) : null}
 
-      {/* Button to Sign Up */}
-      <Button
-        label="Next"
+      {/* Sign Up Button */}
+      <TouchableOpacity
         onPress={onSignUpPress}
-        size="py-3 px-4"
-        color="bg-accent"
-        className="w-[300px] items-center my-3"
-        textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+        className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-[#6536DD] px-4 py-3">
+          <Text
+            className="text-white text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            NEXT
+          </Text>
+        </View>
+      </TouchableOpacity>
 
-      {/* Button to Sign Up with Google */}
-      <Button
-        label="Sign up with Google"
-        onPress={() => console.log('Google Sign Up')} // Placeholder for Google sign-up logic
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] items-center mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+      {/* Sign up with Google Button */}
+      <TouchableOpacity
+        onPress={() => console.log('Google Sign Up')}
+        className="w-full mb-4 bg-white border-4 border-[#6536DD]"
+        style={{
+          shadowColor: '#6536DD',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-white px-4 py-3">
+          <Text
+            className="text-[#6536DD] text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            SIGN UP WITH GOOGLE
+          </Text>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -8,7 +8,10 @@ import highlight from '@/assets/images/highlight.png';
 import navBarBackground from '@/assets/images/navBarBackground.png';
 import entry from '@/assets/images/entry.png';
 import startButton from '@/assets/images/startButton.png';
-
+import SignIn from '@/assets/images/SignIn.png';
+import SignUp from '@/assets/images/SignUp.png';
+import ResetPassword from '@/assets/images/ResetPassword.png';
+import VerifyEmail from '@/assets/images/VerifyEmail.png';
 export default {
   polaroid,
   book_on_board,
@@ -19,5 +22,9 @@ export default {
   highlight,
   navBarBackground,
   entry,
-  startButton
+  startButton,
+  SignIn,
+  SignUp,
+  ResetPassword,
+  VerifyEmail
 };

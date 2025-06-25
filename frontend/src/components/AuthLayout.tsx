@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { ImageBackground, View, Image, Text, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import images from '@/constants/images';
-import Button from '@/components/Button';
 
 interface Props {
   activeTab: 'sign-in' | 'sign-up';
@@ -11,42 +10,48 @@ interface Props {
 
 export default function AuthLayout({ activeTab, onTabChange, children }: Props) {
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-6">
-      {/* Logo */}
-      <Image source={images.logo} className="w-full max-h-28 mt-10" resizeMode="contain" />
+    <ImageBackground
+      source={images.entry}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <View className="flex-1 items-center justify-center">
+        {/* Retro Auth Container */}
+        <View className="w-11/12 max-w-md shadow-2xl border-2 border-black rounded-lg">
+          {/* Purple Header Section */}
+          <View className="bg-[#6536DD] border-b-4 border-black px-4 py-4 items-center">
+            <Image
+              source={activeTab === 'sign-in' ? images.SignIn : images.SignUp}
+              className="w-48 h-12"
+              resizeMode="contain"
+              style={{
+                tintColor: undefined, // Ensure no color filtering
+              }}
+            />
+          </View>
 
-      {/* Tagline */}
-      <Text className="text-lg font-poppins-light text-black text-center mb-8">
-        Love knows no distance
-      </Text>
+          {/* White Form Section */}
+          <View className="bg-white px-8 py-8 rounded-b-md">
+            {children}
 
-      {/* Tabs */}
-      <View className="flex-row mb-2">
-        <Button
-          label="Login"
-          onPress={() => onTabChange('sign-in')}
-          className={`px-6 pb-1 ${
-            activeTab === 'sign-in' ? 'border-b-2 border-b-accent' : 'border-b-transparent'
-          }`}
-          textClassName={`text-[18px] ${
-            activeTab === 'sign-in' ? 'font-bold text-accent' : 'text-accent'
-          }`}
-        />
-
-        <Button
-          label="Create Account"
-          onPress={() => onTabChange('sign-up')}
-          className={`px-6 pb-1 ml-4 ${
-            activeTab === 'sign-up' ? 'border-b-2 border-b-accent' : 'border-b-transparent'
-          }`}
-          textClassName={`text-[18px] ${
-            activeTab === 'sign-up' ? 'font-bold text-accent' : 'text-accent'
-          }`}
-        />
+            {/* Auth Toggle Link */}
+            <View className="mt-6 items-center">
+              <TouchableOpacity
+                onPress={() => onTabChange(activeTab === 'sign-in' ? 'sign-up' : 'sign-in')}
+              >
+                <Text className="text-gray-600 text-center">
+                  {activeTab === 'sign-in'
+                    ? "Don't have an account? "
+                    : 'Already have an account? '}
+                  <Text className="text-[#6536DD] font-semibold underline">
+                    {activeTab === 'sign-in' ? 'Sign up' : 'Sign in'}
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </View>
-
-      {/* Form */}
-      <View>{children}</View>
-    </View>
+    </ImageBackground>
   );
 }
