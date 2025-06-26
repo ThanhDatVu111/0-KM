@@ -185,6 +185,14 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
           <Text style={styles.authSubtitle}>
             Connect your Spotify to share music and discover what your partner is listening to
           </Text>
+
+          {/* Debug info - remove this after testing */}
+          <View style={styles.debugContainer}>
+            <Text style={styles.debugText}>Debug Info:</Text>
+            <Text style={styles.debugText}>Redirect URI: 0km-app://spotify-callback</Text>
+            <Text style={styles.debugText}>Add this to your Spotify app settings</Text>
+          </View>
+
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator color="white" />
@@ -552,5 +560,18 @@ const styles = StyleSheet.create({
     color: '#1DB954',
     fontSize: 16,
     fontWeight: '600',
+  },
+  debugContainer: {
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
   },
 });

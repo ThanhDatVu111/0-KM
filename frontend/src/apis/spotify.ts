@@ -6,10 +6,24 @@ import { SPOTIFY_CONFIG } from '@/constants/spotify';
 
 // Spotify API configuration
 const SPOTIFY_CLIENT_ID = SPOTIFY_CONFIG.CLIENT_ID;
-const SPOTIFY_REDIRECT_URI = AuthSession.makeRedirectUri({
+
+// Try to get redirect URI dynamically, fallback to hardcoded
+let SPOTIFY_REDIRECT_URI = AuthSession.makeRedirectUri({
   scheme: '0km-app',
   path: 'spotify-callback',
 });
+
+// If the dynamic URI is empty, use a hardcoded one
+if (!SPOTIFY_REDIRECT_URI) {
+  SPOTIFY_REDIRECT_URI = '0km-app://spotify-callback';
+}
+
+// Log the redirect URI for debugging
+console.log('Spotify Redirect URI:', SPOTIFY_REDIRECT_URI);
+
+// Alternative redirect URI for testing
+const ALTERNATIVE_REDIRECT_URI = '0km-app://spotify-callback';
+console.log('Alternative Redirect URI:', ALTERNATIVE_REDIRECT_URI);
 
 // Spotify API endpoints
 const SPOTIFY_API_BASE = SPOTIFY_CONFIG.API_BASE;
@@ -119,6 +133,17 @@ class SpotifyAPI {
   // Exchange authorization code for access token
   private async exchangeCodeForToken(code: string, codeVerifier: string): Promise<void> {
     try {
+      console.log(
+        'Token exchange body:',
+        new URLSearchParams({
+          client_id: SPOTIFY_CLIENT_ID,
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: SPOTIFY_REDIRECT_URI,
+          code_verifier: codeVerifier,
+        }).toString(),
+      );
+
       const response = await fetch(SPOTIFY_TOKEN_URL, {
         method: 'POST',
         headers: {

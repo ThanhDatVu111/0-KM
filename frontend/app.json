@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/logo.png",
-    "scheme": "myapp",
+    "scheme": "0km-app",
     "assets": ["./assets/fonts"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
