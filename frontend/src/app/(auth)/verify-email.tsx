@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, Image } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { createUser } from '@/apis/user';
@@ -13,6 +13,7 @@ export default function VerifyEmail() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [resendTimer, setResendTimer] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Countdown for resend button
   useEffect(() => {
@@ -25,7 +26,10 @@ export default function VerifyEmail() {
 
   // Handle verification
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isVerifying) return;
+
+    setIsVerifying(true);
+    setError(null); // Clear any previous errors
 
     try {
       const { status, createdSessionId, createdUserId } =
@@ -56,6 +60,8 @@ export default function VerifyEmail() {
         err?.message ||
         'Something went wrong during verification. Please try again.';
       setError(msg);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -129,21 +135,24 @@ export default function VerifyEmail() {
               {/* Verify Button */}
               <TouchableOpacity
                 onPress={onVerifyPress}
-                className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+                disabled={isVerifying}
+                className={`w-full mb-4 border-4 border-black ${
+                  isVerifying ? 'bg-gray-400' : 'bg-[#6536DD]'
+                }`}
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 4, height: 4 },
-                  shadowOpacity: 1,
+                  shadowOpacity: isVerifying ? 0.5 : 1,
                   shadowRadius: 0,
                   elevation: 8,
                 }}
               >
-                <View className="bg-[#6536DD] px-4 py-3">
+                <View className={`px-4 py-3 ${isVerifying ? 'bg-gray-400' : 'bg-[#6536DD]'}`}>
                   <Text
                     className="text-white text-center text-[16px] font-bold"
                     style={{ fontFamily: 'Poppins-Bold' }}
                   >
-                    VERIFY
+                    {isVerifying ? 'VERIFYING...' : 'VERIFY'}
                   </Text>
                 </View>
               </TouchableOpacity>

@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Platform, Image, TextInput} from 'react-native';
+import {
+  View,
+  Text,
+  Platform,
+  Image,
+  TouchableOpacity,
+  ImageBackground,
+  KeyboardAvoidingView,
+  ScrollView,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import Button from '@/components/Button';
+import FormInput from '@/components/FormInput';
+import images from '@/constants/images';
 import { useLocalSearchParams } from 'expo-router';
 import { onboardUser } from '@/apis/user';
 import { createRoom } from '@/apis/room';
@@ -20,22 +30,52 @@ function NameStep({
   onNext: () => void;
 }) {
   return (
-    <View className="w-full max-w-xs">
-      <Text className="text-2xl font-bold text-accent mb-4 text-center">What’s your name?</Text>
-      <TextInput
-        className="border border-accent rounded-lg px-4 py-2 mb-6"
-        value={name}
-        placeholder="Your name"
-        onChangeText={setName}
-      />
-      <Button
-        label="Next"
-        onPress={onNext}
-        size="py-4 px-8"
-        color="bg-accent"
-        className="w-full"
-        textClassName="text-white text-base font-medium"
-      />
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
+        <Image
+          source={images.Onboarding}
+          className="w-66 h-26"
+          resizeMode="contain"
+          style={{
+            tintColor: undefined, // Ensure no color filtering
+          }}
+        />
+      </View>
+
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md">
+        <FormInput
+          label="Your Name"
+          borderColor="#6536DD"
+          value={name}
+          placeholder="Enter your name"
+          onChangeText={setName}
+        />
+
+        <TouchableOpacity
+          onPress={onNext}
+          disabled={!name.trim()}
+          className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+            opacity: !name.trim() ? 0.5 : 1,
+          }}
+        >
+          <View className="bg-[#6536DD] px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              NEXT
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -64,43 +104,96 @@ function BirthdayStep({
   };
 
   return (
-    <View className="w-full max-w-xs items-center">
-      <Text className="text-2xl font-bold text-accent mb-4 text-center">
-        What’s your birthdate?
-      </Text>
-      <Button
-        label={birthdate.toLocaleDateString()}
-        onPress={() => setShowPicker(true)}
-        size="px-4 py-3"
-        color="bg-accent"
-        className="w-full"
-        textClassName="text-white text-base font-medium"
-      />
-      {showPicker && (
-        <DateTimePicker
-          value={birthdate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleChange}
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
+        <Image
+          source={images.Onboarding}
+          className="w-66 h-26"
+          resizeMode="contain"
+          style={{
+            tintColor: undefined, // Ensure no color filtering
+          }}
         />
-      )}
-      <View className="flex-row justify-between w-full">
-        <Button
-          label="Previous"
-          onPress={onPrevious}
-          size="px-4 py-3"
-          color="bg-gray-400"
-          className="w-1/2 mr-2"
-          textClassName="text-white text-base font-medium"
-        />
-        <Button
-          label="Next"
-          onPress={onNext}
-          size="px-4 py-3"
-          color="bg-accent"
-          className="w-1/2 ml-2"
-          textClassName="text-white text-base font-medium"
-        />
+      </View>
+
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md">
+        <TouchableOpacity
+          onPress={() => setShowPicker(true)}
+          className="w-full mb-6 bg-[#6536DD] border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+          }}
+        >
+          <View className="bg-[#6536DD] px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              {birthdate.toLocaleDateString()}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {showPicker && (
+          <View className="mb-6">
+            <DateTimePicker
+              value={birthdate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleChange}
+            />
+          </View>
+        )}
+
+        <View className="flex-row justify-between w-full gap-4">
+          <TouchableOpacity
+            onPress={onPrevious}
+            className="flex-1 bg-gray-400 border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-gray-400 px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                PREVIOUS
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onNext}
+            className="flex-1 bg-[#6536DD] border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-[#6536DD] px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                NEXT
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -136,56 +229,129 @@ function PhotoStep({
   onPrevious?: () => void;
 }) {
   return (
-    <View className="w-full max-w-xs items-center">
-      <Text className="text-2xl font-bold text-accent mb-4 text-center">
-        Upload your profile picture
-      </Text>
-      {photo ? (
-        <Image source={{ uri: photo }} className="w-32 h-32 rounded-full mb-6" />
-      ) : (
-        <Button
-          label="Choose Photo"
-          onPress={() => pickImage(setPhoto)}
-          size="px-4 py-3"
-          color="bg-accent"
-          className="w-full"
-          textClassName="text-white text-base font-medium"
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
+        <Image
+          source={images.Onboarding}
+          className="w-66 h-26"
+          resizeMode="contain"
+          style={{
+            tintColor: undefined, // Ensure no color filtering
+          }}
         />
-      )}
-      {onPrevious && (
-        <Button
-          label="Previous"
-          onPress={onPrevious}
-          size="px-4 py-3"
-          color="bg-gray-400"
-          className="w-full mb-4"
-          textClassName="text-white text-base font-medium"
-        />
-      )}
-      <Button
-        label="Finish onboarding"
-        onPress={onFinish} // Still using `onFinish` to go to next step (setStep(3))
-        size="px-4 py-3"
-        color="bg-accent"
-        className="w-full"
-        textClassName="text-white text-base font-medium"
-      />
+      </View>
+
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md items-center">
+        {photo ? (
+          <View className="mb-6 items-center">
+            <Image
+              source={{ uri: photo }}
+              className="w-32 h-32 rounded-full border-4 border-[#6536DD]"
+            />
+            <TouchableOpacity
+              onPress={() => pickImage(setPhoto)}
+              className="mt-4 bg-white border-4 border-[#6536DD]"
+              style={{
+                shadowColor: '#6536DD',
+                shadowOffset: { width: 4, height: 4 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+                elevation: 8,
+              }}
+            >
+              <View className="bg-white px-4 py-2">
+                <Text
+                  className="text-[#6536DD] text-center text-[14px] font-bold"
+                  style={{ fontFamily: 'Poppins-Bold' }}
+                >
+                  CHANGE PHOTO
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={() => pickImage(setPhoto)}
+            className="w-full mb-6 bg-[#6536DD] border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-[#6536DD] px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                CHOOSE PHOTO
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {onPrevious && (
+          <TouchableOpacity
+            onPress={onPrevious}
+            className="w-full mb-4 bg-gray-400 border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-gray-400 px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                PREVIOUS
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          onPress={onFinish}
+          className="w-full bg-[#6536DD] border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+          }}
+        >
+          <View className="bg-[#6536DD] px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              FINISH ONBOARDING
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-/** --- Main Onboarding Flow (NativeWind) --- */
+/** --- Main Onboarding Flow --- */
 const OnboardingFlow = () => {
-  //Note: This page still need to work on the UI to make it look consistent with the rest of the app.
-
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
-  const {user_id} = useLocalSearchParams();
+  const { user_id } = useLocalSearchParams();
   const router = useRouter();
-  const roomId = uuid.v4(); 
+  const roomId = uuid.v4();
 
   const handleFinish = async () => {
     try {
@@ -202,7 +368,6 @@ const OnboardingFlow = () => {
         room_id: roomId as string,
         user_1: user_id as string,
       });
-
       console.log('✅ Room created:', room);
 
       // Navigate only if both user and room creation are successful
@@ -217,6 +382,7 @@ const OnboardingFlow = () => {
       console.error('❌ Error onboarding user or creating room:', err);
     }
   };
+
   const steps = [
     <NameStep key="1" name={name} setName={setName} onNext={() => setStep(1)} />,
     <BirthdayStep
@@ -237,7 +403,27 @@ const OnboardingFlow = () => {
     />,
   ];
 
-  return <View className="flex-1 items-center justify-center bg-primary px-4">{steps[step]}</View>;
+  return (
+    <ImageBackground
+      source={images.onboardPairingBg}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 items-center justify-center px-4 py-8">{steps[step]}</View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
+  );
 };
 
 export default OnboardingFlow;

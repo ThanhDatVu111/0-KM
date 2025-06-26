@@ -12,6 +12,10 @@ import SignIn from '@/assets/images/SignIn.png';
 import SignUp from '@/assets/images/SignUp.png';
 import ResetPassword from '@/assets/images/ResetPassword.png';
 import VerifyEmail from '@/assets/images/VerifyEmail.png';
+import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
+import Onboarding from '@/assets/images/Onboarding.png';
+import Pairing from '@/assets/images/Pairing.png';
+
 export default {
   polaroid,
   book_on_board,
@@ -26,5 +30,8 @@ export default {
   SignIn,
   SignUp,
   ResetPassword,
-  VerifyEmail
+  VerifyEmail,
+  onboardPairingBg,
+  Onboarding,
+  Pairing
 };
