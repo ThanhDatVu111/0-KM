@@ -19,6 +19,45 @@ import { onboardUser } from '@/apis/user';
 import { createRoom } from '@/apis/room';
 import uuid from 'react-native-uuid';
 
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-3, 0],
+          [3, 0],
+          [0, -3],
+          [0, 3],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 24,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 24,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 /** --- Step 1: NameEntry --- */
 function NameStep({
   name,
@@ -32,16 +71,7 @@ function NameStep({
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
       {/* Purple Header Section */}
-      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
-        <Image
-          source={images.Onboarding}
-          className="w-66 h-26"
-          resizeMode="contain"
-          style={{
-            tintColor: undefined, // Ensure no color filtering
-          }}
-        />
-      </View>
+      <RetroHeader title="Onboarding" />
 
       {/* White Form Section */}
       <View className="bg-white px-8 py-8 rounded-b-md">
@@ -106,16 +136,7 @@ function BirthdayStep({
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
       {/* Purple Header Section */}
-      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
-        <Image
-          source={images.Onboarding}
-          className="w-66 h-26"
-          resizeMode="contain"
-          style={{
-            tintColor: undefined, // Ensure no color filtering
-          }}
-        />
-      </View>
+      <RetroHeader title="Onboarding" />
 
       {/* White Form Section */}
       <View className="bg-white px-8 py-8 rounded-b-md">
@@ -231,16 +252,7 @@ function PhotoStep({
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
       {/* Purple Header Section */}
-      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
-        <Image
-          source={images.Onboarding}
-          className="w-66 h-26"
-          resizeMode="contain"
-          style={{
-            tintColor: undefined, // Ensure no color filtering
-          }}
-        />
-      </View>
+      <RetroHeader title="Onboarding" />
 
       {/* White Form Section */}
       <View className="bg-white px-8 py-8 rounded-b-md items-center">

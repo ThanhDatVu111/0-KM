@@ -8,13 +8,7 @@ import highlight from '@/assets/images/highlight.png';
 import navBarBackground from '@/assets/images/navBarBackground.png';
 import entry from '@/assets/images/entry.png';
 import startButton from '@/assets/images/startButton.png';
-import SignIn from '@/assets/images/SignIn.png';
-import SignUp from '@/assets/images/SignUp.png';
-import ResetPassword from '@/assets/images/ResetPassword.png';
-import VerifyEmail from '@/assets/images/VerifyEmail.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
-import Onboarding from '@/assets/images/Onboarding.png';
-import Pairing from '@/assets/images/Pairing.png';
 
 export default {
   polaroid,
@@ -27,11 +21,5 @@ export default {
   navBarBackground,
   entry,
   startButton,
-  SignIn,
-  SignUp,
-  ResetPassword,
-  VerifyEmail,
   onboardPairingBg,
-  Onboarding,
-  Pairing
 };

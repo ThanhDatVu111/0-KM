@@ -90,14 +90,40 @@ export default function ForgotPasswordScreen() {
             <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
               {/* Purple Header Section */}
               <View className="bg-[#6536DD] border-b-4 border-black px-4 py-4 items-center rounded-t-md">
-                <Image
-                  source={images.ResetPassword}
-                  className="w-56 h-16"
-                  resizeMode="contain"
-                  style={{
-                    tintColor: undefined, // Ensure no color filtering
-                  }}
-                />
+                <View className="relative">
+                  {/* So it renders 4 <Text> components: 1 for each corner */}
+                  {[
+                    [-3, 0],
+                    [3, 0],
+                    [0, -3],
+                    [0, 3],
+                  ].map(([dx, dy], index) => (
+                    <Text
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        fontFamily: 'PressStart2P',
+                        fontSize: 23,
+                        color: 'white',
+                        left: dx,
+                        top: dy,
+                      }}
+                    >
+                      Reset Password
+                    </Text>
+                  ))}
+
+                  {/* Foreground Red Text */}
+                  <Text
+                    style={{
+                      fontFamily: 'PressStart2P',
+                      fontSize: 23,
+                      color: '#F24187',
+                    }}
+                  >
+                    Reset Password
+                  </Text>
+                </View>
               </View>
 
               {/* White Form Section */}

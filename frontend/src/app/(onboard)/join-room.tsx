@@ -46,14 +46,40 @@ function PairingStep({
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
       {/* Purple Header Section */}
       <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
-        <Image
-          source={images.Pairing}
-          className="w-66 h-26"
-          resizeMode="contain"
-          style={{
-            tintColor: undefined, // Ensure no color filtering
-          }}
-        />
+        <View className="relative">
+          {/* So it renders 4 <Text> components: 1 for each corner */}
+          {[
+            [-3, 0],
+            [3, 0],
+            [0, -3],
+            [0, 3],
+          ].map(([dx, dy], index) => (
+            <Text
+              key={index}
+              style={{
+                position: 'absolute',
+                fontFamily: 'PressStart2P',
+                fontSize: 24,
+                color: 'white',
+                left: dx,
+                top: dy,
+              }}
+            >
+              Pairing
+            </Text>
+          ))}
+
+          {/* Foreground Red Text */}
+          <Text
+            style={{
+              fontFamily: 'PressStart2P',
+              fontSize: 24,
+              color: '#F24187',
+            }}
+          >
+            Pairing
+          </Text>
+        </View>
       </View>
 
       {/* White Form Section */}
