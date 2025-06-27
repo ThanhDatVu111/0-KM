@@ -63,7 +63,7 @@ export default function Library() {
     try {
       const fetchedBooks = await libraryApi.getBooks(roomId);
       setBooks(fetchedBooks);
-          (null);
+      null;
     } catch (error: any) {
       console.error(error.message);
     } finally {
@@ -150,10 +150,23 @@ export default function Library() {
 
   return (
     <ImageBackground source={images.libraryBg} resizeMode="cover" className="flex-1">
-      <SafeAreaView className="flex-1 ">
-        <View className="items-center">
-          <Image source={images.libraryTitle} className="w-[280px] h-[80px]" resizeMode="contain" />
-        </View>
+      <SafeAreaView className="flex-1">
+        <Text
+          className="text-center mt-6 mb-6"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 22,
+            color: '#EE478D',
+            textAlign: 'center',
+            textShadowColor: 'black',
+            textShadowOffset: { width: 3, height: 3 },
+            textShadowRadius: 0,
+          }}
+        >
+          Virtual Library
+        </Text>
 
         {loading ? (
           <View className="flex-1 items-center justify-center">

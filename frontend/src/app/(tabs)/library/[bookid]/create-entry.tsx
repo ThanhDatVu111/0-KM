@@ -29,10 +29,19 @@ export default function NewEntryScreen() {
       const newId = (uuid.v4() as string) || '';
       const toCreate = { ...data, id: newId, created_at: new Date().toISOString() };
       await CreateEntry(toCreate);
+      
+      // Navigate back with refresh parameter to trigger refetch
+      router.push({
+        pathname: `/library/[bookId]/page`,
+        params: { 
+          bookId, 
+          refresh: Date.now().toString() // Use timestamp to ensure it's always different
+        }
+      });
     } catch (err: any) {
       console.error('CreateEntries error:', err);
+      router.back(); // Still go back on error, but without refresh
     }
-    router.back();
   };
 
   return (

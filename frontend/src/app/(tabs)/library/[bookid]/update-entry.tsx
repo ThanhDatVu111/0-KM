@@ -40,7 +40,14 @@ export default function UpdateEntryScreen() {
   }) => {
     try {
       await updateEntryApi(data);
-      router.back();
+      // Navigate back with refresh parameter to trigger refetch
+      router.push({
+        pathname: `/library/[bookId]/page`,
+        params: {
+          bookId,
+          refresh: Date.now().toString(), // Use timestamp to ensure it's always different
+        },
+      });
     } catch (err: any) {
       console.error('updateEntryApi error:', err);
       alert('Failed to update entry. Please try again.');
