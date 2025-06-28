@@ -6,7 +6,6 @@ import {
   Dimensions,
   Modal,
   ImageBackground,
-  Image,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
@@ -169,7 +168,7 @@ export default function Library() {
         </Text>
 
         {loading ? (
-          <View className="flex-1 items-center justify-center">
+          <View className="flex-1 items-center py-36">
             <ActivityIndicator size="large" color="white" />
           </View>
         ) : (

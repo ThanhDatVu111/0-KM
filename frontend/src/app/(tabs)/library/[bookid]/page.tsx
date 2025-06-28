@@ -18,9 +18,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import EntryCard from '@/components/EntryCard';
 
 export default function BookPage() {
-  const { bookId: rawId, title: rawTitle, refresh } = useLocalSearchParams<{ 
-    bookId: string; 
-    title: string; 
+  const {
+    bookId: rawId,
+    title: rawTitle,
+    refresh,
+  } = useLocalSearchParams<{
+    bookId: string;
+    title: string;
     refresh?: string;
   }>();
   const bookId = Array.isArray(rawId) ? rawId[0] : rawId;
@@ -34,7 +38,7 @@ export default function BookPage() {
   // Fetch data function
   const fetchData = async () => {
     if (!bookId) return;
-    
+
     setLoading(true);
     try {
       const data = await fetchEntries(bookId);
@@ -91,7 +95,7 @@ export default function BookPage() {
   const goCreate = () => {
     router.push({
       pathname: `/library/[bookId]/create-entry`,
-      params: { bookId }
+      params: { bookId },
     });
   };
 
@@ -265,18 +269,21 @@ export default function BookPage() {
             className="px-4"
             contentContainerStyle={{ paddingBottom: 130, paddingTop: 20 }}
           >
-            {entries.map((entry) => (
-              <EntryCard
-                key={entry.id}
-                title={entry.title}
-                body={entry.body}
-                createdAt={entry.created_at}
-                media={entry.media_paths}
-                location={entry.location}
-                onDelete={() => deleteEntry(bookId, entry.id)}
-                onEdit={() => updateEntry(entry)}
-              />
-            ))}
+            {entries
+              .slice()
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .map((entry) => (
+                <EntryCard
+                  key={entry.id}
+                  title={entry.title}
+                  body={entry.body}
+                  createdAt={entry.created_at}
+                  media={entry.media_paths}
+                  location={entry.location}
+                  onDelete={() => deleteEntry(bookId, entry.id)}
+                  onEdit={() => updateEntry(entry)}
+                />
+              ))}
             <View className="items-center">{renderPlusButton(goCreate)}</View>
           </ScrollView>
         )}

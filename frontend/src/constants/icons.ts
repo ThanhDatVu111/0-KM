@@ -11,6 +11,10 @@ import location from '@/assets/icons/location.png';
 import camera from '@/assets/icons/camera.png';
 import location2 from '@/assets/icons/location2.png';
 import time from '@/assets/icons/time.png';
+import zoomout from '@/assets/icons/zoomout.png';
+import deleteIcon from '@/assets/icons/delete.png';
+import edit from '@/assets/icons/edit.png';
+import zoomin from '@/assets/icons/zoomin.png';
 
 export default {
   books,
@@ -25,5 +29,9 @@ export default {
   location,
   camera,
   location2,
-  time
+  time,
+  zoomin,
+  zoomout,
+  deleteIcon,
+  edit
 };
