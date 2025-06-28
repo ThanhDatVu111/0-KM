@@ -1,4 +1,4 @@
-import supabase from '../../supabase/db';
+import supabase from '../../utils/supabase';
 
 export async function createBook(attrs: { couple_id: string; title: string; color: string }) {
   const { data, error } = await supabase.from('library').insert([attrs]).select().single();

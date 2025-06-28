@@ -5,6 +5,7 @@ import FormInput from '@/components/FormInput';
 import React from 'react';
 import Button from '@/components/Button';
 import { useState } from 'react';
+import { SimpleSignOutButton } from '@/components/SignOutButton';
 
 export default function SignInForm() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -110,6 +111,9 @@ export default function SignInForm() {
         textClassName="text-[16px] underline text-accent"
         textStyle={{ fontFamily: 'Poppins-Medium' }}
       />
+
+      {/* Sign Out Button */}
+      <SimpleSignOutButton />
     </View>
   );
 }

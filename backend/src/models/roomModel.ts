@@ -1,5 +1,4 @@
-import supabase from '../../supabase/db';
-
+import supabase from '../../utils/supabase';
 //ROLE: Database access layer
 
 export async function createRoom(attrs: { room_id: string; user_1: string }) {

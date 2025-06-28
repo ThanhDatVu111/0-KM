@@ -5,7 +5,7 @@ export default function LibraryLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, // Customize this based on your needs
+        headerShown: false, 
       }}
     />
   );
