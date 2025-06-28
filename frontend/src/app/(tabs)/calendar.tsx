@@ -2,14 +2,12 @@ import { View, Text, Image, TouchableOpacity, ActivityIndicator, StyleSheet } fr
 import React, { useState, useEffect } from 'react';
 import icons from '@/constants/icons';
 import useFont from '@/hooks/useFont';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, CodeChallengeMethod, Prompt } from 'expo-auth-session';
 import { useAuth } from '@clerk/clerk-expo';
 
 import {
-  createRefreshToken,
   fetchNewAccessToken,
   checkRefreshToken,
   updateRefreshToken,
@@ -55,9 +53,10 @@ const FAKE_EVENTS: Record<string, FakeEvent[]> = {
 };
 
 function GGCalendar() {
-  const [userId] = useAuth();
+  const { userId, isLoaded, isSignedIn } = useAuth();
   const todayKey = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
+  const [activeTab, setActiveTab] = useState<'partner' | 'mutual'>('partner');
 
   // --- NEW STATE FOR REAL EVENTS ---
   const [myEvents, setMyEvents] = useState<any[]>([]);
@@ -128,8 +127,6 @@ function GGCalendar() {
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
   const iosClientId = process.env.EXPO_PUBLIC_IOS_CLIENT_ID!;
   const clientSecret = process.env.EXPO_PUBLIC_CLIENT_SECRET!;
-  const { user_id } = useLocalSearchParams();
-  const userId = 'user_2xpzayL53QL1tzrGzLoCXXF0FIz';
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     redirectUri,
@@ -206,9 +203,13 @@ function GGCalendar() {
     if (!other_refresh_token) return;
     (async () => {
       try {
-        console.log('fetching partner access token');
-        // Skip real fetch; just hard‐code:
-        setOtherAccessToken('partner_access_token');
+        const partnerAccessToken = await fetchNewAccessToken({
+          client_id: webClientId,
+          client_secret: clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: other_refresh_token,
+        });
+        setOtherAccessToken(partnerAccessToken.access_token);
       } catch (err) {
         console.error('Error fetching partner access token:', err);
       }
@@ -220,7 +221,7 @@ function GGCalendar() {
     if (!room_id) return;
     (async () => {
       try {
-        const meSynced = await checkRefreshToken({ user_id: userId });
+        const meSynced = await checkRefreshToken({ user_id: userId ?? '' });
         setSyncWithCalendar(Boolean(meSynced));
       } catch (err) {
         console.error('Error checking my sync:', err);
@@ -233,7 +234,7 @@ function GGCalendar() {
     if (!syncWithCalendar) return;
     (async () => {
       try {
-        const myRT = await fetchRefreshToken({ user_id: userId });
+        const myRT = await fetchRefreshToken({ user_id: userId ?? '' });
         // Fix: unwrap .data if present
         const refreshTokenValue = (myRT as any)?.data?.refresh_token || myRT?.refresh_token || '';
         setRefreshToken(refreshTokenValue);
@@ -276,7 +277,7 @@ function GGCalendar() {
       setLoadingEvents(true);
       setFetchError(null);
       try {
-        const events = await fetchCalendarEvents({ partnerAccessToken: access_token });
+        const events = await fetchCalendarEvents({ partnerAccessToken: other_access_token });
         setMyEvents(events);
       } catch (err) {
         setFetchError('Failed to fetch calendar events');
@@ -298,7 +299,7 @@ function GGCalendar() {
         const refToken = response.authentication?.refreshToken;
         if (response.authentication?.refreshToken) {
           await updateRefreshToken({
-            user_id: userId,
+            user_id: userId ?? '',
             refresh_token: refToken ?? '',
           });
           setRefreshToken(refToken ?? '');
@@ -375,7 +376,6 @@ function GGCalendar() {
   };
 
   const fontsLoaded = useFont();
-  const router = useRouter();
 
   if (!fontsLoaded) {
     return (
@@ -445,8 +445,29 @@ function GGCalendar() {
     );
   }
 
+  // Tab UI
   return (
     <View style={styles.container}>
+      {/* Tab Switcher */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'partner' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('partner')}
+        >
+          <Text style={[styles.tabText, activeTab === 'partner' && styles.tabTextActive]}>
+            Partner's Schedule
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'mutual' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('mutual')}
+        >
+          <Text style={[styles.tabText, activeTab === 'mutual' && styles.tabTextActive]}>
+            Compare Schedule
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Calendar UI */}
       <Calendar
         onDayPress={onDayPress}
@@ -461,21 +482,31 @@ function GGCalendar() {
         }}
       />
 
-      {/* Below the calendar, show a header and list of fake events */}
-      <View style={styles.eventsHeaderContainer}>
-        <Text style={styles.eventsHeaderText}>
-          {eventsForDate.length > 0 ? `Events on ${selectedDate}` : `No events on ${selectedDate}`}
-        </Text>
-      </View>
-
-      <View style={styles.eventsListContainer}>
-        {eventsForDate.map((evt) => (
-          <View key={evt.id} style={styles.eventItem}>
-            <Text style={styles.eventTitle}>{evt.title}</Text>
-            <Text style={styles.eventTime}>{evt.time}</Text>
+      {/* Tab Content */}
+      {activeTab === 'partner' ? (
+        <View>
+          {/* Below the calendar, show a header and list of partner's events */}
+          <View style={styles.eventsHeaderContainer}>
+            <Text style={styles.eventsHeaderText}>
+              {eventsForDate.length > 0
+                ? `Events on ${selectedDate}`
+                : `No events on ${selectedDate}`}
+            </Text>
           </View>
-        ))}
-      </View>
+          <View style={styles.eventsListContainer}>
+            {eventsForDate.map((evt) => (
+              <View key={evt.id} style={styles.eventItem}>
+                <Text style={styles.eventTitle}>{evt.title}</Text>
+                <Text style={styles.eventTime}>{evt.time}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.eventsHeaderContainer}>
+          <Text style={styles.eventsHeaderText}>No events to display.</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -518,6 +549,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#777',
     marginTop: 4,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  tabButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    backgroundColor: '#eee',
+    marginHorizontal: 8,
+  },
+  tabButtonActive: {
+    backgroundColor: '#E91E63',
+  },
+  tabText: {
+    color: '#333',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  tabTextActive: {
+    color: '#fff',
   },
 });
 
