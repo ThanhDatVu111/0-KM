@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { spotifyAPI, SpotifyTrack, SpotifyPlaybackState } from '@/apis/spotify';
 import { PlaylistSelector } from './PlaylistSelector';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface SpotifyWidgetProps {
   roomId?: string;
@@ -175,43 +176,72 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
     </TouchableOpacity>
   );
 
+  // Add a themed card wrapper for the widget
+  const ThemedCard: React.FC<{ children: React.ReactNode; style?: any }> = ({
+    children,
+    style,
+  }) => (
+    <View
+      style={[
+        {
+          borderWidth: 1.5,
+          borderColor: 'black',
+          borderRadius: 16,
+          overflow: 'hidden',
+        },
+        style,
+      ]}
+    >
+      <LinearGradient
+        colors={['#6536DA', '#F7BFF7']}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ ...StyleSheet.absoluteFillObject, borderRadius: 16, zIndex: -1 }}
+      />
+      <View style={{ padding: 16, minHeight: 180, justifyContent: 'center' }}>{children}</View>
+    </View>
+  );
+
   // Not authenticated state
   if (!isAuthenticated) {
     return (
-      <View style={styles.container}>
-        <View style={styles.authContainer}>
-          <Ionicons name="musical-notes" size={48} color="#1DB954" />
-          <Text style={styles.authTitle}>Link with your Spotify account</Text>
-          <Text style={styles.authSubtitle}>
-            Connect your Spotify to share music and discover what your partner is listening to
+      <ThemedCard>
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="musical-notes" size={48} color="#fff" style={{ marginBottom: 8 }} />
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18, marginBottom: 8 }}>
+            Connect your Spotify
           </Text>
-
-          {/* Debug info - remove this after testing */}
-          <View style={styles.debugContainer}>
-            <Text style={styles.debugText}>Debug Info:</Text>
-            <Text style={styles.debugText}>Redirect URI: 0km-app://spotify-callback</Text>
-            <Text style={styles.debugText}>Add this to your Spotify app settings</Text>
-          </View>
-
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+          <Text style={{ color: '#fff', textAlign: 'center', marginBottom: 16 }}>
+            Sign in to share music and discover what your partner is listening to
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#1DB954',
+              borderRadius: 8,
+              paddingVertical: 10,
+              paddingHorizontal: 24,
+              marginTop: 8,
+            }}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <>
-                <Ionicons name="musical-notes" size={20} color="white" />
-                <Text style={styles.loginButtonText}>Sign in with Spotify</Text>
-              </>
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                Sign in to Spotify
+              </Text>
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </ThemedCard>
     );
   }
 
   // Authenticated but no music playing
   if (!currentTrack) {
     return (
-      <View style={styles.container}>
+      <ThemedCard>
         <View style={styles.authContainer}>
           <Ionicons name="musical-notes" size={48} color="#1DB954" />
           <Text style={styles.authTitle}>Listen to music together</Text>
@@ -226,13 +256,13 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
             <Text style={styles.secondaryButtonText}>Open Spotify</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ThemedCard>
     );
   }
 
   // Music is playing - show current track
   return (
-    <View style={styles.container}>
+    <ThemedCard>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Now Playing</Text>
@@ -326,7 +356,7 @@ export const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ roomId, isHost = f
         onPlaylistSelect={handlePlaylistSelect}
         isHost={isHost}
       />
-    </View>
+    </ThemedCard>
   );
 };
 
