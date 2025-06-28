@@ -5,7 +5,6 @@ import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
-import { SpotifyWidget } from '@/components/SpotifyWidget';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -53,11 +52,6 @@ const Home = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSpotifySync = (state: any) => {
-    // Handle Spotify sync data
-    console.log('Spotify sync state:', state);
   };
 
   if (isLoading) {
@@ -188,16 +182,14 @@ const Home = () => {
           </WidgetCard>
         </View>
 
-        {/* Spotify Widget */}
-        {roomId ? (
-          <SpotifyWidget roomId={roomId} isHost={isHost} onSync={handleSpotifySync} />
-        ) : (
+        {/* Join Room Widget */}
+        {!roomId && (
           <TouchableOpacity
             className="h-28 mt-4 items-center justify-center rounded-2xl border border-white/20 bg-primary/80 p-4 shadow-md backdrop-blur-lg"
             onPress={() => router.push('/(onboard)/join-room')}
           >
             <Text className="text-center font-pmedium text-lg text-white">
-              + Join a room to connect with your Spotify +
+              + Join a room to connect with your partner +
             </Text>
           </TouchableOpacity>
         )}
