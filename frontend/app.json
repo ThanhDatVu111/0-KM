@@ -2,6 +2,9 @@
   "expo": {
     "name": "0km-app",
     "slug": "0km-app",
+    "extra": {
+      "redirectUri": "0km-app://spotify-callback"
+    },
     "entryPoint": "./src/app/_layout.tsx",
     "version": "1.0.0",
     "orientation": "portrait",

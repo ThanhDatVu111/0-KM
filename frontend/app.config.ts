@@ -5,6 +5,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: '0-KM',
   slug: '0-km',
   version: '1.0.0',
+  scheme: '0km-app',
+  
   orientation: 'portrait',
   icon: './src/assets/icon.png',
   userInterfaceStyle: 'light',

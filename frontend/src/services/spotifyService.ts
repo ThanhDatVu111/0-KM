@@ -4,13 +4,17 @@ import * as WebBrowser from 'expo-web-browser';
 import { Linking } from 'react-native';
 import { SpotifyTrack, SpotifyPlaybackState, SpotifyPlaylist } from '@/types/spotify';
 
-// Spotify configuration
-const SPOTIFY_CLIENT_ID = 'f805d2782059483e801da7782a7e04c8'; // Replace with your actual client ID
-const SPOTIFY_REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: '0km-app',
-  path: 'spotify-callback',
-});
+// Complete any pending auth session
+WebBrowser.maybeCompleteAuthSession();
 
+// Generate a redirect URI that works in Expo Go and standalone
+const redirectUri = (AuthSession.makeRedirectUri as any)({
+  scheme: '0km-app',
+  useProxy: true,
+});
+console.log('▶️ Using redirectUri =', redirectUri);
+
+const SPOTIFY_CLIENT_ID = 'f805d2782059483e801da7782a7e04c8';
 const SPOTIFY_SCOPES = [
   'user-read-playback-state',
   'user-read-currently-playing',
@@ -19,180 +23,136 @@ const SPOTIFY_SCOPES = [
   'playlist-modify-private',
 ].join(' ');
 
-class SpotifyService {
+export class SpotifyService {
   private accessToken: string | null = null;
 
-  // Simple authentication
   async authenticate(): Promise<boolean> {
     try {
-      // Generate PKCE challenge
-      const codeVerifier = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-        { encoding: Crypto.CryptoEncoding.BASE64 },
-      );
-
-      const codeChallenge = await Crypto.digestStringAsync(
+      // 1. Generate PKCE code verifier & challenge
+      const codeVerifier = await Crypto.randomUUID();
+      const codeChallengeBuffer = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
         codeVerifier,
         { encoding: Crypto.CryptoEncoding.BASE64 },
       );
+      const codeChallenge = codeChallengeBuffer
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
 
-      // Create auth request
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_SCOPES)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+      // 2. Build the auth URL
+      const authUrl =
+        `https://accounts.spotify.com/authorize?` +
+        `client_id=${SPOTIFY_CLIENT_ID}` +
+        `&response_type=code` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(SPOTIFY_SCOPES)}` +
+        `&code_challenge_method=S256` +
+        `&code_challenge=${codeChallenge}`;
 
-      // Open browser for authentication
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, SPOTIFY_REDIRECT_URI);
+      // 3. Open the browser for user login
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      if (result.type !== 'success' || !result.url) return false;
 
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get('code');
+      // 4. Extract the authorization code
+      const returnedUrl = new URL(result.url);
+      const code = returnedUrl.searchParams.get('code');
+      if (!code) return false;
 
-        if (code) {
-          await this.exchangeCodeForToken(code, codeVerifier);
-          return true;
-        }
-      }
-
-      return false;
+      // 5. Exchange code for tokens
+      await this.exchangeCodeForToken(code, codeVerifier);
+      return true;
     } catch (error) {
       console.error('Spotify authentication error:', error);
       return false;
     }
   }
 
-  // Exchange authorization code for access token
-  private async exchangeCodeForToken(code: string, codeVerifier: string): Promise<void> {
-    try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: SPOTIFY_CLIENT_ID,
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: SPOTIFY_REDIRECT_URI,
-          code_verifier: codeVerifier,
-        }),
-      });
+  private async exchangeCodeForToken(code: string, codeVerifier: string) {
+    const tokenUrl = 'https://accounts.spotify.com/api/token';
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+      client_id: SPOTIFY_CLIENT_ID,
+      code_verifier: codeVerifier,
+    }).toString();
 
-      const data = await response.json();
-
-      if (response.ok) {
-        this.accessToken = data.access_token;
-      } else {
-        throw new Error(`Token exchange failed: ${data.error}`);
-      }
-    } catch (error) {
-      console.error('Token exchange error:', error);
-      throw error;
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${data.error}`);
     }
+    this.accessToken = data.access_token;
   }
 
-  // Get current playback state
   async getCurrentPlayback(): Promise<SpotifyPlaybackState | null> {
     if (!this.accessToken) return null;
-
-    try {
-      const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-      });
-
-      if (response.status === 204) return null;
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to get current playback:', error);
-      return null;
-    }
+    const resp = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
+    if (resp.status === 204) return null;
+    return resp.json();
   }
 
-  // Search tracks
-  async searchTracks(query: string, limit: number = 20): Promise<SpotifyTrack[]> {
+  async searchTracks(query: string, limit = 20): Promise<SpotifyTrack[]> {
     if (!this.accessToken) return [];
-
-    try {
-      const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
-        { headers: { Authorization: `Bearer ${this.accessToken}` } },
-      );
-
-      const data = await response.json();
-      return data.tracks?.items || [];
-    } catch (error) {
-      console.error('Failed to search tracks:', error);
-      return [];
-    }
+    const resp = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+      { headers: { Authorization: `Bearer ${this.accessToken}` } },
+    );
+    const data = await resp.json();
+    return data.tracks?.items || [];
   }
 
-  // Create playlist
-  async createPlaylist(name: string, isPublic: boolean = false): Promise<SpotifyPlaylist | null> {
+  async createPlaylist(name: string, isPublic = false): Promise<SpotifyPlaylist | null> {
     if (!this.accessToken) return null;
-
-    try {
-      // Get current user
-      const userResponse = await fetch('https://api.spotify.com/v1/me', {
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-      });
-      const user = await userResponse.json();
-
-      // Create playlist
-      const response = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, public: isPublic }),
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to create playlist:', error);
-      return null;
-    }
+    const userResp = await fetch('https://api.spotify.com/v1/me', {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
+    const user = await userResp.json();
+    const resp = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, public: isPublic }),
+    });
+    return resp.ok ? resp.json() : null;
   }
 
-  // Add tracks to playlist
   async addTracksToPlaylist(playlistId: string, trackUris: string[]): Promise<boolean> {
     if (!this.accessToken) return false;
-
-    try {
-      const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uris: trackUris }),
-      });
-
-      return response.ok;
-    } catch (error) {
-      console.error('Failed to add tracks to playlist:', error);
-      return false;
-    }
+    const resp = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ uris: trackUris }),
+    });
+    return resp.ok;
   }
 
-  // Open track in Spotify
-  openTrackInSpotify(trackUri: string): void {
-    const spotifyUrl = trackUri.replace('spotify:track:', 'https://open.spotify.com/track/');
-    Linking.openURL(spotifyUrl);
+  openTrackInSpotify(trackUri: string) {
+    const url = trackUri.replace('spotify:track:', 'https://open.spotify.com/track/');
+    Linking.openURL(url);
   }
 
-  // Check if authenticated
-  isAuthenticated(): boolean {
-    return !!this.accessToken;
+  isAuthenticated() {
+    return Boolean(this.accessToken);
   }
 
-  // Get access token
-  getAccessToken(): string | null {
+  getAccessToken() {
     return this.accessToken;
   }
 
-  // Logout
-  logout(): void {
+  logout() {
     this.accessToken = null;
   }
 }
