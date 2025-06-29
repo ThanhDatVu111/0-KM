@@ -8,6 +8,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import images from '@/constants/images';
@@ -42,6 +43,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
   });
 
   const [expanded, setExpanded] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Carousel state for expanded mode
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -454,7 +456,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
             <Image source={icons.edit} style={{ width: 21, height: 21 }} resizeMode="contain" />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={onDelete}
+            onPress={() => setShowDeleteModal(true)}
             accessibilityLabel="Delete"
             style={{ flex: 1, alignItems: 'center' }}
           >
@@ -593,6 +595,141 @@ const EntryCard: React.FC<EntryCardProps> = ({
           </View>
         </View>
       </View>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showDeleteModal}
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.3)',
+          }}
+        >
+          <View
+            style={{
+              width: '80%',
+              backgroundColor: '#FFF0F5',
+              borderWidth: 4,
+              borderColor: '#000',
+              shadowColor: '#000',
+              shadowOffset: { width: 6, height: 6 },
+              shadowOpacity: 0.5,
+            }}
+          >
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottomWidth: 2,
+                borderColor: '#000',
+                backgroundColor: '#FAD3E4',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <View style={{ width: 20 }} />
+              <Text style={{ fontFamily: 'PixelifySans', fontSize: 18 }}>DELETE ENTRY</Text>
+              <TouchableOpacity
+                onPress={() => setShowDeleteModal(false)}
+                activeOpacity={0.8}
+                style={{
+                  width: 32,
+                  height: 32,
+                  backgroundColor: '#FFE4EC',
+                  borderColor: '#000',
+                  borderWidth: 2,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 18,
+                    color: '#000',
+                    lineHeight: 20,
+                  }}
+                >
+                  ×
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {/* Body */}
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text
+                style={{
+                  fontFamily: 'PixelifySans',
+                  fontSize: 16,
+                  color: '#222',
+                  textAlign: 'center',
+                }}
+              >
+                Are you sure you want to delete this entry? This action cannot be undone.
+              </Text>
+            </View>
+            {/* Actions */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                borderTopWidth: 2,
+                borderColor: '#000',
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setShowDeleteModal(false)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  backgroundColor: '#EEE',
+                  borderRightWidth: 2,
+                  borderColor: '#000',
+                }}
+              >
+                <Text style={{ fontFamily: 'PixelifySans', fontSize: 15, color: '#222' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  onDelete();
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  backgroundColor: '#FAD3E4',
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 15,
+                    color: '#d63031',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

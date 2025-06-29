@@ -18,6 +18,8 @@ import * as Location from 'expo-location';
 import images from '@/constants/images';
 import icons from '@/constants/icons';
 import { router } from 'expo-router';
+import MapPickerWebView from './MapPickerWebView';
+
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
 const CLOUDINARY_SIGN_URL = process.env.EXPO_PUBLIC_CLOUDINARY_SIGN_URL;
@@ -78,6 +80,10 @@ export default function EntryForm({
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
   const [saving, setSaving] = useState(false);
   const [locationLoading, setLocationLoading] = useState<boolean>(false);
+  const [showWebPicker, setShowWebPicker] = useState(false);
+  const [pickedCoords, setPickedCoords] = useState<{ latitude: number; longitude: number } | null>(
+    null,
+  );
 
   const MAX_MEDIA = 16; // Maximum number of media items allowed
   const MAX_WORDS = 20;
@@ -381,6 +387,10 @@ export default function EntryForm({
     );
   }
 
+  function setMapPickerVisible(visible: boolean): void {
+    setShowWebPicker(visible);
+  }
+
   return (
     <View className="flex-1">
       {/* ─── Background Image ─── */}
@@ -508,12 +518,9 @@ export default function EntryForm({
                     <Image source={icons.photo} style={{ width: 24, height: 24 }} />
                   </Pressable>
 
-                  <Pressable onPress={handleLocationPicker} disabled={locationLoading}>
-                    {locationLoading ? (
-                      <ActivityIndicator size="small" color="#000" />
-                    ) : (
-                      <Image source={icons.location} style={{ width: 24, height: 24 }} />
-                    )}
+                  {/* New Map Picker Button */}
+                  <Pressable onPress={() => setMapPickerVisible(true)}>
+                    <Image source={icons.location} style={{ width: 24, height: 24 }} />
                   </Pressable>
                 </View>
                 {/* ─── Done Button ─── */}
@@ -647,6 +654,28 @@ export default function EntryForm({
           </View>
         </View>
       </ImageBackground>
+
+      <MapPickerWebView
+        visible={showWebPicker}
+        onClose={() => setShowWebPicker(false)}
+        onSelect={(lat, lng) => {
+          setPickedCoords({ latitude: lat, longitude: lng });
+          (async () => {
+            const [rev] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+            const formatted = [
+              rev.name,
+              rev.street,
+              rev.city,
+              rev.region,
+              rev.postalCode,
+              rev.country,
+            ]
+              .filter(Boolean)
+              .join(', ');
+            setLocationAddress(formatted);
+          })();
+        }}
+      />
     </View>
   );
 }
