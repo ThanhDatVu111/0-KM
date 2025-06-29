@@ -1,11 +1,11 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 
-export default function LibraryLayout() {
+export default function ChatLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, // Customize this based on your needs
+        headerShown: false,
       }}
     />
   );

@@ -1,4 +1,4 @@
-import supabase from '../../supabase/db';
+import supabase from '../../utils/supabase';
 
 // Fetch all preceding messages before opening the chatroom
 export async function fetchMessages({
@@ -49,18 +49,19 @@ export async function getMessageById(message_id: string) {
 export async function sendMessage(attrs: {
   message_id: string;
   room_id: string;
-  content?: string;
+  content?: string | null;
   sender_id: string;
   created_at: string;
-  media?: object;
+  media_paths?: string[];
 }) {
-  if (!attrs.room_id || (!attrs.content && !attrs.media)) return;
+  if (!attrs.room_id || (!attrs.content && !attrs.media_paths)) return;
   const { data, error } = await supabase.from('chat').insert([attrs]).select().single(); // Expect 1 row
 
   if (error) {
     console.error('Failed to send message.', error.message);
     throw error;
   }
+  console.log('Message sent: ', data);
   return data;
 }
 

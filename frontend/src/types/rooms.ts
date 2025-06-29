@@ -26,8 +26,6 @@ export interface FetchRoomRequest {
 export interface FetchRoomResponse {
   room_id: string;
   filled: boolean;
-<<<<<<< HEAD
+  user_1: string;
   user_2: string;
-=======
->>>>>>> f3d1c1f0819fd1e48b9bb466a45d50a52e62615e
 }

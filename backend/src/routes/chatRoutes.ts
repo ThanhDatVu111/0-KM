@@ -10,8 +10,8 @@ import {
 const router = Router();
 
 // Define RESTful routes relative to /chat
-router.post('/', sendMessage);
 router.get('/', fetchMessages);
+router.post('/', sendMessage);
 router.get('/:message_id', getMessageById);
 router.delete('/:message_id', deleteMessage);
 router.put('/:message_id', editMessage);

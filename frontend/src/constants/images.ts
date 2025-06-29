@@ -6,6 +6,7 @@ import polaroid_frame from '@/assets/images/polaroidFrame.png';
 import polaroid_picture from '@/assets/images/polaroidPicture.png';
 import highlight from '@/assets/images/highlight.png';
 import navBarBackground from '@/assets/images/navBarBackground.png';
+import chatBg from '@/assets/images/chatBg.png';
 
 export default {
   polaroid,
@@ -15,5 +16,6 @@ export default {
   polaroid_frame,
   polaroid_picture,
   highlight,
-  navBarBackground
+  navBarBackground,
+  chatBg,
 };

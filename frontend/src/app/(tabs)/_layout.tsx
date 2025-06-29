@@ -91,7 +91,7 @@ export default function TabsLayout() {
           tabBarStyle: { display: 'none' },
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon={icons.speech_bubble} />,
         }}
-      />
+      /> 
     </Tabs>
   );
 }

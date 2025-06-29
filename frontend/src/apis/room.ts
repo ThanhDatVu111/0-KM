@@ -8,7 +8,7 @@ import {
 } from '@/types/rooms';
 import { BASE_URL } from './apiClient';
 
-console.log('BASE_URL:', BASE_URL);
+console.log('BASE_URL in api room:', BASE_URL);
 
 export async function createRoom(request: RoomRequest): Promise<CreatedRoom> {
   try {

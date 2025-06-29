@@ -44,9 +44,9 @@ export async function getMessageById(
 
 export async function sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { message_id, room_id, content, sender_id, created_at, media } = req.body;
-    if (!room_id || (!content && !media)) {
-      res.status(400).json({ error: 'RMissing field/params: room_id and content' });
+    const { message_id, room_id, content, sender_id, created_at, media_paths } = req.body;
+    if (!room_id || (!content && !media_paths)) {
+      res.status(400).json({ error: 'RMissing field/params: room_id or content or media_paths' });
       return;
     }
 
@@ -56,7 +56,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       content,
       sender_id,
       created_at,
-      media,
+      media_paths,
     });
   } catch (err: any) {
     next(err);
@@ -72,7 +72,7 @@ export async function editMessage(
     const { message_id, newInput } = req.params;
 
     if (!message_id || !newInput) {
-      res.status(400).json({ error: 'RMissing field/params: message_id and newInput' });
+      res.status(400).json({ error: 'RMissing field/params: message_id or newInput' });
       return;
     }
     const newMessage = await chatService.editMessage({ message_id, newInput });
