@@ -9,11 +9,16 @@ import icons from '@/constants/icons';
 
 // Use a plain template string for leafletHTML
 // language=HTML
-const leafletHTML =`
+const leafletHTML = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    Leaflet CSS: This line loads the default styles for the map, markers, and controls.
+    Do not remove! Without it, the map will look broken or unstyled.
+    Docs: https://leafletjs.com/
+  -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body, #map { height: 100%; margin:0; padding:0; }
@@ -50,7 +55,7 @@ const leafletHTML =`
       font-size: 16px;
     }
     #search-results {
-      position:absolute; top:92px; left:32px; right:32px;
+      position:absolute; top:110px; left:32px; right:32px;
       background: #D0F5FF;
       border: 2px solid #000;
       box-shadow: 4px 4px 0 #000; max-height:150px; overflow-y:auto;
@@ -80,9 +85,15 @@ const leafletHTML =`
 <body>
   <div id="search-bar">
     <input id="search-input" placeholder="Search for a place…" autocomplete="off" />
+    <button id="clear-btn" title="Clear search" style="background:none;border:none;outline:none;cursor:pointer;font-size:18px;padding:0 4px;color:#000;">✕</button>
   </div>
   <div id="search-results" style="display:none;"></div>
   <div id="map"></div>
+  <!--
+    Leaflet JS: This line imports the Leaflet map library from a CDN.
+    It does NOT fetch map data or call an API—just loads the code so you can use Leaflet's map features in your JS below.
+    Docs: https://leafletjs.com/
+  -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     let selectedPlace = null;
@@ -92,14 +103,18 @@ const leafletHTML =`
       maxZoom: 19
     }).addTo(map);
     let selectMarker = null;
+
     // Helper: reverse geocode
+    // This function fetches the external Nominatim API (OpenStreetMap)
+    // to convert latitude/longitude coordinates into a human-readable address.
     function reverseGeocode(lat, lng, cb) {
       fetch(\`https://nominatim.openstreetmap.org/reverse?format=json&lat=\${lat}&lon=\${lng}\`)
         .then(r => r.json())
         .then(data => cb(data.display_name || \`\${lat.toFixed(5)}, \${lng.toFixed(5)}\`))
         .catch(() => cb(\`\${lat.toFixed(5)}, \${lng.toFixed(5)}\`));
     }
-    // === Map Click Handler ===
+
+    // === Map Marker Handler ===
     map.on('click', e => {
       if (selectMarker) map.removeLayer(selectMarker);
       selectMarker = L.marker(e.latlng).addTo(map);
@@ -109,9 +124,25 @@ const leafletHTML =`
         window.ReactNativeWebView.postMessage(JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, name: address }));
       });
     });
+
     // === Search Bar Logic ===
     const input = document.getElementById('search-input');
     const resultsDiv = document.getElementById('search-results');
+    const clearBtn = document.getElementById('clear-btn');
+    // Clear button logic: clears input and results
+    clearBtn.addEventListener('click', function(e) {
+      input.value = '';
+      resultsDiv.style.display = 'none';
+      resultsDiv.innerHTML = '';
+      input.focus();
+      if (selectMarker) {
+        map.removeLayer(selectMarker);
+        selectMarker = null;
+      }
+      selectedPlace = null;
+      // Optionally, notify React Native that selection is cleared
+      window.ReactNativeWebView.postMessage(JSON.stringify({ cleared: true }));
+    });
     let timeout = null;
     input.addEventListener('input', () => {
       const q = input.value.trim();
@@ -120,6 +151,8 @@ const leafletHTML =`
         resultsDiv.style.display = 'none';
         return;
       }
+      // Debounced search: After the user stops typing for 400ms, fetch place suggestions from the Nominatim API (OpenStreetMap)
+      // and display them as clickable results. When a result is clicked, update the map, marker, input, and send the selection to React Native.
       timeout = setTimeout(() => {
         fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q))
           .then(r => r.json())
