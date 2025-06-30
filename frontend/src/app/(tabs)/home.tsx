@@ -1,10 +1,14 @@
-import { View, Text, ImageBackground, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ImageBackground, TouchableOpacity, Image, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
+import { YouTubeWidget } from '@/components/music/YouTubeWidget';
+import { YouTubeInput } from '@/components/music/YouTubeInput';
+import { useYouTubeVideo } from '@/hooks/useYouTubeVideo';
+import { upsertYouTubeVideo } from '@/apis/youtube';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -31,6 +35,9 @@ const Home = () => {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showYouTubeInput, setShowYouTubeInput] = useState(false);
+
+  const { userVideo, partnerVideo, hasRoom, isLoading: videoLoading } = useYouTubeVideo();
 
   useEffect(() => {
     if (userId) {
@@ -51,6 +58,21 @@ const Home = () => {
       console.error('Failed to load user room:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAddYouTubeVideo = async (videoId: string, title?: string) => {
+    if (!userId) return;
+
+    try {
+      await upsertYouTubeVideo({
+        user_id: userId,
+        video_id: videoId,
+        title,
+      });
+      setShowYouTubeInput(false);
+    } catch (error) {
+      console.error('Failed to add YouTube video:', error);
     }
   };
 
@@ -182,6 +204,39 @@ const Home = () => {
           </WidgetCard>
         </View>
 
+        {/* YouTube Music Widget */}
+        <View className="mb-4">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg text-white font-pmedium">
+              {hasRoom ? "What We're Watching" : 'My Music Video'}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowYouTubeInput(true)}
+              className="bg-white/20 px-3 py-1 rounded-full"
+            >
+              <Text className="text-white font-pregular text-sm">+ Add</Text>
+            </TouchableOpacity>
+          </View>
+
+          {hasRoom ? (
+            // Show partner's video if in a room
+            <YouTubeWidget
+              videoId={partnerVideo?.video_id || ''}
+              title={partnerVideo?.title || "Partner's Music Video"}
+              onPress={() => {
+                // Could open in full screen or external app
+              }}
+            />
+          ) : (
+            // Show user's own video if not in a room
+            <YouTubeWidget
+              videoId={userVideo?.video_id || ''}
+              title={userVideo?.title || 'My Music Video'}
+              onPress={() => setShowYouTubeInput(true)}
+            />
+          )}
+        </View>
+
         {/* Join Room Widget */}
         {!roomId && (
           <TouchableOpacity
@@ -198,6 +253,21 @@ const Home = () => {
       <View className="absolute bottom-5 right-5">
         <SignOutButton />
       </View>
+
+      {/* YouTube Input Modal */}
+      <Modal
+        visible={showYouTubeInput}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowYouTubeInput(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center p-6">
+          <YouTubeInput
+            onVideoIdSubmit={handleAddYouTubeVideo}
+            onCancel={() => setShowYouTubeInput(false)}
+          />
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
