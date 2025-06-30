@@ -7,7 +7,7 @@ import { fetchUser } from '@/apis/user';
 import { Feather } from '@expo/vector-icons';
 
 interface ChatHeaderProps {
-  partnerName?: string | 'Your Partner';
+  partnerName?: string;
   avatar_url?: string;
   isOnline?: boolean;
   onBackPress?: () => void;
@@ -51,7 +51,7 @@ export default function ChatHeader({
 
   return (
     <View
-      className="flex-row items-center bg-white px-4 py-3 rounded-full"
+      className="flex-row items-center bg-white px-4 py-3 rounded-full border-2 border-[#F24187]"
       style={{
         ...Platform.select({
           ios: {
@@ -67,14 +67,14 @@ export default function ChatHeader({
       }}
     >
       <TouchableOpacity className="mr-3" onPress={() => router.push('/(tabs)/home')}>
-        <Text className="text-lg text-[#F5829B]">←</Text>
+        <Feather name="arrow-left" color="#F24187" size={24} />
       </TouchableOpacity>
 
       {/* Avatar with fallback to default icon */}
       <Image source={getAvatarSource(avatar_url)} className="w-10 h-10 rounded-lg mr-3" />
 
       <View className="flex-1">
-        <Text className="text-lg font-poppins-medium text-black">{partnerName}</Text>
+        <Text className="text-lg font-poppins-medium text-[#F24187]">{partnerName}</Text>
         <Text className="text-sm text-gray-500">{isOnline ? 'Active now' : 'Offline'}</Text>
       </View>
 
