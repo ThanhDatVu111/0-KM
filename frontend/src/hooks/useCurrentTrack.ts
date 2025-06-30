@@ -1,39 +1,39 @@
 import { useState, useEffect } from 'react';
 import { spotifyService } from '@/services/spotifyService';
-import { SpotifyPlaybackState } from '@/types/spotify';
+import { SpotifyTrack } from '@/types/spotify';
 
 export function useCurrentTrack(refetchInterval: number = 15000) {
-  const [playbackState, setPlaybackState] = useState<SpotifyPlaybackState | null>(null);
+  const [recentTrack, setRecentTrack] = useState<SpotifyTrack | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchCurrentTrack = async () => {
+  const fetchRecentTrack = async () => {
     if (!spotifyService.isAuthenticated()) return;
 
     setIsLoading(true);
     try {
-      const state = await spotifyService.getCurrentPlayback();
-      setPlaybackState(state);
+      const track = await spotifyService.getRecentlyPlayed();
+      setRecentTrack(track);
     } catch (error) {
-      console.error('Failed to fetch current track:', error);
+      console.error('Failed to fetch recent track:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCurrentTrack();
+    fetchRecentTrack();
 
     // Set up polling
-    const interval = setInterval(fetchCurrentTrack, refetchInterval);
+    const interval = setInterval(fetchRecentTrack, refetchInterval);
 
     return () => clearInterval(interval);
   }, [refetchInterval]);
 
   return {
-    playbackState,
-    currentTrack: playbackState?.item,
-    isPlaying: playbackState?.is_playing || false,
+    recentTrack,
+    currentTrack: recentTrack, // For backward compatibility
+    isPlaying: false, // We can't know if it's currently playing with free accounts
     isLoading,
-    refetch: fetchCurrentTrack,
+    refetch: fetchRecentTrack,
   };
 }

@@ -183,8 +183,11 @@ const Home = () => {
           </WidgetCard>
         </View>
 
-        {/* Now Playing Widget */}
-        <NowPlayingWidget className="mb-4" />
+        {/* Music Widget */}
+        <View className="mb-4">
+          <Text className="text-lg text-white mb-2 font-pmedium">What We're Listening To</Text>
+          <NowPlayingWidget />
+        </View>
 
         {/* Join Room Widget */}
         {!roomId && (

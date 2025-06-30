@@ -3,8 +3,7 @@ export const SPOTIFY_OAUTH_CONFIG = {
   CLIENT_ID: 'f805d2782059483e801da7782a7e04c8',
   REDIRECT_URI: '0km-app://spotify-callback',
   SCOPES: [
-    'user-read-playback-state',
-    'user-read-currently-playing',
+    'user-read-recently-played',
     'playlist-read-private',
     'playlist-modify-public',
     'playlist-modify-private',

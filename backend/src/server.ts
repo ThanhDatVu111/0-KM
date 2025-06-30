@@ -6,6 +6,7 @@ import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
+import SpotifyRouter from './routes/spotifyRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
 app.use('/entries', EntriesRouter);
+app.use('/spotify', SpotifyRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
@@ -37,11 +39,22 @@ app.get('/cloudinary-sign', (_req, res) => {
   res.json({ signature, timestamp });
 });
 
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('❌ Global error handler caught:', err);
+  console.error('❌ Error stack:', err.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+});
+
 const startServer = async () => {
   try {
     console.log('🔍 Checking Supabase connectivity...');
 
-    // 1) Quick “head”‐only check on your users table
+    // 1) Quick "head"‐only check on your users table
     let { error } = await supabase.from('users').select('user_id', { head: true }).limit(1);
 
     if (error) {
@@ -70,6 +83,18 @@ const startServer = async () => {
       return;
     }
     console.log('✅ users schema and columns OK');
+
+    // 3) Test spotify_tokens table
+    const { error: spotifyError } = await supabase
+      .from('spotify_tokens')
+      .select('id', { head: true })
+      .limit(1);
+
+    if (spotifyError) {
+      console.error('❌ Cannot access spotify_tokens table:', spotifyError.message);
+      return;
+    }
+    console.log('✅ spotify_tokens table reachable');
 
     // 4) All good—start listening
     if (!PORT) {
