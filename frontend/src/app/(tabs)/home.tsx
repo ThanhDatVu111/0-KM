@@ -5,7 +5,6 @@ import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
-import { NowPlayingWidget } from '@/components/music/NowPlayingWidget';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -181,12 +180,6 @@ const Home = () => {
               </View>
             </View>
           </WidgetCard>
-        </View>
-
-        {/* Music Widget */}
-        <View className="mb-4">
-          <Text className="text-lg text-white mb-2 font-pmedium">What We're Listening To</Text>
-          <NowPlayingWidget />
         </View>
 
         {/* Join Room Widget */}

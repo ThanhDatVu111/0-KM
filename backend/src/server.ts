@@ -6,7 +6,6 @@ import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
-import SpotifyRouter from './routes/spotifyRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
@@ -29,7 +28,6 @@ app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
 app.use('/entries', EntriesRouter);
-app.use('/spotify', SpotifyRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
@@ -84,19 +82,7 @@ const startServer = async () => {
     }
     console.log('✅ users schema and columns OK');
 
-    // 3) Test spotify_tokens table
-    const { error: spotifyError } = await supabase
-      .from('spotify_tokens')
-      .select('id', { head: true })
-      .limit(1);
-
-    if (spotifyError) {
-      console.error('❌ Cannot access spotify_tokens table:', spotifyError.message);
-      return;
-    }
-    console.log('✅ spotify_tokens table reachable');
-
-    // 4) All good—start listening
+    // 3) All good—start listening
     if (!PORT) {
       throw new Error('🚨 PORT is not defined or invalid.');
     }
