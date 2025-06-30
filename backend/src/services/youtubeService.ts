@@ -1,60 +1,177 @@
-import * as youtubeModel from '../models/youtubeModel';
+import {
+  createRoomYouTubeVideo,
+  getRoomYouTubeVideo,
+  updateRoomYouTubeVideo,
+  deleteRoomYouTubeVideo,
+  getRoomIdForUser,
+  RoomYouTubeVideo,
+  CreateRoomYouTubeVideoInput,
+  UpdateRoomYouTubeVideoInput,
+} from '../models/youtubeModel';
 
-/**
- * Create or update a user's YouTube video
- */
-export async function upsertYouTubeVideo(input: {
+export interface CreateRoomVideoRequest {
   user_id: string;
   video_id: string;
   title?: string;
-}) {
-  try {
-    // Check if user already has a YouTube video
-    const existingVideo = await youtubeModel.getYouTubeVideoByUserId(input.user_id);
+}
 
-    if (existingVideo) {
-      // Update existing video
-      return await youtubeModel.updateYouTubeVideo({
-        id: existingVideo.id,
-        video_id: input.video_id,
-        title: input.title,
-      });
-    } else {
-      // Create new video
-      return await youtubeModel.createYouTubeVideo(input);
+export interface UpdateRoomVideoRequest {
+  video_id: string;
+  title?: string;
+}
+
+/**
+ * Create a new room YouTube video
+ */
+export async function createRoomVideo(
+  request: CreateRoomVideoRequest,
+): Promise<RoomYouTubeVideo | null> {
+  try {
+    // Get the room ID for the user
+    const roomId = await getRoomIdForUser(request.user_id);
+    if (!roomId) {
+      throw new Error('User is not in a room');
     }
+
+    const input: CreateRoomYouTubeVideoInput = {
+      room_id: roomId,
+      video_id: request.video_id,
+      title: request.title,
+      added_by_user_id: request.user_id,
+    };
+
+    return await createRoomYouTubeVideo(input);
   } catch (error) {
-    console.error('Error in upsertYouTubeVideo:', error);
-    return null;
+    console.error('Error in createRoomVideo service:', error);
+    throw error;
   }
 }
 
 /**
- * Get user's YouTube video
+ * Get the current room YouTube video
  */
-export async function getUserYouTubeVideo(user_id: string) {
-  return await youtubeModel.getYouTubeVideoByUserId(user_id);
-}
-
-/**
- * Get partner's YouTube video
- */
-export async function getPartnerYouTubeVideo(user_id: string) {
-  return await youtubeModel.getPartnerYouTubeVideo(user_id);
-}
-
-/**
- * Delete user's YouTube video
- */
-export async function deleteUserYouTubeVideo(user_id: string) {
+export async function getRoomVideo(user_id: string): Promise<RoomYouTubeVideo | null> {
   try {
-    const video = await youtubeModel.getYouTubeVideoByUserId(user_id);
-    if (video) {
-      return await youtubeModel.deleteYouTubeVideo(video.id);
+    // Get the room ID for the user
+    const roomId = await getRoomIdForUser(user_id);
+    if (!roomId) {
+      return null; // User is not in a room
     }
-    return false;
+
+    return await getRoomYouTubeVideo(roomId);
   } catch (error) {
-    console.error('Error in deleteUserYouTubeVideo:', error);
-    return false;
+    console.error('Error in getRoomVideo service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update the current room YouTube video
+ */
+export async function updateRoomVideo(
+  user_id: string,
+  request: UpdateRoomVideoRequest,
+): Promise<RoomYouTubeVideo | null> {
+  try {
+    // Get the current room video
+    const currentVideo = await getRoomVideo(user_id);
+    if (!currentVideo) {
+      throw new Error('No video found for this room');
+    }
+
+    // Check if the user is the one who added the video
+    if (currentVideo.added_by_user_id !== user_id) {
+      throw new Error('Only the user who added the video can update it');
+    }
+
+    const input: UpdateRoomYouTubeVideoInput = {
+      id: currentVideo.id,
+      video_id: request.video_id,
+      title: request.title,
+    };
+
+    return await updateRoomYouTubeVideo(input);
+  } catch (error) {
+    console.error('Error in updateRoomVideo service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete the current room YouTube video
+ */
+export async function deleteRoomVideo(user_id: string): Promise<boolean> {
+  try {
+    // Get the current room video
+    const currentVideo = await getRoomVideo(user_id);
+    if (!currentVideo) {
+      return false; // No video to delete
+    }
+
+    // Check if the user is the one who added the video
+    if (currentVideo.added_by_user_id !== user_id) {
+      throw new Error('Only the user who added the video can delete it');
+    }
+
+    return await deleteRoomYouTubeVideo(currentVideo.id);
+  } catch (error) {
+    console.error('Error in deleteRoomVideo service:', error);
+    throw error;
+  }
+}
+
+// Legacy functions for backward compatibility
+export interface CreateVideoRequest {
+  user_id: string;
+  video_id: string;
+  title?: string;
+}
+
+export interface UpdateVideoRequest {
+  user_id: string;
+  video_id: string;
+  title?: string;
+}
+
+/**
+ * Create a new YouTube video (legacy)
+ */
+export async function createVideo(request: CreateVideoRequest) {
+  try {
+    const { createYouTubeVideo } = await import('../models/youtubeModel');
+    return await createYouTubeVideo({
+      user_id: request.user_id,
+      video_id: request.video_id,
+      title: request.title,
+    });
+  } catch (error) {
+    console.error('Error in createVideo service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's YouTube video (legacy)
+ */
+export async function getUserVideo(user_id: string) {
+  try {
+    const { getYouTubeVideoByUserId } = await import('../models/youtubeModel');
+    return await getYouTubeVideoByUserId(user_id);
+  } catch (error) {
+    console.error('Error in getUserVideo service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get partner's YouTube video (legacy)
+ */
+export async function getPartnerVideo(user_id: string) {
+  try {
+    const { getPartnerYouTubeVideo } = await import('../models/youtubeModel');
+    return await getPartnerYouTubeVideo(user_id);
+  } catch (error) {
+    console.error('Error in getPartnerVideo service:', error);
+    throw error;
   }
 }

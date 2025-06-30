@@ -7,8 +7,8 @@ import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
 import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
-import { useYouTubeVideo } from '@/hooks/useYouTubeVideo';
-import { upsertYouTubeVideo } from '@/apis/youtube';
+import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
+import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -37,7 +37,17 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
 
-  const { userVideo, partnerVideo, hasRoom, isLoading: videoLoading } = useYouTubeVideo();
+  const { roomVideo, hasRoom, isLoading: videoLoading } = useRoomYouTubeVideo();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🎬 Room YouTube Debug:', {
+      roomVideo,
+      hasRoom,
+      videoLoading,
+      userId,
+    });
+  }, [roomVideo, hasRoom, videoLoading, userId]);
 
   useEffect(() => {
     if (userId) {
@@ -65,7 +75,7 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await upsertYouTubeVideo({
+      await createRoomVideo({
         user_id: userId,
         video_id: videoId,
         title,
@@ -75,6 +85,18 @@ const Home = () => {
       console.error('Failed to add YouTube video:', error);
     }
   };
+
+  const handleRemoveYouTubeVideo = async () => {
+    if (!userId) return;
+
+    try {
+      await deleteRoomVideo(userId);
+    } catch (error) {
+      console.error('Failed to remove YouTube video:', error);
+    }
+  };
+
+  const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
 
   if (isLoading) {
     return (
@@ -210,30 +232,50 @@ const Home = () => {
             <Text className="text-lg text-white font-pmedium">
               {hasRoom ? "What We're Watching" : 'My Music Video'}
             </Text>
-            <TouchableOpacity
-              onPress={() => setShowYouTubeInput(true)}
-              className="bg-white/20 px-3 py-1 rounded-full"
-            >
-              <Text className="text-white font-pregular text-sm">+ Add</Text>
-            </TouchableOpacity>
+            {canAddVideo && (
+              <TouchableOpacity
+                onPress={() => setShowYouTubeInput(true)}
+                className="bg-white/20 px-3 py-1 rounded-full"
+              >
+                <Text className="text-white font-pregular text-sm">+ Add</Text>
+              </TouchableOpacity>
+            )}
+            {roomVideo && roomVideo.added_by_user_id === userId && (
+              <TouchableOpacity
+                onPress={handleRemoveYouTubeVideo}
+                className="bg-red-500/20 px-3 py-1 rounded-full ml-2"
+              >
+                <Text className="text-red-200 font-pregular text-sm">Remove</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {hasRoom ? (
-            // Show partner's video if in a room
-            <YouTubeWidget
-              videoId={partnerVideo?.video_id || ''}
-              title={partnerVideo?.title || "Partner's Music Video"}
-              onPress={() => {
-                // Could open in full screen or external app
-              }}
-            />
+            // Show shared room video
+            roomVideo ? (
+              <YouTubeWidget
+                videoId={roomVideo.video_id}
+                title={roomVideo.title || 'Shared Music Video'}
+                onPress={() => {
+                  // Could open in full screen or external app
+                }}
+              />
+            ) : (
+              <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
+                <Text className="text-white/70 font-pregular text-center px-4">
+                  {canAddVideo
+                    ? 'No video playing. Tap + Add to start watching together!'
+                    : 'Waiting for your partner to add a video...'}
+                </Text>
+              </View>
+            )
           ) : (
-            // Show user's own video if not in a room
-            <YouTubeWidget
-              videoId={userVideo?.video_id || ''}
-              title={userVideo?.title || 'My Music Video'}
-              onPress={() => setShowYouTubeInput(true)}
-            />
+            // Show placeholder when not in a room
+            <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
+              <Text className="text-white/70 font-pregular text-center px-4">
+                Join a room to watch videos together!
+              </Text>
+            </View>
           )}
         </View>
 
