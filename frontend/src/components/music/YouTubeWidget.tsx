@@ -6,14 +6,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 type Props = {
   videoId: string;
-  title?: string;
   onPress?: () => void;
   className?: string;
 };
 
-export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props) {
+export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
   // Debug logging
-  console.log('🎬 YouTubeWidget Debug:', { videoId, title, className });
+  console.log('🎬 YouTubeWidget Debug:', { videoId, className });
 
   if (!videoId) {
     console.log('🎬 YouTubeWidget: No videoId provided, showing empty state');
@@ -82,33 +81,26 @@ export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props
       className={`border border-black bg-white/10 shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
       style={{ borderWidth: 1.5 }}
     >
-      <LinearGradient
-        colors={['#6536DA', '#F7BFF7']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          zIndex: -1,
-        }}
-      />
-      {title && (
-        <View className="p-3">
-          <Text className="text-white font-pmedium text-base" numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
-      )}
-      <View style={styles.container}>
+      <View style={styles.videoContainer}>
         <YoutubePlayer
-          height={200}
+          height={styles.videoContainer.height}
           play={false}
           videoId={videoId}
           webViewProps={{
-            style: { borderRadius: 12, overflow: 'hidden' },
+            style: styles.webView,
+            androidLayerType: 'hardware',
           }}
-          onError={(error) => {
+          initialPlayerParams={{
+            preventFullScreen: true,
+            cc_lang_pref: 'us',
+            showClosedCaptions: false,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            iv_load_policy: 3,
+          }}
+          onError={(error: any) => {
             console.error('🎬 YouTube player error:', error);
           }}
           onReady={() => {
@@ -121,11 +113,15 @@ export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props
 }
 
 const styles = StyleSheet.create({
-  container: {
+  videoContainer: {
     width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: 12,
-    backgroundColor: '#000',
+    height: 220,
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
+  },
+  webView: {
+    backgroundColor: 'transparent',
+    borderRadius: 0,
     overflow: 'hidden',
   },
 });
