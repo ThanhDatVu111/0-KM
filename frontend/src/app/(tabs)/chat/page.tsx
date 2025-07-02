@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,13 +11,14 @@ import {
   TextInput,
   Pressable,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import icons from '@/constants/icons';
 import { Message } from '@/types/chat';
-import { chatApi } from '@/apis/chat';
+import { fetchMessages, sendMessage, deleteMessage, editMessage } from '@/apis/chat';
 import { fetchRoom } from '@/apis/room';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -28,6 +29,8 @@ import Popover from 'react-native-popover-view';
 import images from '@/constants/images';
 import ChatHeader from '@/components/ChatHeader';
 import { fetchUser } from '@/apis/user';
+import { BASE_URL } from '@/apis/apiClient';
+import io from 'socket.io-client';
 
 export default function Chat() {
   const { userId, isLoaded, isSignedIn } = useAuth();
@@ -40,6 +43,9 @@ export default function Chat() {
   const [editedContent, setEditedContent] = useState('');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const socketRef = useRef<SocketIOClient.Socket | null>(null);
 
   const onRecordPress = () => {};
 
@@ -65,11 +71,34 @@ export default function Chat() {
     loadRoom();
   }, [isLoaded, isSignedIn, userId]);
 
+  // Create socket connection with authentication
+  socketRef.current = io(BASE_URL, {
+    transports: ['websocket', 'polling'],
+    auth: {
+      userId: userId,
+    },
+    query: {
+      userId: userId,
+    },
+  });
+  const socket = socketRef.current;
+
+  // Connection event handlers
+  socket.on('connect', () => {
+    console.log('✅ Connected to socket server:', socket.id);
+    setIsConnected(true);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Disconnected from socket:', reason);
+    setIsConnected(false);
+  });
+
   // Retrieve previous conversation
   const fetchConversation = useCallback(async () => {
     if (!roomId) return;
     try {
-      const prevChat = await chatApi.fetchMessages(roomId);
+      const prevChat = await fetchMessages(roomId);
       console.log('Messages fetched successfully:', prevChat?.length || 0, 'messages');
       setPreviousChat(prevChat || []);
     } catch (err: any) {
@@ -99,8 +128,9 @@ export default function Chat() {
         is_sent: true,
       };
 
-      await chatApi.sendMessage(messagePayload);
+      await sendMessage(messagePayload);
       setMessage('');
+      socket.emit('send-message', messagePayload);
       setSelectedImages([]);
       setPreviousChat((prev) => [...prev, messagePayload]);
     } catch (error) {
@@ -110,7 +140,7 @@ export default function Chat() {
 
   const handleDelete = async (messageId: string) => {
     try {
-      await chatApi.deleteMessage(messageId);
+      await deleteMessage(messageId);
       setPreviousChat((prev) => prev.filter((msg) => msg.message_id !== messageId));
     } catch (error) {
       console.error('Failed to delete message:', error);
@@ -128,8 +158,46 @@ export default function Chat() {
       });
 
       if (!result.canceled && result.assets?.length) {
-        const mediaPaths = result.assets.map((asset) => asset.uri);
-        setSelectedImages(mediaPaths);
+        // Upload images to Cloudinary first
+        const uploadPromises = result.assets.map(async (asset) => {
+          try {
+            const formData = new FormData();
+            formData.append('file', {
+              uri: asset.uri,
+              type: 'image/jpeg',
+              name: 'image.jpg',
+            } as any);
+
+            // Get Cloudinary signature
+            const response = await fetch(`${BASE_URL}/cloudinary-sign`);
+            const { signature, timestamp } = await response.json();
+
+            formData.append('api_key', process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY!);
+            formData.append('timestamp', timestamp.toString());
+            formData.append('signature', signature);
+
+            const uploadResponse = await fetch(
+              `https://api.cloudinary.com/v1_1/${process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+              {
+                method: 'POST',
+                body: formData,
+              },
+            );
+
+            const uploadResult = await uploadResponse.json();
+            return uploadResult.secure_url;
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            return null;
+          }
+        });
+
+        const uploadedUrls = await Promise.all(uploadPromises);
+        const validUrls = uploadedUrls.filter((url) => url !== null);
+
+        if (validUrls.length > 0) {
+          setSelectedImages(validUrls);
+        }
       }
     } catch (error) {
       console.error('Image picker error:', error);

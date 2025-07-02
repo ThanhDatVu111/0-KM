@@ -28,6 +28,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     isSent,
     createdAt,
 }) => {
+
+    const [selected, setSelected] = useState(false);
     // Format the timestamp
     const formattedTimestamp = new Date(createdAt).toLocaleTimeString('en-US', {
         hour: '2-digit',

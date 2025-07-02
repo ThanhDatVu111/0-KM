@@ -8,8 +8,9 @@ import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import ChatRouter from './routes/chatRoutes';
-import socketHandler from './socket';
 import { v2 as cloudinary } from 'cloudinary';
+import socketHandler from './socket';
+
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
@@ -21,7 +22,7 @@ const LOCAL_URL = process.env.LOCAL_URL;
 const PUBLIC_URL = process.env.PUBLIC_URL;
 const io = new Server(server, {
   cors: {
-    origin: [process.env.LOCAL_URL, process.env.PUBLIC_URL].filter((u): u is string => !!u),
+    origin: PUBLIC_URL,
     methods: ['GET', 'POST'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -40,6 +41,12 @@ app.use(
     credentials: true,
   }),
 );
+
+// Route mounting
+app.use('/users', UserRouter);
+app.use('/rooms', RoomRouter);
+app.use('/library', LibraryRouter);
+app.use('/chat', ChatRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
@@ -48,15 +55,6 @@ app.get('/cloudinary-sign', (_req, res) => {
   );
   res.json({ signature, timestamp });
 });
-
-// Route mounting
-app.use('/users', UserRouter);
-app.use('/rooms', RoomRouter);
-app.use('/library', LibraryRouter);
-app.use('/chat', ChatRouter);
-
-// Initialize Socket.IO
-socketHandler(io);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -128,3 +126,4 @@ const startServer = async () => {
 };
 
 startServer();
+socketHandler(io);

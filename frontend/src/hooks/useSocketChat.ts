@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import socketManager from '@/apis/socket';
-import { chatApi } from '@/apis/chat';
+import { sendMessage, editMessage, deleteMessage } from '@/apis/chat';
 import { Message, Socket } from '@/types/chat';
 
 export const useSocketChat = ({ room_id, user_id }: Socket) => {
@@ -69,25 +69,25 @@ export const useSocketChat = ({ room_id, user_id }: Socket) => {
 
       // Optionally also save via REST API for backup/consistency
       // This ensures the message is persisted even if socket fails
-      try {
-        await chatApi.sendMessage({
-          message_id: `${Date.now()}-${user_id}`,
-          room_id: room_id,
-          content,
-          sender_id: user_id,
-          media_paths,
-          created_at: new Date().toISOString(),
-          is_sent: true,
-        });
-      } catch (apiError) {
-        console.warn('Failed to save message via REST API:', apiError);
-        // Message was still sent via socket, so it's not a complete failure
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      throw error;
-    }
-  };
+  //     try {
+  //       await sendMessage({
+  //         message_id: `${Date.now()}-${user_id}`,
+  //         room_id: room_id,
+  //         content: content,
+  //         sender_id: user_id,
+  //         media_paths,
+  //         created_at: new Date().toISOString(),
+  //         is_sent: true,
+  //       });
+  //     } catch (apiError) {
+  //       console.warn('Failed to save message via REST API:', apiError);
+  //       // Message was still sent via socket, so it's not a complete failure
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to send message:', error);
+  //     throw error;
+  //   }
+  // };
 
   const editMessage = (messageId: string, newContent: string) => {
     socketManager.editMessage(messageId, newContent, room_id);
