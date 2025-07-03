@@ -85,8 +85,6 @@ export async function updateEntries(
     const { book_id, entry_id } = req.params;
     const { title, body, location, pin, media_paths, updated_at } = req.body;
 
-    console.log('entries controller here', req.body);
-
     // Validate required fields
     if (!book_id || !entry_id || !title) {
       res.status(400).json({ error: 'Missing required fields: book_id, entry_id, or title' });

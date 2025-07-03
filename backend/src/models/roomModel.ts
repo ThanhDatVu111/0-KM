@@ -54,8 +54,6 @@ export async function deleteRoom(attrs: { room_id: string }): Promise<string | n
 }
 
 export async function fetchRoom(user_id: string) {
-  console.log('🔍 Fetching room for user:', user_id);
-
   const { data, error } = await supabase
     .from('room')
     .select('room_id, user_1, user_2, filled')
@@ -75,7 +73,5 @@ export async function fetchRoom(user_id: string) {
     console.log('❌ No data returned from database for user:', user_id);
     return null;
   }
-
-  console.log('✅ Room data found:', data);
   return data;
 }

@@ -28,10 +28,7 @@ export async function getBooks(req: Request, res: Response) {
       res.status(400).json({ error: 'Missing required coupleId parameter' });
       return;
     }
-
-    console.log('📚 Fetching books for room:', coupleId);
     const books = await libraryModel.getBooks(coupleId);
-    console.log('✅ Books fetched:', books);
     res.json({ data: books });
   } catch (error: any) {
     console.error('❌ Error in getBooks:', error);

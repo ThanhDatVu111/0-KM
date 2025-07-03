@@ -35,6 +35,5 @@ export function onboardUser(input: OnboardUserInput) {
 }
 
 export function fetchUser(input: FetchUserInput) {
-  console.log('🔍 Fetching user with ID:', input.userId);
   return userModel.getUser(input.userId);
 }

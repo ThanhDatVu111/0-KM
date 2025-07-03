@@ -10,10 +10,6 @@ import sortButtonBg from '@/assets/images/sortButtonBg.png';
 import createEntryBg from '@/assets/images/createEntryBg.png';
 import entryFormBg from '@/assets/images/entryFormBg.png';
 import entryCardBg from '@/assets/images/entryCardBg.png';
-import layer1 from '@/assets/images/layer1.png';
-import layer2 from '@/assets/images/layer2.png';
-import layer3 from '@/assets/images/layer3.png';
-import layer4 from '@/assets/images/layer4.png';
 import loadingScreen from '@/assets/images/loadingScreen.png';
 
 export default {
@@ -29,9 +25,5 @@ export default {
   createEntryBg,
   entryFormBg,
   entryCardBg,
-  layer1,
-  layer2,
-  layer3,
-  layer4,
   loadingScreen
 };

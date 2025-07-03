@@ -14,7 +14,7 @@ export default function UpdateEntryScreen() {
   const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId;
   const rawEntryId = params.entryId!;
   const entryId = Array.isArray(rawEntryId) ? rawEntryId[0]! : rawEntryId;
-  
+
   const initialTitle = params.title || '';
   const initialBody = params.body || '';
   const initialLocation = params.location || '';
@@ -23,7 +23,9 @@ export default function UpdateEntryScreen() {
     ? params.media
         .split(',')
         .filter((url) => url.trim() !== '')
-        .map((url) => ({ uri: url.trim(), type: 'image' }))
+        // For each image URL, set both `uri` and `cloudinaryUrl` to the Cloudinary URL.
+        // This tells EntryForm that the image is already uploaded and should not be re-uploaded.
+        .map((url) => ({ uri: url.trim(), cloudinaryUrl: url.trim(), type: 'image' }))
     : [];
   const [saving, setSaving] = useState(false);
 
@@ -62,7 +64,7 @@ export default function UpdateEntryScreen() {
       initialBody={initialBody}
       initialMedia={initialMedia}
       initialLocation={initialLocation}
-      initialCreatedAt={undefined}  // not required for updating an entry; set to undefined
+      initialCreatedAt={undefined} // not required for updating an entry; set to undefined
       initialUpdatedAt={initialUpdatedAt}
       saving={saving}
       onSubmit={async (data) => {

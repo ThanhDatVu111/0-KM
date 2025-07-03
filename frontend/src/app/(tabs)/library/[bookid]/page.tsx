@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,31 +18,43 @@ import { LinearGradient } from 'expo-linear-gradient';
 import EntryCard from '@/components/EntryCard';
 
 export default function BookPage() {
-  const { bookId: rawId } = useLocalSearchParams<{ bookId: string }>();
-  const bookId = Array.isArray(rawId) ? rawId[0] : rawId;
+  const params = useLocalSearchParams<{ bookId: string; refresh?: string; title?: string }>();
+  const bookId = Array.isArray(params.bookId) ? params.bookId[0] : params.bookId;
+  const bookTitle = Array.isArray(params.title) ? params.title[0] : params.title;
+  const refresh = params.refresh;
   const router = useRouter();
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const lastRefresh = useRef<string | undefined>(undefined);
 
   useFocusEffect(
     React.useCallback(() => {
       if (!bookId) return;
-
+      if (refresh && refresh !== lastRefresh.current) {
+        lastRefresh.current = refresh;
+      } else if (!lastRefresh.current) {
+        lastRefresh.current = 'init';
+      } else {
+        return;
+      }
       const fetchData = async () => {
         setLoading(true);
         try {
           const data = await fetchEntries(bookId);
-          setEntries(data);
+          // Sort entries by created_at descending (newest first)
+          const sortedData = data.sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          );
+          setEntries(sortedData);
         } catch (error) {
           console.error(error);
         } finally {
           setLoading(false);
         }
       };
-
       const timeoutId = setTimeout(fetchData, 300); // Debounce manually
       return () => clearTimeout(timeoutId); // Cleanup timeout
-    }, [bookId]),
+    }, [bookId, refresh]),
   );
 
   const deleteEntry = async (bookId: string, entryId: string) => {
@@ -124,40 +136,66 @@ export default function BookPage() {
   // Choose background based on state
   let bgImage = images.entryCardBg;
   if (entries.length === 0) bgImage = images.createEntryBg;
-  // Remove loadingScreen image for smoother transitions
 
   return (
-    <ImageBackground
-      source={bgImage}
-      resizeMode="cover"
-      style={{ flex: 1 }}
-    >
-      {/* Back button */}
-      <View
-        className="absolute z-10 mt-12 ml-6"
-        style={{
-          shadowColor: '#000',
-          shadowOffset: { width: 3, height: 3 },
-          shadowOpacity: 1,
-          shadowRadius: 0,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-          className="w-11 h-11 bg-[#FAD3E4] border-2 border-black rounded-lg justify-center items-center mt-10"
+    <ImageBackground source={bgImage} resizeMode="cover" style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 10 }}>
+        {/* Back button */}
+        <View
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 3, height: 3 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            marginLeft: 24, // replaces ml-6
+            marginRight: 12, // space between button and title
+          }}
         >
-          <Text
+          <TouchableOpacity
+            onPress={() => router.replace('/(tabs)/library/page')}
+            activeOpacity={0.8}
             style={{
-              fontFamily: 'PixelifySans',
-              fontSize: 24,
-              color: '#000',
-              lineHeight: 28,
+              width: 44,
+              height: 44,
+              backgroundColor: '#FAD3E4',
+              borderWidth: 2,
+              borderColor: 'black',
+              borderRadius: 10,
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
-            ←
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 24,
+                color: '#000',
+                lineHeight: 28,
+              }}
+            >
+              ←
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{
+              fontFamily: 'PixelifySans',
+              color: 'white',
+              textShadowColor: 'black',
+              textShadowOffset: { width: 3, height: 3 },
+              textShadowRadius: 0,
+              fontSize: 50,
+              textAlign: 'left',
+            }}
+          >
+            {(bookTitle || 'Book Entries').slice(0, 5)}
+            {bookTitle && bookTitle.length > 5 ? '...' : ''}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
 
       {/* Loading overlay */}
@@ -177,7 +215,7 @@ export default function BookPage() {
 
       {/* Main content */}
       {!loading && entries.length === 0 && (
-        <View className="flex-1 items-center px-6 py-64">
+        <View className="flex-1 items-center px-6 py-40">
           <Image source={images.logo} className="w-64 h-32 mb-4" resizeMode="contain" />
           <Text
             className="text-[30px] mb-2 text-center"
@@ -208,7 +246,7 @@ export default function BookPage() {
       )}
 
       {!loading && entries.length > 0 && (
-        <ScrollView className="py-36" contentContainerStyle={{ paddingBottom: 130 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 130 }}>
           {entries.map((entry) => (
             <EntryCard
               key={entry.id}

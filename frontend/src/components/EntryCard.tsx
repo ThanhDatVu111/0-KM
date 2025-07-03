@@ -11,7 +11,6 @@ import {
   Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import images from '@/constants/images';
 import icons from '@/constants/icons';
 
 interface EntryCardProps {
@@ -44,6 +43,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
 
   const [expanded, setExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [textHeight, setTextHeight] = useState(0);
 
   // Carousel state for expanded mode
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -341,24 +341,17 @@ const EntryCard: React.FC<EntryCardProps> = ({
   };
 
   // Calculate expanded size
-  const isExpanded = expanded;
   const cardWidth = 365;
-  const cardHeight = isExpanded ? 480 : 330;
+  const cardHeight = expanded ? 450 + textHeight : 335;
   const layer1Width = 345;
-  const layer1Height = isExpanded ? 480 : 330;
+  const layer1Height = expanded ? 450 + textHeight : 335;
   const layer2Width = 365;
-  const layer2Height = isExpanded ? 470 : 320;
+  const layer2Height = expanded ? 440 + textHeight : 325;
   const layer3Width = 330;
-  const layer3Height = isExpanded ? 395 : 255;
+  const layer3Height = expanded ? 360 + textHeight : 255;
   const layer4Width = 310;
-  const layer4Height = isExpanded ? 370 : 230;
-  const layer4Top = 31;
-
-  // Smooth expand/collapse handler
-  const handleToggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded((prev) => !prev);
-  };
+  const layer4Height = expanded ? 335 + textHeight : 230;
+  const layer4Top = 32;
 
   return (
     <View
@@ -366,11 +359,10 @@ const EntryCard: React.FC<EntryCardProps> = ({
         width: cardWidth,
         height: cardHeight,
         alignSelf: 'center',
-        marginBottom: 15,
+        marginBottom: 20,
         position: 'relative',
         alignItems: 'center',
-        top: 0,
-        transitionProperty: 'width, height',
+        transitionProperty: 'height',
         transitionDuration: '300ms',
       }}
     >
@@ -379,45 +371,34 @@ const EntryCard: React.FC<EntryCardProps> = ({
         style={{
           width: layer1Width,
           height: layer1Height,
+          backgroundColor: '#F24187',
           shadowColor: '#000',
           shadowOffset: { width: 6, height: 6 },
-          shadowOpacity: 0.3,
-          shadowRadius: 2,
-          backgroundColor: 'transparent',
+          shadowOpacity: 0.4,
+          shadowRadius: 3,
+          borderRadius: 10,
+          borderColor: '#220E6D',
+          borderWidth: 3,
           position: 'absolute',
-          zIndex: 1,
-          transitionProperty: 'width, height',
-          transitionDuration: '300ms',
         }}
-      >
-        <Image
-          source={images.layer1}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="stretch"
-        />
-      </View>
+      />
 
       {/* Layer 2 */}
       <View
         style={{
           width: layer2Width,
           height: layer2Height,
+          backgroundColor: '#FDA3D4',
           shadowColor: '#000',
           shadowOffset: { width: 6, height: 6 },
-          shadowOpacity: 0.3,
-          shadowRadius: 2,
-          backgroundColor: 'transparent',
+          shadowOpacity: 0.4,
+          shadowRadius: 3,
+          borderRadius: 10,
+          borderColor: '#220E6D',
+          borderWidth: 3,
           position: 'absolute',
-          zIndex: 1,
-          transitionProperty: 'width, height',
-          transitionDuration: '300ms',
         }}
       >
-        <Image
-          source={images.layer2}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="stretch"
-        />
         {/* Action Icons in bottom right */}
         <View
           style={{
@@ -511,18 +492,13 @@ const EntryCard: React.FC<EntryCardProps> = ({
           width: layer3Width,
           height: layer3Height,
           top: 19,
-          position: 'absolute',
-          zIndex: 1,
-          transitionProperty: 'width, height, top',
-          transitionDuration: '300ms',
+          backgroundColor: '#A673E7',
+          borderRadius: 10,
+          borderColor: '#220E6D',
+          borderWidth: 3,
+          position: 'absolute'
         }}
-      >
-        <Image
-          source={images.layer3}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="stretch"
-        />
-      </View>
+      ></View>
 
       {/* Layer 4 */}
       <View
@@ -531,16 +507,10 @@ const EntryCard: React.FC<EntryCardProps> = ({
           height: layer4Height,
           top: layer4Top,
           position: 'absolute',
-          zIndex: 1,
-          transitionProperty: 'width, height, top',
-          transitionDuration: '300ms',
+          backgroundColor: '#F8EAF8',
+          borderRadius: 10
         }}
       >
-        <Image
-          source={images.layer4}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="stretch"
-        />
         <View
           style={{
             position: 'absolute',
@@ -588,7 +558,8 @@ const EntryCard: React.FC<EntryCardProps> = ({
                 textAlign: 'left',
                 alignSelf: 'flex-start',
               }}
-              numberOfLines={expanded ? 2 : 1}
+              onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}
+              numberOfLines={expanded ? undefined : 1}
             >
               {body}
             </Text>

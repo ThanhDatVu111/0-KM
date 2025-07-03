@@ -32,8 +32,6 @@ export async function updateUser(attrs: {
 }
 
 export async function getUser(userId: string) {
-  console.log('📝 Attempting to fetch user from database with ID:', userId);
-
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -49,7 +47,5 @@ export async function getUser(userId: string) {
     console.log('❌ No user found with ID:', userId);
     return null;
   }
-
-  console.log('✅ User fetched successfully:', data);
   return data;
 }

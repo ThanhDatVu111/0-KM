@@ -8,8 +8,6 @@ import {
   Image,
   ActivityIndicator,
   ScrollView,
-  Alert,
-  Linking,
   ImageBackground,
   TouchableOpacity,
 } from 'react-native';
@@ -27,8 +25,8 @@ const CLOUDINARY_SIGN_URL = process.env.EXPO_PUBLIC_CLOUDINARY_SIGN_URL;
 // ─── MediaItem type ──────────────────────────────────────────────────────────────────────────────────────────────
 export type MediaItem = {
   uri: string;
-  type: 'image' | 'video';
-  thumbnail?: string | null; // only for videos if you generate a thumbnail
+  cloudinaryUrl?: string;
+  type: 'image';
 };
 
 export interface EntryFormProps {
@@ -46,8 +44,7 @@ export interface EntryFormProps {
   initialCreatedAt?: string;
   initialUpdatedAt?: string;
 
-  /** True while the parent is saving; form’s “Done” button will disable if true */
-  saving: boolean;
+  saving?: boolean;
 
   onSubmit: (entryData: {
     id: string;
@@ -79,14 +76,13 @@ export default function EntryForm({
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>(initialMedia);
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
   const [saving, setSaving] = useState(false);
-  const [locationLoading, setLocationLoading] = useState<boolean>(false);
   const [showWebPicker, setShowWebPicker] = useState(false);
   const [pickedCoords, setPickedCoords] = useState<{ latitude: number; longitude: number } | null>(
     null,
   );
 
   const MAX_MEDIA = 16; // Maximum number of media items allowed
-  const MAX_WORDS = 20;
+  const MAX_WORDS = 100;
 
   // ─── Pick Image ─────────────────────────────────────────────────────────────────────────────────────────────────
   const handlePickImage = async () => {
@@ -115,7 +111,7 @@ export default function EntryForm({
       const newAssets = result.assets.slice(0, remainingSlots);
 
       const newMedia = newAssets.map((asset) => ({
-        uri: asset.uri,
+        uri: asset.uri, // ← ✅ Assigns to the `uri` field
         type: 'image' as const,
       }));
 
@@ -234,65 +230,6 @@ export default function EntryForm({
     }
   };
 
-  // ─── Location Picker ──────────────────────────────────────────────────────────────────────────────────────────────
-  const handleLocationPicker = async () => {
-    setLocationLoading(true);
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Location Permission',
-        'We need your permission to read your location. Please enable it in Settings.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => setLocationLoading(false) },
-          {
-            text: 'Open Settings',
-            onPress: () => {
-              setLocationLoading(false);
-              Linking.openSettings();
-            },
-          },
-        ],
-      );
-      return;
-    }
-    try {
-      const { coords } = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-      const [rev] = await Location.reverseGeocodeAsync({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-      });
-      let formatted = '';
-      if (rev.name) formatted += rev.name;
-      if (rev.street) formatted += (formatted ? ', ' : '') + rev.street;
-      if (rev.city) formatted += (formatted ? ', ' : '') + rev.city;
-      if (rev.region) formatted += (formatted ? ', ' : '') + rev.region;
-      if (rev.postalCode) formatted += ' ' + rev.postalCode;
-      if (rev.country) formatted += (formatted ? ', ' : '') + rev.country;
-
-      // Confirm with user before saving
-      Alert.alert('Use this location?', formatted || 'Unknown address', [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => setLocationLoading(false),
-        },
-        {
-          text: 'OK',
-          onPress: () => {
-            setLocationAddress(formatted);
-            setLocationLoading(false);
-          },
-        },
-      ]);
-    } catch (err) {
-      setLocationLoading(false);
-      alert('Unable to get location. Try again.');
-      console.error('Reverse geocode error:', err);
-    }
-  };
-
   // ─── When “Done” is pressed ────────────────────────────────────────────────────────────────────────────────────────
   const handleDonePress = async () => {
     if (!title.trim()) {
@@ -301,7 +238,15 @@ export default function EntryForm({
     }
     setSaving(true);
     try {
-      const uploadedUrls = await Promise.all(selectedMedia.map((m) => uploadToCloudinary(m.uri)));
+      const updatedMedia = await Promise.all(
+        selectedMedia.map(async (media) => {
+          if (media.cloudinaryUrl) return media;
+          const url = await uploadToCloudinary(media.uri);
+          return { ...media, cloudinaryUrl: url };
+        }),
+      );
+      setSelectedMedia(updatedMedia); // update state with new cloudinaryUrls
+
       const entryData: {
         id: string;
         book_id: string;
@@ -319,7 +264,7 @@ export default function EntryForm({
         body: body.trim() || null,
         location: locationAddress ? { address: locationAddress } : null,
         pin: false,
-        media_paths: uploadedUrls,
+        media_paths: updatedMedia.map((m) => m.cloudinaryUrl!).filter(Boolean),
       };
       if (entryId) {
         entryData.updated_at = new Date().toISOString();
@@ -329,9 +274,9 @@ export default function EntryForm({
       await onSubmit(entryData); // Send the entry data to the backend
     } catch (err: any) {
       console.error('Error uploading media or submitting entry:', err);
-    } finally {
-      setSaving(false);
+      alert('Failed to upload media. Please try again.');
     }
+    setSaving(false);
   };
 
   type FooterRowProps = {
