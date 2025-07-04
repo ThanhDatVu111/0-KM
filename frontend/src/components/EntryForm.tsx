@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,10 +17,12 @@ import images from '@/constants/images';
 import icons from '@/constants/icons';
 import { router } from 'expo-router';
 import MapPickerWebView from './MapPickerWebView';
-
+import * as Y from 'yjs';
+import { YSocketIOProvider } from '@/utils/YSocketIOProvider';
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
 const CLOUDINARY_SIGN_URL = process.env.EXPO_PUBLIC_CLOUDINARY_SIGN_URL;
+const PUBLIC_URL = process.env.EXPO_PUBLIC_API_PUBLIC_URL;
 
 // ─── MediaItem type ──────────────────────────────────────────────────────────────────────────────────────────────
 export type MediaItem = {
@@ -77,12 +79,59 @@ export default function EntryForm({
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
   const [saving, setSaving] = useState(false);
   const [showWebPicker, setShowWebPicker] = useState(false);
-  const [pickedCoords, setPickedCoords] = useState<{ latitude: number; longitude: number } | null>(
-    null,
-  );
+  const [_, setPickedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const ydocRef = useRef<Y.Doc | null>(null);
+  const providerRef = useRef<any>(null);
 
   const MAX_MEDIA = 16; // Maximum number of media items allowed
   const MAX_WORDS = 100;
+
+  // ─── Collaborative Yjs logic ──────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (ydocRef.current) {
+      providerRef.current?.destroy();
+    }
+    const ydoc = new Y.Doc();
+    ydocRef.current = ydoc;
+    const provider = new YSocketIOProvider(PUBLIC_URL!, entryId || 'new', ydoc);
+    providerRef.current = provider;
+
+    // Yjs observer for syncing React state
+    const yBody = ydoc.getText('entry-body');
+    const yTitle = ydoc.getText('entry-title');
+    const bodyObserver = () => setBody(yBody.toString());
+    const titleObserver = () => setTitle(yTitle.toString());
+    yBody.observe(bodyObserver);
+    yTitle.observe(titleObserver);
+    setBody(yBody.toString());
+    setTitle(yTitle.toString());
+
+    return () => {
+      yBody.unobserve(bodyObserver);
+      yTitle.unobserve(titleObserver);
+      provider.destroy();
+    };
+  }, [entryId]);
+
+  // ─── Handle text change (Yjs only) ──────────────────────────────────────────────────────────────
+  const handleBodyChange = (text: string) => {
+    const ydoc = ydocRef.current;
+    if (!ydoc) return;
+    const yBody = ydoc.getText('entry-body');
+    ydoc.transact(() => {
+      yBody.delete(0, yBody.length);
+      yBody.insert(0, text);
+    });
+  };
+  const handleTitleChange = (text: string) => {
+    const ydoc = ydocRef.current;
+    if (!ydoc) return;
+    const yTitle = ydoc.getText('entry-title');
+    ydoc.transact(() => {
+      yTitle.delete(0, yTitle.length);
+      yTitle.insert(0, text);
+    });
+  };
 
   // ─── Pick Image ─────────────────────────────────────────────────────────────────────────────────────────────────
   const handlePickImage = async () => {
@@ -90,13 +139,11 @@ export default function EntryForm({
       alert(`You can only select up to ${MAX_MEDIA} images.`);
       return;
     }
-
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       alert('Permission to access photos is required!');
       return;
     }
-
     const remainingSlots = MAX_MEDIA - selectedMedia.length;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -105,103 +152,14 @@ export default function EntryForm({
       quality: 1,
       selectionLimit: remainingSlots,
     });
-
     if (!result.canceled && result.assets.length > 0) {
-      const remainingSlots = MAX_MEDIA - selectedMedia.length;
       const newAssets = result.assets.slice(0, remainingSlots);
-
-      const newMedia = newAssets.map((asset) => ({
-        uri: asset.uri, // ← ✅ Assigns to the `uri` field
-        type: 'image' as const,
-      }));
-
+      const newMedia = newAssets.map((asset) => ({ uri: asset.uri, type: 'image' as const }));
       setSelectedMedia((prev) => [...prev, ...newMedia]);
     }
   };
-  // ─── Validation ─────────────────────────────────────────────────────────────────────────────────────────────────
-  async function uploadToCloudinary(uri: string): Promise<string> {
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_SIGN_URL) {
-      throw new Error(
-        'Define EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_API_KEY & EXPO_PUBLIC_CLOUDINARY_SIGN_URL in .env',
-      );
-    }
-    // 1) Get the signature + timestamp
-    let signature: string, timestamp: number;
-    try {
-      const sigRes = await fetch(CLOUDINARY_SIGN_URL);
-      const sigJson = await sigRes.json();
-      signature = sigJson.signature;
-      timestamp = sigJson.timestamp;
-    } catch (err: any) {
-      console.error('❌ Error fetching signature', err);
-      throw err;
-    }
 
-    // 2) Build the multipart/form-data
-    const form = new FormData();
-    form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
-    form.append('api_key', CLOUDINARY_API_KEY);
-    form.append('timestamp', timestamp.toString());
-    form.append('signature', signature);
-
-    // 3) Upload to Cloudinary
-    let uploadRes: Response, uploadJson: any;
-    try {
-      uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: form },
-      );
-      uploadJson = await uploadRes.json();
-    } catch (err: any) {
-      console.error('❌ Network error uploading to Cloudinary', err);
-      throw err;
-    }
-    if (!uploadRes.ok) {
-      console.error('❌ Cloudinary returned an error', uploadJson.error);
-      throw new Error(uploadJson.error?.message || 'Cloudinary upload failed');
-    }
-    console.log('✅ Image uploaded to Cloudinary secure_url =', uploadJson.secure_url);
-    return uploadJson.secure_url;
-  }
-
-  // ─── Format date ─────────────────────────────────────────────────────────────────────────────────────────────────
-  const now = new Date();
-  let footerDateLabel = '';
-  let footerDateValue = '';
-  if (initialUpdatedAt && initialUpdatedAt !== initialCreatedAt) {
-    footerDateLabel = 'Updated at';
-    footerDateValue = new Date(initialUpdatedAt ?? '').toLocaleString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  } else {
-    footerDateLabel = 'Created at';
-    footerDateValue = new Date(initialCreatedAt ?? '').toLocaleString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }
-  // ─── Count words ──────────────────────────────────────────────────────────────────────────────
-  const countWords = (text: string) =>
-    text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
-
-  // ─── Handle text change ──────────────────────────────────────────────────────────────────────────────
-  const handleBodyChange = (text: string) => {
-    const words = text.trim().split(/\s+/);
-    if (words.length <= MAX_WORDS) {
-      setBody(text);
-    } else {
-      setBody(words.slice(0, MAX_WORDS).join(' '));
-    }
-  };
-
-  // ─── Camera Pickers ────────────────────────────────────────────────────────────────────────────────────────────────
+  // ─── Camera Picker ────────────────────────────────────────────────────────────────────────────────────────────────
   const handleCameraPicker = async () => {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
     if (!granted) {
@@ -230,6 +188,72 @@ export default function EntryForm({
     }
   };
 
+  // ─── Upload to Cloudinary ─────────────────────────────────────────────────────────────────────────────────────────
+  async function uploadToCloudinary(uri: string): Promise<string> {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_SIGN_URL) {
+      throw new Error(
+        'Define EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_API_KEY & EXPO_PUBLIC_CLOUDINARY_SIGN_URL in .env',
+      );
+    }
+    let signature: string, timestamp: number;
+    try {
+      const sigRes = await fetch(CLOUDINARY_SIGN_URL);
+      const sigJson = await sigRes.json();
+      signature = sigJson.signature;
+      timestamp = sigJson.timestamp;
+    } catch (err: any) {
+      console.error('❌ Error fetching signature', err);
+      throw err;
+    }
+    const form = new FormData();
+    form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
+    form.append('api_key', CLOUDINARY_API_KEY);
+    form.append('timestamp', timestamp.toString());
+    form.append('signature', signature);
+    let uploadRes: Response, uploadJson: any;
+    try {
+      uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: form },
+      );
+      uploadJson = await uploadRes.json();
+    } catch (err: any) {
+      console.error('❌ Network error uploading to Cloudinary', err);
+      throw err;
+    }
+    if (!uploadRes.ok) {
+      console.error('❌ Cloudinary returned an error', uploadJson.error);
+      throw new Error(uploadJson.error?.message || 'Cloudinary upload failed');
+    }
+    return uploadJson.secure_url;
+  }
+
+  // ─── Date/word helpers ───────────────────────────────────────────────────────────────────────────────────────────
+  const now = new Date();
+  let footerDateLabel = '';
+  let footerDateValue = '';
+  if (initialUpdatedAt && initialUpdatedAt !== initialCreatedAt) {
+    footerDateLabel = 'Updated at';
+    footerDateValue = new Date(initialUpdatedAt ?? '').toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } else {
+    footerDateLabel = 'Created at';
+    footerDateValue = new Date(initialCreatedAt ?? '').toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  const countWords = (text: string) =>
+    text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
+
   // ─── When “Done” is pressed ────────────────────────────────────────────────────────────────────────────────────────
   const handleDonePress = async () => {
     if (!title.trim()) {
@@ -245,33 +269,20 @@ export default function EntryForm({
           return { ...media, cloudinaryUrl: url };
         }),
       );
-      setSelectedMedia(updatedMedia); // update state with new cloudinaryUrls
-
-      const entryData: {
-        id: string;
-        book_id: string;
-        title: string;
-        body: string | null;
-        location: { address: string } | null;
-        pin: boolean;
-        media_paths: string[];
-        created_at?: string;
-        updated_at?: string;
-      } = {
-        id: entryId || '', // if editing, entryId is set; if creating, parent will choose a new ID
+      setSelectedMedia(updatedMedia);
+      const entryData = {
+        id: entryId || '',
         book_id: bookId,
         title: title.trim(),
         body: body.trim() || null,
         location: locationAddress ? { address: locationAddress } : null,
         pin: false,
         media_paths: updatedMedia.map((m) => m.cloudinaryUrl!).filter(Boolean),
+        ...(entryId
+          ? { updated_at: new Date().toISOString() }
+          : { created_at: new Date().toISOString() }),
       };
-      if (entryId) {
-        entryData.updated_at = new Date().toISOString();
-      } else {
-        entryData.created_at = new Date().toISOString();
-      }
-      await onSubmit(entryData); // Send the entry data to the backend
+      await onSubmit(entryData);
     } catch (err: any) {
       console.error('Error uploading media or submitting entry:', err);
       alert('Failed to upload media. Please try again.');
@@ -398,7 +409,7 @@ export default function EntryForm({
               </Text>
               <TextInput
                 value={title}
-                onChangeText={setTitle}
+                onChangeText={handleTitleChange}
                 placeholder="Enter memory title"
                 placeholderTextColor="#aaa"
                 className="mb-2 mx-3 px-3 py-2 text-sm"
@@ -416,7 +427,6 @@ export default function EntryForm({
               >
                 Write a few words about your memory here
               </Text>
-
               <View style={{ position: 'relative' }}>
                 <TextInput
                   value={body}
