@@ -16,12 +16,7 @@ const PUBLIC_URL = process.env.PUBLIC_URL;
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
-app.use(
-  cors({
-    origin: [LOCAL_URL, PUBLIC_URL].filter((u): u is string => !!u),
-  }),
-);
-
+app.use(cors());
 
 // Route mounting
 app.use('/users', UserRouter);
