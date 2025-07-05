@@ -6,12 +6,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/logo.png",
-    "scheme": "myapp",
+    "scheme": "0km-app",
     "assets": ["./assets/fonts"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to tag your memories."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,6 +43,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "permissions": ["CAMERA", "MEDIA_LIBRARY"]
   }
 }

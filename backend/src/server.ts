@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import supabase from '../supabase/db';
+import supabase from '../utils/supabase';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
-// import other routers like TripRouter, NotificationRouter if needed
+import EntriesRouter from './routes/entriesRoutes';
+import YouTubeRouter from './routes/youtubeRoutes';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
 
@@ -16,18 +18,43 @@ const PUBLIC_URL = process.env.PUBLIC_URL;
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: [LOCAL_URL, PUBLIC_URL].filter((u): u is string => !!u),
+  }),
+);
 
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
+app.use('/entries', EntriesRouter);
+app.use('/youtube', YouTubeRouter);
+app.get('/cloudinary-sign', (_req, res) => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    { timestamp },
+    process.env.CLOUDINARY_API_SECRET!,
+  );
+  res.json({ signature, timestamp });
+});
+
+// Global error handler
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('❌ Global error handler caught:', err);
+  console.error('❌ Error stack:', err.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+});
 
 const startServer = async () => {
   try {
     console.log('🔍 Checking Supabase connectivity...');
 
-    // 1) Quick “head”‐only check on your users table
+    // 1) Quick "head"‐only check on your users table
     let { error } = await supabase.from('users').select('user_id', { head: true }).limit(1);
 
     if (error) {
@@ -57,7 +84,7 @@ const startServer = async () => {
     }
     console.log('✅ users schema and columns OK');
 
-    // 4) All good—start listening
+    // 3) All good—start listening
     if (!PORT) {
       throw new Error('🚨 PORT is not defined or invalid.');
     }

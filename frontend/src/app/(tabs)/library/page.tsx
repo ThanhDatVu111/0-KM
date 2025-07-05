@@ -9,6 +9,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import Button from '@/components/Button';
 import { BookCard } from '@/components/BookCard';
+import { useRouter } from 'expo-router';
 
 type SortOption = 'last_modified' | 'date_created' | 'name';
 
@@ -29,6 +30,7 @@ export default function Library() {
   const gapBetweenCards = 16; // gap-4 between cards
   const totalGapWidth = gapBetweenCards * 2; // Gap for 2 spaces between 3 cards
   const cardWidth = (screenWidth - totalHorizontalPadding - totalGapWidth) / 3;
+  const router = useRouter();
 
   // Fetch room ID
   useEffect(() => {
@@ -93,12 +95,14 @@ export default function Library() {
     active: boolean;
     onPress: () => void;
   }) => (
-    <Button
-      onPress={onPress}
-      label={title}
-      className={`mx-1 ${active ? 'bg-pink-100' : 'bg-gray-100'}`}
-      textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
-    />
+    <View className="flex justify-center">
+      <Button
+        onPress={onPress}
+        label={title}
+        className={`px-4 py-2 ${active ? 'bg-primary' : 'bg-gray-100'}`}
+        textClassName={`${active ? 'text-pink-600' : 'text-gray-600'}`}
+      />
+    </View>
   );
 
   const handleDeleteBook = async (book: Book) => {
@@ -123,10 +127,10 @@ export default function Library() {
     <SafeAreaView className="flex-1 bg-white">
       <Pressable onPress={() => setActiveDropdownId(null)} style={{ flex: 1 }}>
         <View className="items-center py-2">
-          <Text className="text-2xl font-bold text-gray-800 mb-4">Library</Text>
+          <Text className="text-2xl font-bold text-accent mb-4">Our Library</Text>
 
           {/* Sort options */}
-          <View className="mb-4 w-full flex items-center">
+          <View className="w-full flex items-center mt-5">
             <View className="flex-row gap-2">
               <SortButton
                 title="Last modified"
@@ -176,6 +180,12 @@ export default function Library() {
                   setSelectedBook(book);
                 }}
                 onDeletePress={handleDeleteBook}
+                onPress={() => {
+                  router.push({
+                    pathname: `/library/[bookid]/page`,
+                    params: { bookid: book.id, title: book.title }, // Pass the book ID and title as parameters
+                  });
+                }}
               />
             ))}
             {/* Add invisible placeholder cards to maintain grid alignment */}
