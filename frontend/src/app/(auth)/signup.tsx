@@ -1,9 +1,29 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Text, View, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from 'react-native';
+import { useSignUp, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+
+const useWarmUpBrowser = () => {
+  React.useEffect(() => {
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpForm() {
   const { isLoaded, signUp } = useSignUp();
@@ -42,6 +62,39 @@ export default function SignUpForm() {
       setError(readableMessage);
     }
   };
+
+  // ✅ Sign in with Google (OAuth)
+  // Handle any pending authentication sessions
+  WebBrowser.maybeCompleteAuthSession();
+  useWarmUpBrowser();
+
+  // Use the `useSSO()` hook to access the `startSSOFlow()` method
+  const { startSSOFlow } = useSSO();
+
+  const onGoogleSignInPress = React.useCallback(async () => {
+    try {
+      // Start the authentication process by calling `startSSOFlow()`
+      const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+        redirectUrl: AuthSession.makeRedirectUri(),
+      });
+
+      // If sign in was successful, set the active session
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId });
+        router.replace('/(auth)/authscreen');
+      } else {
+        // If there is no `createdSessionId`,
+        // there are missing requirements, such as MFA
+        // Use the `signIn` or `signUp` returned from `startSSOFlow`
+        // to handle next steps
+      }
+    } catch (err) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      console.error(JSON.stringify(err, null, 2));
+    }
+  }, []);
 
   return (
     <View className="w-full">
