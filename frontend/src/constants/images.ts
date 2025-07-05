@@ -6,6 +6,9 @@ import polaroid_frame from '@/assets/images/polaroidFrame.png';
 import polaroid_picture from '@/assets/images/polaroidPicture.png';
 import highlight from '@/assets/images/highlight.png';
 import navBarBackground from '@/assets/images/navBarBackground.png';
+import entry from '@/assets/images/entry.png';
+import startButton from '@/assets/images/startButton.png';
+import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import chatBg from '@/assets/images/chatBg.png';
 
 export default {
@@ -17,5 +20,8 @@ export default {
   polaroid_picture,
   highlight,
   navBarBackground,
+  entry,
+  startButton,
+  onboardPairingBg,,
   chatBg,
 };

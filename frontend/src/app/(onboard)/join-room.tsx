@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import Button from '@/components/Button';
-import { View, Text, TextInput, Alert, Image } from 'react-native';
+import {
+  View,
+  Text,
+  Alert,
+  Image,
+  TouchableOpacity,
+  ImageBackground,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
 import { SignOutButton } from '@/components/SignOutButton';
+import FormInput from '@/components/FormInput';
+import images from '@/constants/images';
+import { useAuth } from '@clerk/clerk-expo';
+import { fetchRoom } from '@/apis/room';
 
 function PairingStep({
   myCode,
@@ -32,67 +45,155 @@ function PairingStep({
   };
 
   return (
-    <View className="w-full max-w-xs items-center px-6">
-      {/* Logo */}
-      <Image source={require('@/assets/images/logo.png')} className="w-20 h-20 mb-6" />
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <View className="bg-[#6536DD] border-b-4 border-black px-4 py-6 items-center rounded-t-md">
+        <View className="relative">
+          {/* So it renders 4 <Text> components: 1 for each corner */}
+          {[
+            [-3, 0],
+            [3, 0],
+            [0, -3],
+            [0, 3],
+          ].map(([dx, dy], index) => (
+            <Text
+              key={index}
+              style={{
+                position: 'absolute',
+                fontFamily: 'PressStart2P',
+                fontSize: 24,
+                color: 'white',
+                left: dx,
+                top: dy,
+              }}
+            >
+              Pairing
+            </Text>
+          ))}
 
-      <Text className="text-2xl font-semibold text-gray-800 mb-8">Pair with your partner</Text>
-
-      <View className="w-full bg-custom rounded-3xl p-6 mb-4">
-        <Text className="text-xl font-medium text-gray-800 mb-2 text-center">
-          Invite your partner
-        </Text>
-
-        <Text className="text-lg font-medium text-white text-center mb-2">{myCode}</Text>
-
-        <Button
-          label="Copy invite code"
-          onPress={handleCopy}
-          size="py-3"
-          color="bg-accent"
-          className="w-full rounded-xl"
-          textClassName="text-white text-base font-medium"
-        />
+          {/* Foreground Red Text */}
+          <Text
+            style={{
+              fontFamily: 'PressStart2P',
+              fontSize: 24,
+              color: '#F24187',
+            }}
+          >
+            Pairing
+          </Text>
+        </View>
       </View>
 
-      <Text className="text-base text-gray-600 mb-4">or</Text>
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md">
+        {/* Your Code Section */}
+        <View className="mb-6">
+          <Text
+            className="text-[#6536DD] text-lg font-bold text-center mb-4"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            YOUR INVITE CODE
+          </Text>
 
-      <View className="w-full bg-white/20 rounded-3xl p-6">
-        <Text className="text-xl font-medium text-gray-800 mb-4 text-center">
-          Enter partner's code
+          <View className="bg-[#F3EEFF] border-2 border-[#6536DD] rounded-lg p-4 mb-4">
+            <Text
+              className="text-[#6536DD] text-xl font-bold text-center"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              {myCode}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleCopy}
+            className="w-full mb-4 bg-white border-4 border-[#6536DD]"
+            style={{
+              shadowColor: '#6536DD',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-white px-4 py-3">
+              <Text
+                className="text-[#6536DD] text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                COPY INVITE CODE
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Divider */}
+        <Text
+          className="text-gray-600 text-center mb-6 text-lg"
+          style={{ fontFamily: 'Poppins-Medium' }}
+        >
+          OR
         </Text>
 
-        <TextInput
-          value={partnerCode}
-          onChangeText={setPartnerCode}
-          placeholder="Enter code here"
-          className="border border-gray-300 bg-white px-4 py-3 rounded-lg w-full mb-4"
-          maxLength={40}
-        />
+        {/* Partner Code Section */}
+        <View className="mb-6">
+          <Text
+            className="text-[#6536DD] text-lg font-bold text-center mb-4"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            ENTER PARTNER INVITE CODE
+          </Text>
+          <FormInput
+            borderColor="#6536DD"
+            value={partnerCode}
+            placeholder="Enter code here"
+            onChangeText={setPartnerCode}
+            maxLength={40}
+          />
 
-        <Button
-          label={loading ? 'Pairing...' : 'Pair now'}
-          onPress={onFinish}
-          size="py-3"
-          color={loading ? 'bg-gray-400' : 'bg-accent'}
-          className="w-full rounded-xl"
-          textClassName="text-white text-base font-medium"
-          disabled={loading} // Disable the button while loading
-        />
+          <TouchableOpacity
+            onPress={onFinish}
+            disabled={loading || !partnerCode.trim()}
+            className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+              opacity: loading || !partnerCode.trim() ? 0.5 : 1,
+            }}
+          >
+            <View className="bg-[#6536DD] px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                {loading ? 'PAIRING...' : 'PAIR NOW'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Error Message */}
+        {error ? (
+          <Text className="text-red-600 text-center mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
+            {error}
+          </Text>
+        ) : null}
       </View>
-
-      {error && <Text className="text-accent mb-4 text-center">{error}</Text>}
     </View>
   );
 }
 
 const JoinRoom = () => {
   const router = useRouter();
-  const { userId, roomId } = useLocalSearchParams();
-  const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
+  const { userId } = useAuth();
+  const [roomId, setRoomId] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
+
+  const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
 
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
@@ -100,9 +201,8 @@ const JoinRoom = () => {
       return;
     }
 
-    setLoading(true); // Set loading to true when the request starts
+    setLoading(true);
     try {
-      // Pair with the partner's room
       console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
       console.log('Moving to room:', partnerCode);
 
@@ -113,12 +213,10 @@ const JoinRoom = () => {
 
       console.log('Deleting room with ID:', roomIdString);
 
-      // Delete user2's room after pairing
       await deleteRoom({
         room_id: roomIdString,
       });
 
-      // Success feedback and navigation
       console.log('Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
       router.push('/(tabs)/home');
@@ -126,22 +224,42 @@ const JoinRoom = () => {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
     } finally {
-      setLoading(false); // Set loading to false when the request finishes
+      setLoading(false);
     }
   };
 
   return (
-    <View className="flex-1 items-center justify-center  bg-primary px-4">
-      <SignOutButton />
-      <PairingStep
-        myCode={roomIdString}
-        partnerCode={partnerCode}
-        setPartnerCode={setPartnerCode}
-        onFinish={connectRoom}
-        error={error}
-        loading={loading} // Pass loading state to the child component
-      />
-    </View>
+    <ImageBackground
+      source={images.onboardPairingBg}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 items-center justify-center px-4 py-8">
+            <View className="absolute top-12 right-4">
+              <SignOutButton />
+            </View>
+            <PairingStep
+              myCode={roomIdString}
+              partnerCode={partnerCode}
+              setPartnerCode={setPartnerCode}
+              onFinish={connectRoom}
+              error={error}
+              loading={loading}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 

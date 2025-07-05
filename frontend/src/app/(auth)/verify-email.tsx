@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Button from '@/components/Button';
 import { useSignUp } from '@clerk/clerk-expo';
 import { createUser } from '@/apis/user';
+import FormInput from '@/components/FormInput';
+import images from '@/constants/images';
 
 export default function VerifyEmail() {
   const { emailAddress } = useLocalSearchParams(); // Get email from navigation params
@@ -12,6 +13,7 @@ export default function VerifyEmail() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [resendTimer, setResendTimer] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Countdown for resend button
   useEffect(() => {
@@ -24,7 +26,10 @@ export default function VerifyEmail() {
 
   // Handle verification
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isVerifying) return;
+
+    setIsVerifying(true);
+    setError(null); // Clear any previous errors
 
     try {
       const { status, createdSessionId, createdUserId } =
@@ -55,6 +60,8 @@ export default function VerifyEmail() {
         err?.message ||
         'Something went wrong during verification. Please try again.';
       setError(msg);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -75,48 +82,154 @@ export default function VerifyEmail() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-primary">
-      <Text className="text-md mb-4 text-accent text-center" style={{ fontFamily: 'Poppins-Bold' }}>
-        A verification code has been sent to: {emailAddress}.
-      </Text>
-      <TextInput
-        value={code}
-        placeholder="Enter your verification code"
-        onChangeText={setCode}
-        className="border border-accent bg-white px-4 py-3 rounded-lg w-[300px] mb-4"
-      />
-      {error && (
-        <Text
-          className="text-red-600 text-center mb-2 w-[300px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
-          {error}
-        </Text>
-      )}
-      <Button
-        label="Verify"
-        onPress={onVerifyPress}
-        size="py-3 px-4"
-        color="bg-accent"
-        className="w-[300px] items-center"
-        textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
-      {resendTimer > 0 ? (
-        <Text className="text-accent mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
-          You can resend code in {resendTimer} seconds
-        </Text>
-      ) : (
-        <Button
-          label="Resend Code"
-          onPress={onResendCode}
-          size="py-3 px-4"
-          color="border border-accent"
-          className="w-[300px] items-center mb-4"
-          textClassName="text-accent text-[16px]"
-          textStyle={{ fontFamily: 'Poppins-Regular' }}
-        />
-      )}
-    </View>
+    <ImageBackground
+      source={images.entry}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <View className="flex-1 items-center justify-center">
+        {/* Retro Auth Container */}
+        <View className="w-11/12 max-w-md bg-white shadow-2xl border-4 border-black rounded-lg">
+          {/* Purple Header Section */}
+          <View className="bg-[#6536DD] border-b-4 border-black px-4 py-4 items-center rounded-t-md">
+            <View className="relative">
+              {/* So it renders 4 <Text> components: 1 for each corner */}
+              {[
+                [-3, 0],
+                [3, 0],
+                [0, -3],
+                [0, 3],
+              ].map(([dx, dy], index) => (
+                <Text
+                  key={index}
+                  style={{
+                    position: 'absolute',
+                    fontFamily: 'PressStart2P',
+                    fontSize: 23,
+                    color: 'white',
+                    left: dx,
+                    top: dy,
+                  }}
+                >
+                  Verify Email
+                </Text>
+              ))}
+
+              {/* Foreground Red Text */}
+              <Text
+                style={{
+                  fontFamily: 'PressStart2P',
+                  fontSize: 23,
+                  color: '#F24187',
+                }}
+              >
+                Verify Email
+              </Text>
+            </View>
+          </View>
+
+          {/* White Form Section */}
+          <View className="bg-white px-8 py-8 rounded-b-md">
+            <View className="w-full">
+              {/* Instructions */}
+              <Text
+                className="text-gray-700 text-center mb-6 text-[14px]"
+                style={{ fontFamily: 'Poppins-Regular' }}
+              >
+                A verification code has been sent to: {emailAddress}
+              </Text>
+
+              {/* Verification Code Input */}
+              <FormInput
+                label="Verification Code"
+                borderColor="#6536DD"
+                value={code}
+                placeholder="Enter your verification code"
+                onChangeText={setCode}
+              />
+
+              {/* Error Message */}
+              {error && (
+                <Text
+                  className="text-red-600 text-center mb-4"
+                  style={{ fontFamily: 'Poppins-Regular' }}
+                >
+                  {error}
+                </Text>
+              )}
+
+              {/* Verify Button */}
+              <TouchableOpacity
+                onPress={onVerifyPress}
+                disabled={isVerifying}
+                className={`w-full mb-4 border-4 border-black ${
+                  isVerifying ? 'bg-gray-400' : 'bg-[#6536DD]'
+                }`}
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 4, height: 4 },
+                  shadowOpacity: isVerifying ? 0.5 : 1,
+                  shadowRadius: 0,
+                  elevation: 8,
+                }}
+              >
+                <View className={`px-4 py-3 ${isVerifying ? 'bg-gray-400' : 'bg-[#6536DD]'}`}>
+                  <Text
+                    className="text-white text-center text-[16px] font-bold"
+                    style={{ fontFamily: 'Poppins-Bold' }}
+                  >
+                    {isVerifying ? 'VERIFYING...' : 'VERIFY'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Resend Code Section */}
+              {resendTimer > 0 ? (
+                <Text
+                  className="text-[#6536DD] text-center mb-4 mt-4"
+                  style={{ fontFamily: 'Poppins-Regular' }}
+                >
+                  You can resend code in {resendTimer} seconds
+                </Text>
+              ) : (
+                <TouchableOpacity
+                  onPress={onResendCode}
+                  className="w-full mb-4 bg-white border-4 border-[#6536DD]"
+                  style={{
+                    shadowColor: '#6536DD',
+                    shadowOffset: { width: 4, height: 4 },
+                    shadowOpacity: 1,
+                    shadowRadius: 0,
+                    elevation: 8,
+                  }}
+                >
+                  <View className="bg-white px-4 py-3">
+                    <Text
+                      className="text-[#6536DD] text-center text-[16px] font-bold"
+                      style={{ fontFamily: 'Poppins-Bold' }}
+                    >
+                      RESEND CODE
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {/* Back to Sign Up Link */}
+              <TouchableOpacity
+                onPress={() => router.push('../(auth)/authscreen')}
+                className="mt-2"
+              >
+                <Text
+                  className="text-[#6536DD] text-center text-[14px] underline"
+                  style={{ fontFamily: 'Poppins-Medium' }}
+                >
+                  Wrong email? Back to Sign Up
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
