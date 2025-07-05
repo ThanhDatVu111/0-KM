@@ -582,23 +582,44 @@ function GGCalendar() {
               </View>
             </View>
             {/* Mutual Free Time */}
-            <View style={{ marginTop: 24 }}>
+            <View style={{ marginTop: 24, alignItems: 'center', width: '100%' }}>
               <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 8, color: '#43A047' }}>
                 Mutual Free Time
               </Text>
+
               {mutualFreeSlots.length > 0 ? (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {mutualFreeSlots.map((slot) => (
-                    <View
-                      key={slot}
-                      style={{ backgroundColor: '#E0F2F1', borderRadius: 6, padding: 6, margin: 4 }}
-                    >
-                      <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
-                        {slot} -{' '}
-                        {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
-                      </Text>
-                    </View>
-                  ))}
+                <View
+                  style={{
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      justifyContent: 'center', 
+                      width: '100%',
+                    }}
+                  >
+                    {mutualFreeSlots.map((slot) => (
+                      <View
+                        key={slot}
+                        style={{
+                          backgroundColor: '#E0F2F1',
+                          borderRadius: 6,
+                          padding: 12,
+                          margin: 5,
+                          minWidth: 100,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
+                          {slot} -{' '}
+                          {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               ) : (
                 <Text style={{ color: '#888' }}>No mutual free slots</Text>
