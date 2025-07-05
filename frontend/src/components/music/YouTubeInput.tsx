@@ -5,12 +5,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { extractVideoId, isValidVideoId } from '@/utils/youtubeUtils';
 
 type Props = {
-  onVideoIdSubmit: (videoId: string) => void;
+  onVideoIdSubmit: (videoId: string, title?: string) => void;
   onCancel: () => void;
 };
 
 export function YouTubeInput({ onVideoIdSubmit, onCancel }: Props) {
   const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -29,7 +30,7 @@ export function YouTubeInput({ onVideoIdSubmit, onCancel }: Props) {
         return;
       }
 
-      onVideoIdSubmit(videoId);
+      onVideoIdSubmit(videoId, title.trim() || undefined);
     } catch (error) {
       Alert.alert('Error', 'Failed to process YouTube URL. Please try again.');
     } finally {
@@ -57,7 +58,7 @@ export function YouTubeInput({ onVideoIdSubmit, onCancel }: Props) {
           Add YouTube Music Video
         </Text>
 
-        <View className="mb-6">
+        <View className="mb-4">
           <Text className="text-white/80 font-pregular text-sm mb-2">YouTube URL</Text>
           <TextInput
             value={url}
@@ -67,6 +68,17 @@ export function YouTubeInput({ onVideoIdSubmit, onCancel }: Props) {
             className="bg-white/20 text-white p-3 rounded-lg border border-white/30"
             autoCapitalize="none"
             autoCorrect={false}
+          />
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-white/80 font-pregular text-sm mb-2">Title (Optional)</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="My favorite song"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            className="bg-white/20 text-white p-3 rounded-lg border border-white/30"
           />
         </View>
 

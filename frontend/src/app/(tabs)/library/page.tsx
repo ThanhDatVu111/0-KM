@@ -181,10 +181,10 @@ export default function Library() {
                 }}
                 onDeletePress={handleDeleteBook}
                 onPress={() => {
-                   router.push({
-                     pathname: `/library/[bookId]/page`,
-                     params: { bookId: book.id, title: book.title }, // Pass the book ID and title as parameters
-                   });
+                  router.push({
+                    pathname: `/library/[bookid]/page`,
+                    params: { bookid: book.id, title: book.title }, // Pass the book ID and title as parameters
+                  });
                 }}
               />
             ))}

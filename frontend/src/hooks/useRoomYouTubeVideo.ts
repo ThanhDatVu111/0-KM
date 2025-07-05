@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { getRoomVideo, RoomYouTubeVideo } from '@/apis/youtube';
 
-export function useRoomYouTubeVideo(refetchInterval: number = 3000) {
+export function useRoomYouTubeVideo(refetchInterval: number = 15000) {
   const { userId } = useAuth();
   const [roomVideo, setRoomVideo] = useState<RoomYouTubeVideo | null>(null);
   const [isLoading, setIsLoading] = useState(false);

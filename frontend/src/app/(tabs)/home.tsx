@@ -37,7 +37,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
 
-  const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
+  const { roomVideo, hasRoom, isLoading: videoLoading } = useRoomYouTubeVideo();
 
   // Debug logging
   useEffect(() => {
@@ -71,18 +71,16 @@ const Home = () => {
     }
   };
 
-  const handleAddYouTubeVideo = async (videoId: string) => {
+  const handleAddYouTubeVideo = async (videoId: string, title?: string) => {
     if (!userId) return;
 
     try {
       await createRoomVideo({
         user_id: userId,
         video_id: videoId,
+        title,
       });
       setShowYouTubeInput(false);
-
-      // Immediately refresh the video data
-      await refetchRoomVideo();
     } catch (error) {
       console.error('Failed to add YouTube video:', error);
     }
@@ -93,9 +91,6 @@ const Home = () => {
 
     try {
       await deleteRoomVideo(userId);
-
-      // Immediately refresh the video data
-      await refetchRoomVideo();
     } catch (error) {
       console.error('Failed to remove YouTube video:', error);
     }
@@ -233,28 +228,26 @@ const Home = () => {
 
         {/* YouTube Music Widget */}
         <View className="mb-4">
-          <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center justify-between mb-2">
             <Text className="text-lg text-white font-pmedium">
               {hasRoom ? "What We're Watching" : 'My Music Video'}
             </Text>
-            <View className="flex-row items-center gap-2">
-              {canAddVideo && (
-                <TouchableOpacity
-                  onPress={() => setShowYouTubeInput(true)}
-                  className="bg-white/20 px-3 py-1 rounded-full"
-                >
-                  <Text className="text-white font-pregular text-sm">+ Add</Text>
-                </TouchableOpacity>
-              )}
-              {roomVideo && roomVideo.added_by_user_id === userId && (
-                <TouchableOpacity
-                  onPress={handleRemoveYouTubeVideo}
-                  className="bg-red-500/20 px-3 py-1 rounded-full"
-                >
-                  <Text className="text-red-200 font-pregular text-sm">Remove</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            {canAddVideo && (
+              <TouchableOpacity
+                onPress={() => setShowYouTubeInput(true)}
+                className="bg-white/20 px-3 py-1 rounded-full"
+              >
+                <Text className="text-white font-pregular text-sm">+ Add</Text>
+              </TouchableOpacity>
+            )}
+            {roomVideo && roomVideo.added_by_user_id === userId && (
+              <TouchableOpacity
+                onPress={handleRemoveYouTubeVideo}
+                className="bg-red-500/20 px-3 py-1 rounded-full ml-2"
+              >
+                <Text className="text-red-200 font-pregular text-sm">Remove</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {hasRoom ? (
@@ -262,6 +255,7 @@ const Home = () => {
             roomVideo ? (
               <YouTubeWidget
                 videoId={roomVideo.video_id}
+                title={roomVideo.title || 'Shared Music Video'}
                 onPress={() => {
                   // Could open in full screen or external app
                 }}
