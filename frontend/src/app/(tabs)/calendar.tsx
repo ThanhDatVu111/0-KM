@@ -6,6 +6,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
+  Modal,
+  TextInput,
+  Alert,
+  Platform,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import icons from '@/constants/icons';
@@ -22,14 +26,15 @@ import {
   fetchRefreshToken,
 } from '@/apis/token';
 import { fetchRoomByUserId } from '@/apis/room';
-import { fetchCalendarEvents } from '@/apis/calendar';
+import { fetchCalendarEvents, createCalendarEvent } from '@/apis/calendar';
+import { fetchUser } from '@/apis/user';
 
 import { Calendar, DateData } from 'react-native-calendars';
 
 WebBrowser.maybeCompleteAuthSession();
 
 function GGCalendar() {
-  const { userId, isLoaded, isSignedIn } = useAuth();
+  const { userId } = useAuth();
   const todayKey = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
   const [activeTab, setActiveTab] = useState<'partner' | 'mutual'>('partner');
@@ -43,6 +48,10 @@ function GGCalendar() {
   // Room and partner IDs
   const [room_id, setRoomId] = useState('');
   const [other_user_id, setOtherUserId] = useState('');
+
+  //emails
+  const [user_email, setUserEmail] = useState('');
+  const [partner_email, setPartnerEmail] = useState('');
 
   // Sync flags
   const [syncWithCalendar, setSyncWithCalendar] = useState(false);
@@ -83,6 +92,12 @@ function GGCalendar() {
         const room = await fetchRoomByUserId({ user_id: userId });
         setRoomId(room.room_id);
         setOtherUserId(room.other_user_id);
+
+        const user = await fetchUser(userId);
+        setUserEmail(user.email);
+
+        const partner = await fetchUser(other_user_id);
+        setPartnerEmail(partner.email);
       } catch (err) {}
     })();
   }, [userId]);
@@ -256,10 +271,15 @@ function GGCalendar() {
   let eventsForDate: any[] = [];
   let myOwnEventsForDate: any[] = [];
   if (syncWithCalendar && partnerSyncedWithCalendar && myEvents.length > 0) {
-    // Group events by date
+    // Group events by date using local time
     eventsForDate = myEvents
       .filter((ev) => {
-        const dateKey = ev.start?.dateTime ? ev.start.dateTime.split('T')[0] : ev.start?.date;
+        let dateKey = '';
+        if (ev.start?.dateTime) {
+          dateKey = new Date(ev.start.dateTime).toLocaleDateString('en-CA');
+        } else if (ev.start?.date) {
+          dateKey = ev.start.date;
+        }
         return dateKey === selectedDate;
       })
       .map((ev) => ({
@@ -273,7 +293,12 @@ function GGCalendar() {
     myOwnEventsForDate = myOwnEvents
       ? myOwnEvents
           .filter((ev) => {
-            const dateKey = ev.start?.dateTime ? ev.start.dateTime.split('T')[0] : ev.start?.date;
+            let dateKey = '';
+            if (ev.start?.dateTime) {
+              dateKey = new Date(ev.start.dateTime).toLocaleDateString('en-CA');
+            } else if (ev.start?.date) {
+              dateKey = ev.start.date;
+            }
             return dateKey === selectedDate;
           })
           .map((ev) => ({
@@ -296,6 +321,77 @@ function GGCalendar() {
       await promptAsync();
     } catch (err) {
       console.error('Error during Google OAuth flow:', err);
+    }
+  };
+
+  // --- Modal state for scheduling ---
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [scheduling, setScheduling] = useState(false);
+
+  const handleScheduleEvent = async () => {
+    if (!selectedSlot || !eventTitle) return;
+    setScheduling(true);
+    try {
+      // Parse slot to get start/end time
+      const [hour, min] = selectedSlot.split(':').map(Number);
+      const startDate = new Date(
+        selectedDate + `T${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:00`,
+      );
+      const endDate = new Date(startDate.getTime() + 30 * 60000);
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+      // Get emails for attendees (current user and partner)
+      const myEmail = user_email; // Replace with real email if available
+      const partnerEmail = partner_email; // Replace with real email if available
+      const attendees = [myEmail, partnerEmail]
+        .filter((email): email is string => Boolean(email))
+        .map((email) => ({ email }));
+
+      const event = {
+        summary: eventTitle,
+        description: eventDescription,
+        start: { dateTime: startDate.toISOString(), timeZone },
+        end: { dateTime: endDate.toISOString(), timeZone },
+        attendees,
+        conferenceData: {
+          createRequest: {
+            requestId: `${userId || 'user'}-${Date.now()}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
+      };
+      // Create event for both users, send email
+      await Promise.all([
+        createCalendarEvent({ accessToken: access_token, event, sendUpdates: 'all' }),
+        createCalendarEvent({ accessToken: other_access_token, event, sendUpdates: 'all' }),
+      ]);
+      setModalVisible(false);
+      setEventTitle('');
+      setEventDescription('');
+      setSelectedSlot(null);
+      Alert.alert('Success', 'Event scheduled for both calendars!');
+      // Optionally, refresh events
+      setLoadingEvents(true);
+      setFetchError(null);
+      try {
+        const partnerEvents = await fetchCalendarEvents({ partnerAccessToken: other_access_token });
+        setMyEvents(partnerEvents);
+        const myEventsResp = await fetchCalendarEvents({ partnerAccessToken: access_token });
+        setMyOwnEvents(myEventsResp);
+      } catch (err) {
+        setFetchError('Failed to fetch calendar events');
+        setMyEvents([]);
+        setMyOwnEvents([]);
+      } finally {
+        setLoadingEvents(false);
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to schedule event');
+    } finally {
+      setScheduling(false);
     }
   };
 
@@ -489,7 +585,7 @@ function GGCalendar() {
     }
   }
 
-  // Tab UI
+  // --- Tab UI ---
   return (
     <View style={styles.container}>
       {/* Tab Switcher */}
@@ -582,11 +678,10 @@ function GGCalendar() {
               </View>
             </View>
             {/* Mutual Free Time */}
-            <View style={{ marginTop: 24, alignItems: 'center', width: '100%', marginBottom:20}}>
+            <View style={{ marginTop: 24, alignItems: 'center', width: '100%', marginBottom: 20 }}>
               <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 8, color: '#43A047' }}>
                 Mutual Free Time
               </Text>
-
               {mutualFreeSlots.length > 0 ? (
                 <View
                   style={{
@@ -597,27 +692,36 @@ function GGCalendar() {
                     style={{
                       flexDirection: 'row',
                       flexWrap: 'wrap',
-                      justifyContent: 'center', 
+                      justifyContent: 'center',
                       width: '100%',
                     }}
                   >
                     {mutualFreeSlots.map((slot) => (
-                      <View
+                      <TouchableOpacity
                         key={slot}
-                        style={{
-                          backgroundColor: '#E0F2F1',
-                          borderRadius: 6,
-                          padding: 12,
-                          margin: 5,
-                          minWidth: 100,
-                          alignItems: 'center',
+                        onPress={() => {
+                          setSelectedSlot(slot);
+                          setModalVisible(true);
                         }}
+                        disabled={scheduling}
+                        style={{ opacity: scheduling ? 0.5 : 1 }}
                       >
-                        <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
-                          {slot} -{' '}
-                          {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
-                        </Text>
-                      </View>
+                        <View
+                          style={{
+                            backgroundColor: '#E0F2F1',
+                            borderRadius: 6,
+                            padding: 12,
+                            margin: 5,
+                            minWidth: 100,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
+                            {slot} -{' '}
+                            {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 </View>
@@ -628,6 +732,86 @@ function GGCalendar() {
           </View>
         )}
       </ScrollView>
+
+      {/* Event Creation Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#00000099',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: '85%' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>
+              Schedule Event
+            </Text>
+            <Text style={{ marginBottom: 8 }}>
+              Time: {selectedSlot} -{' '}
+              {selectedSlot &&
+                `${(Number(selectedSlot.split(':')[0]) + (Number(selectedSlot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(selectedSlot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+            </Text>
+            <TextInput
+              placeholder="Event Title"
+              value={eventTitle}
+              onChangeText={setEventTitle}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 6,
+                padding: 8,
+                marginBottom: 12,
+              }}
+              editable={!scheduling}
+            />
+            <TextInput
+              placeholder="Description (optional)"
+              value={eventDescription}
+              onChangeText={setEventDescription}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 6,
+                padding: 8,
+                marginBottom: 12,
+                minHeight: 40,
+              }}
+              editable={!scheduling}
+              multiline
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={{ marginRight: 16, justifyContent:'center' }}
+                disabled={scheduling}
+              >
+                <Text style={{ color: '#888', fontWeight: 'bold' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleScheduleEvent}
+                disabled={scheduling || !eventTitle}
+                style={{
+                  backgroundColor: '#E91E63',
+                  borderRadius: 6,
+                  paddingVertical: 8,
+                  paddingHorizontal: 18,
+                  opacity: scheduling || !eventTitle ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                  {scheduling ? 'Scheduling...' : 'Schedule'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
