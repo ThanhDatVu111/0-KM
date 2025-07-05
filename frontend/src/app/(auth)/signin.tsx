@@ -1,11 +1,12 @@
 import { useSignIn, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, View, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import FormInput from '@/components/FormInput';
 import React, { useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import icons from '@/constants/icons';
 
 const useWarmUpBrowser = () => {
   useEffect(() => {
@@ -147,7 +148,17 @@ export default function SignInForm() {
           elevation: 8,
         }}
       >
-        <View className="bg-white px-4 py-3">
+        <View className="bg-white px-4 py-3 flex-row justify-center">
+          <Image
+            source={icons.google_pixel}
+            style={{
+              width: 24,
+              height: 24,
+              marginRight: 8,
+            }}
+            resizeMode="contain"
+          />
+
           <Text
             className="text-[#6536DD] text-center text-[16px] font-bold"
             style={{ fontFamily: 'Poppins-Bold' }}

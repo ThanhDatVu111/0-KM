@@ -7,12 +7,14 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  Image,
 } from 'react-native';
 import { useSignUp, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import icons from '@/constants/icons';
 
 const useWarmUpBrowser = () => {
   React.useEffect(() => {
@@ -71,7 +73,7 @@ export default function SignUpForm() {
   // Use the `useSSO()` hook to access the `startSSOFlow()` method
   const { startSSOFlow } = useSSO();
 
-  const onGoogleSignInPress = React.useCallback(async () => {
+  const onGoogleSignUpPress = React.useCallback(async () => {
     try {
       // Start the authentication process by calling `startSSOFlow()`
       const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
@@ -148,7 +150,7 @@ export default function SignUpForm() {
 
       {/* Sign up with Google Button */}
       <TouchableOpacity
-        onPress={() => console.log('Google Sign Up')}
+        onPress={onSignUpPress}
         className="w-full mb-4 bg-white border-4 border-[#6536DD]"
         style={{
           shadowColor: '#6536DD',
@@ -158,7 +160,16 @@ export default function SignUpForm() {
           elevation: 8,
         }}
       >
-        <View className="bg-white px-4 py-3">
+        <View className="bg-white px-4 py-3 flex-row justify-center">
+          <Image
+            source={icons.google_pixel}
+            style={{
+              width: 24,
+              height: 24,
+              marginRight: 8,
+            }}
+            resizeMode="contain"
+          />
           <Text
             className="text-[#6536DD] text-center text-[16px] font-bold"
             style={{ fontFamily: 'Poppins-Bold' }}
