@@ -193,6 +193,14 @@ const JoinRoom = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const getRoom = async () => {
+      const room = await fetchRoom({ user_id: userId ?? '' });
+      setRoomId(room.room_id);
+    };
+    getRoom();
+  }, [userId]);
+
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
 
   const connectRoom = async () => {
