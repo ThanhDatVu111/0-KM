@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import Button from '@/components/Button';
@@ -6,6 +6,8 @@ import { View, Text, TextInput, Alert, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
 import { SignOutButton } from '@/components/SignOutButton';
+import { useAuth } from '@clerk/clerk-expo';
+import { fetchRoom } from '@/apis/room';
 
 function PairingStep({
   myCode,
@@ -88,11 +90,21 @@ function PairingStep({
 
 const JoinRoom = () => {
   const router = useRouter();
-  const { userId, roomId } = useLocalSearchParams();
-  const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
+  const { userId } = useAuth();
+  const [roomId, setRoomId] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // Add loading state
+
+  useEffect(() => {
+    const getRoom = async () => {
+      const room = await fetchRoom({ user_id: userId ?? '' });
+      setRoomId(room.room_id);
+    };
+    getRoom();
+  }, [userId]);
+
+  const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
 
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {

@@ -5,22 +5,25 @@ import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import CalendarRouter from './routes/calendarRoutes';
+import LibraryRouter from './routes/libraryRoutes';
 // import other routers like TripRouter, NotificationRouter if needed
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
-const LOCAL_HOST_URL = process.env.LOCAL_HOST_URL;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+const LOCAL_URL = process.env.LOCAL_URL;
+const PUBLIC_URL = process.env.PUBLIC_URL;
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
-app.use(cors()); // allows the backend to respond to requests from the frontend.
+app.use(cors());
 
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/calendar', CalendarRouter);
+app.use('/library', LibraryRouter);
 
 const startServer = async () => {
   try {
@@ -57,8 +60,13 @@ const startServer = async () => {
     console.log('✅ users schema and columns OK');
 
     // 4) All good—start listening
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at ${LOCAL_HOST_URL}:${PORT}`);
+    if (!PORT) {
+      throw new Error('🚨 PORT is not defined or invalid.');
+    }
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('✅ Server listening on port', PORT);
+      console.log('✅ Local endpoint:', LOCAL_URL);
+      console.log('✅ Public endpoint:', PUBLIC_URL);
     });
   } catch (err: any) {
     console.error('🚨 Failed to start server:', err.message || err);

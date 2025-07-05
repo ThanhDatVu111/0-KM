@@ -5,14 +5,9 @@ import {
   OnboardResponse,
   FetchedUserResponse,
 } from '@/types/users';
+import { BASE_URL } from './apiClient';
 
-const host = process.env.EXPO_PUBLIC_API_HOST;
-const port = process.env.EXPO_PUBLIC_API_PORT;
-
-if (!host || !port) {
-  throw new Error('Missing LOCAL_HOST_URL or PORT in your environment');
-}
-const BASE_URL = `${host}:${port}`;
+console.log('BASE_URL:', BASE_URL);
 
 // This function is responsible for making the API call to create a user
 export async function createUser(request: UserRequest): Promise<CreatedUser> {

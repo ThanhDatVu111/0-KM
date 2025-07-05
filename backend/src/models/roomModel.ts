@@ -6,8 +6,8 @@ export async function createRoom(attrs: { room_id: string; user_1: string }) {
   const { data, error } = await supabase
     .from('room')
     .insert([attrs]) // insert 1 new row
-    .select() // ask Supabase to send back the new row’s columns
-    .single(); // “I know it’s exactly one row—give me the object directly”
+    .select() // ask Supabase to send back the new row's columns
+    .single(); // "I know it's exactly one row—give me the object directly"
   if (error) throw error;
   return data;
 }
@@ -55,16 +55,29 @@ export async function deleteRoom(attrs: { room_id: string }): Promise<string | n
 }
 
 export async function fetchRoom(user_id: string) {
+  console.log('🔍 Fetching room for user:', user_id);
+
   const { data, error } = await supabase
     .from('room')
-    .select('filled') // Select only the `filled` column
-    .or(`user_1.eq.${user_id}`) // Match user_id with user_1 or user_2
-    .single(); // Expect a single room
+    .select('room_id, user_1, user_2, filled')
+    .or(`user_1.eq.${user_id},user_2.eq.${user_id}`)
+    .single();
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
+    console.error('❌ Raw error from database:', error);
+    if (error.code === 'PGRST116') {
+      console.log('❌ No room found for user:', user_id);
+      return null;
+    }
     throw error;
   }
-  console.log('✅ Room fetched:', data);
+
+  if (!data) {
+    console.log('❌ No data returned from database for user:', user_id);
+    return null;
+  }
+
+  console.log('✅ Room data found:', data);
   return data;
 }
 

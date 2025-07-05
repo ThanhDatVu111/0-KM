@@ -1,5 +1,4 @@
-const host = process.env.EXPO_PUBLIC_API_HOST;
-const port = process.env.EXPO_PUBLIC_API_PORT;
+import { BASE_URL } from './apiClient';
 
 export interface RefreshTokenRequest {
   client_id: string;
@@ -53,11 +52,6 @@ export interface FetchRefreshTokenResponse {
   refresh_token: string;
 }
 
-if (!host || !port) {
-  throw new Error('Missing LOCAL_HOST_URL or PORT in your environment');
-}
-const BASE_URL = `${host}:${port}`;
-
 export async function createRefreshToken(
   request: RefreshTokenRequest,
 ): Promise<CreatedRefreshToken> {
@@ -71,17 +65,6 @@ export async function createRefreshToken(
       grant_type: 'authorization_code',
       code_verifier: request.code_verifier || '',
     }).toString();
-
-    // 2) Log each individual field plus the raw body string:
-    console.log('--- createRefreshToken called with ---');
-    console.log('client_id:      ', request.client_id);
-    console.log('client_secret:  ', request.client_secret ? '[REDACTED]' : '(missing)');
-    console.log('code:           ', request.code);
-    console.log('redirect_uri:   ', request.redirect_uri);
-    console.log('grant_type:     authorization_code');
-    console.log('code_verifier:  ', request.code_verifier);
-    console.log('raw POST body:  ', params);
-    console.log('--------------------------------------');
 
     // 3) Perform the actual POST:
     const response = await fetch('https://oauth2.googleapis.com/token', {

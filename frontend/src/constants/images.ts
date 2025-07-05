@@ -5,6 +5,7 @@ import logo from '@/assets/images/logo.png';
 import polaroid_frame from '@/assets/images/polaroidFrame.png';
 import polaroid_picture from '@/assets/images/polaroidPicture.png';
 import highlight from '@/assets/images/highlight.png';
+import navBarBackground from '@/assets/images/navBarBackground.png';
 
 export default {
   polaroid,
@@ -13,5 +14,6 @@ export default {
   logo,
   polaroid_frame,
   polaroid_picture,
-  highlight
+  highlight,
+  navBarBackground
 };

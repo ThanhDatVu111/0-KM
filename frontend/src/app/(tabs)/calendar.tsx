@@ -582,7 +582,7 @@ function GGCalendar() {
               </View>
             </View>
             {/* Mutual Free Time */}
-            <View style={{ marginTop: 24, alignItems: 'center', width: '100%' }}>
+            <View style={{ marginTop: 24, alignItems: 'center', width: '100%', marginBottom:20}}>
               <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 8, color: '#43A047' }}>
                 Mutual Free Time
               </Text>
