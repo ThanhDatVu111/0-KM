@@ -545,7 +545,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
                 textAlign: 'left',
                 alignSelf: 'flex-start',
               }}
-              numberOfLines={expanded ? undefined : 1}
+              numberOfLines={1}
             >
               {title}
             </Text>

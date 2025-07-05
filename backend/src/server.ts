@@ -63,12 +63,20 @@ type AwarenessState = {
 const awarenessStates = new Map<string, AwarenessState[]>();
 
 io.on('connection', (socket) => {
-  socket.on('join-entry', (entryId: string) => {
+  socket.on('join-entry', (entryId: string, initialTitle?: string, initialBody?: string) => {
     console.log('✅ A client joined entry', entryId);
     socket.join(entryId);
 
+    // If this is a new doc, seed with initial values if provided
     if (!docs.has(entryId)) {
-      docs.set(entryId, new Y.Doc());
+      const ydoc = new Y.Doc();
+      if (initialTitle) {
+        ydoc.getText('entry-title').insert(0, initialTitle);
+      }
+      if (initialBody) {
+        ydoc.getText('entry-body').insert(0, initialBody);
+      }
+      docs.set(entryId, ydoc);
     }
 
     const ydoc = docs.get(entryId)!;

@@ -93,8 +93,10 @@ export default function EntryForm({
     }
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
+    // Pass initialTitle and initialBody to the server on join
     const provider = new YSocketIOProvider(PUBLIC_URL!, entryId || 'new', ydoc);
     providerRef.current = provider;
+    provider.socket.emit('join-entry', entryId || 'new', initialTitle, initialBody);
 
     // Yjs observer for syncing React state
     const yBody = ydoc.getText('entry-body');
@@ -111,7 +113,7 @@ export default function EntryForm({
       yTitle.unobserve(titleObserver);
       provider.destroy();
     };
-  }, [entryId]);
+  }, [entryId, initialTitle, initialBody]);
 
   // ─── Handle text change (Yjs only) ──────────────────────────────────────────────────────────────
   const handleBodyChange = (text: string) => {
