@@ -32,6 +32,7 @@ import { Socket } from 'socket.io-client';
 import { usePagination } from '@/hooks/usePagination';
 import ChatInput from '@/components/ChatInptut';
 import { useSocket } from 'utils/SocketProvider';
+import ChatPaginatedList from '@/components/ChatPaginatedList';
 
 export default function Chat() {
   const socket = useSocket();
@@ -104,63 +105,6 @@ export default function Chat() {
       setPreviousChat((prev) => prev.filter((msg) => msg.message_id !== messageId));
     } catch (error) {
       console.error('Failed to delete message:', error);
-    }
-  };
-
-  const onImagePress = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.7,
-        allowsMultipleSelection: true,
-        selectionLimit: 5,
-      });
-
-      if (!result.canceled && result.assets?.length) {
-        // Upload images to Cloudinary first
-        const uploadPromises = result.assets.map(async (asset) => {
-          try {
-            const formData = new FormData();
-            formData.append('file', {
-              uri: asset.uri,
-              type: 'image/jpeg',
-              name: 'image.jpg',
-            } as any);
-
-            // Get Cloudinary signature
-            const response = await fetch(`${BASE_URL}/cloudinary-sign`);
-            const { signature, timestamp } = await response.json();
-
-            formData.append('api_key', process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY!);
-            formData.append('timestamp', timestamp.toString());
-            formData.append('signature', signature);
-
-            const uploadResponse = await fetch(
-              `https://api.cloudinary.com/v1_1/${process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-              {
-                method: 'POST',
-                body: formData,
-              },
-            );
-
-            const uploadResult = await uploadResponse.json();
-            return uploadResult.secure_url;
-          } catch (error) {
-            console.error('Error uploading image:', error);
-            return null;
-          }
-        });
-
-        const uploadedUrls = await Promise.all(uploadPromises);
-        const validUrls = uploadedUrls.filter((url) => url !== null);
-
-        if (validUrls.length > 0) {
-          setSelectedImages(validUrls);
-        }
-      }
-    } catch (error) {
-      console.error('Image picker error:', error);
     }
   };
 
@@ -266,7 +210,7 @@ export default function Chat() {
           className="flex-1"
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <FlatList
+          {/* <FlatList
             data={previousChat}
             renderItem={renderMessage}
             keyExtractor={(item) => item?.message_id ?? 'unknown'}
@@ -277,6 +221,14 @@ export default function Chat() {
             // ListFooterComponent={hasMore ? renderFooter : null}
             onEndReached={loadMore}
             onEndReachedThreshold={0.1}
+          /> */}
+
+          <ChatPaginatedList
+            previousChat={previousChat}
+            refreshing={refreshing}
+            refresh={refresh}
+            loadMore={loadMore}
+            hasMore={hasMore}
           />
 
           {/* Chat Input */}

@@ -5,6 +5,7 @@ export interface Message {
   sender_id: string;
   sender_photo_url?: string; // Avatar of sender
   media_paths?: string[]; // Include media paths
+  is_voice?: boolean;
   is_sent?: boolean; // Default to false
   is_read?: boolean; // Default to false
   is_edited?: boolean; // Default to false

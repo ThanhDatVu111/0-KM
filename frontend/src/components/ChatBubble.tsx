@@ -1,8 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import BlurView from 'expo-blur';
-import images from '@/constants/images';
+import { View, Text, Pressable, Image } from 'react-native';
 import Popover from 'react-native-popover-view';
 import ChatContextMenu from './ChatContextMenu';
 
@@ -17,7 +14,6 @@ interface ChatBubbleProps {
   media_paths?: string[];
   reaction?: string;
   isSent: boolean;
-  isDeleted: boolean;
   createdAt: string;
   isSelected: boolean;
 }
@@ -43,8 +39,17 @@ export default function ChatBubble({
     hour12: true,
   });
 
-  // Format the content
+  const parsedMediaPaths = (() => {
+    try {
+      return typeof media_paths === 'string' ? JSON.parse(media_paths) : media_paths;
+    } catch {
+      return [];
+    }
+  })();
 
+  const isMedia = Array.isArray(parsedMediaPaths) && parsedMediaPaths.length > 0;
+
+  // Format the content
   return (
     <View className={`flex-row mb-3 ${isSender ? 'justify-end' : 'justify-start'}`}>
       {/* Avatar for received messages */}
@@ -58,27 +63,28 @@ export default function ChatBubble({
           from={
             <Pressable
               className={`rounded-2xl px-4 py-2.5 ${
-                isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
+                isSender ? 'bg-[#F5829B] self-end' : 'bg-white self-start'
               }`}
               onPress={() => <ChatContextMenu />}
             >
               {/* Render text content if exists */}
-              {content && !media_paths ? (
+              {content && (
                 <Text
                   className={`font-poppins-light text-base ${
-                    isSender ? 'text-white' : 'text-gray-900'
+                    isSender ? 'text-#F5829B' : 'text-white'
                   }`}
                 >
                   {content}
                 </Text>
-              ) : null}
+              )}
 
               {/* Render media if exists */}
-              {media_paths && media_paths.length > 0 && (
+              {isMedia && (
                 <View className="mt-2">
-                  {media_paths.map((mediaPath) => (
+                  {parsedMediaPaths.map((item, index) => (
                     <Image
-                      source={{ uri: mediaPath }}
+                      key={index}
+                      source={{ uri: item }}
                       className="w-48 h-48 mb-2 rounded-lg"
                       resizeMode="cover"
                     />
@@ -95,8 +101,8 @@ export default function ChatBubble({
             isSender ? 'text-right' : 'text-left'
           }`}
         >
-                  {formattedTimestamp}
-                  {isEdited && 'Edited'}
+          {formattedTimestamp}
+          {isEdited && 'Edited'}
         </Text>
       </View>
 
