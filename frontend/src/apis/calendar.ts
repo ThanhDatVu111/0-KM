@@ -1,3 +1,5 @@
+import { BASE_URL } from './apiClient';
+
 export interface FetchCalendarEventsRequest {
   partnerAccessToken: string;
 }
@@ -64,5 +66,33 @@ export async function createCalendarEvent({
   } catch (error) {
     console.error('Error creating calendar event', error);
     throw error;
+  }
+}
+
+export interface CreateEventRequest {
+  room_id: string;
+  user_1: string;
+  user_2: string;
+  start_time: string;
+  start_timezone: string;
+  end_time: string;
+  end_timezone: string;
+  title: string;
+}
+//post the created event to supabase for display in widget
+export async function createEvent(request: CreateEventRequest): Promise<any> {
+  try {
+    const response = await fetch(`${BASE_URL}/calendar`, {
+      method: 'POST',
+      headers: { 'Content-type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response) {
+      throw new Error('error creating event to supabase');
+    }
+    const result = response.json();
+    return result;
+  } catch (error) {
+    console.error('error when creating event to supabase:', error);
   }
 }

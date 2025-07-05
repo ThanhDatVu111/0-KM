@@ -45,3 +45,25 @@ export async function fetchRefreshToken(req: any, res: any) {
     return res.status(400).json({ error: 'error fetching refresh token' });
   }
 }
+
+export async function createEvent(req: any, res: any) {
+  try {
+    const response = await calendarService.createEvent({
+      room_id: req.body.room_id,
+      user_1: req.body.user_1,
+      user_2: req.body.user_2,
+      start_time: req.body.start_time,
+      start_timezone: req.body.start_timezone,
+      end_time: req.body.end_time,
+      end_timezone: req.body.end_timezone,
+      title: req.body.title,
+    });
+
+    if (!response) {
+      return res.status(400).json({ error: 'error creating event' });
+    }
+    res.status(200).json({ data: response });
+  } catch (error) {
+    return res.status(400).json({ error: 'error creating event' });
+  }
+}

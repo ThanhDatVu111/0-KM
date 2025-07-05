@@ -26,7 +26,7 @@ import {
   fetchRefreshToken,
 } from '@/apis/token';
 import { fetchRoomByUserId } from '@/apis/room';
-import { fetchCalendarEvents, createCalendarEvent } from '@/apis/calendar';
+import { fetchCalendarEvents, createCalendarEvent, createEvent } from '@/apis/calendar';
 import { fetchUser } from '@/apis/user';
 
 import { Calendar, DateData } from 'react-native-calendars';
@@ -367,6 +367,16 @@ function GGCalendar() {
       await Promise.all([
         createCalendarEvent({ accessToken: access_token, event, sendUpdates: 'all' }),
         createCalendarEvent({ accessToken: other_access_token, event, sendUpdates: 'all' }),
+        createEvent({
+          room_id: room_id,
+          user_1: userId ?? '',
+          user_2: other_user_id,
+          start_time: event.start.dateTime,
+          start_timezone: event.start.timeZone,
+          end_time: event.end.dateTime,
+          end_timezone: event.end.timeZone,
+          title: eventTitle,
+        }),
       ]);
       setModalVisible(false);
       setEventTitle('');
@@ -788,7 +798,7 @@ function GGCalendar() {
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={{ marginRight: 16, justifyContent:'center' }}
+                style={{ marginRight: 16, justifyContent: 'center' }}
                 disabled={scheduling}
               >
                 <Text style={{ color: '#888', fontWeight: 'bold' }}>Cancel</Text>

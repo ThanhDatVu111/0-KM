@@ -1,3 +1,4 @@
+import { start } from 'repl';
 import supabase from '../../supabase/db';
 
 export async function checkRefreshToken(attrs: { user_id: string }) {
@@ -54,6 +55,28 @@ export async function fetchRefreshToken(attrs: { user_id: string }) {
     .select()
     .eq('user_id', attrs.user_id)
     .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createEvent(attrs: {
+  room_id: string;
+  user_1: string;
+  user_2: string;
+  start: { dateTime: string; timeZone: string };
+  end: { dateTime: string; timeZone: string };
+  title: string;
+}) {
+  const { data, error } = await supabase.from('events').insert({
+    room_id: attrs.room_id,
+    user_1: attrs.user_1,
+    user_2: attrs.user_2,
+    start_timezone: attrs.start.timeZone,
+    end_timezone: attrs.end.timeZone,
+    start_time: attrs.start.dateTime,
+    end_time: attrs.end.dateTime,
+    title: attrs.title,
+  });
   if (error) throw error;
   return data;
 }
