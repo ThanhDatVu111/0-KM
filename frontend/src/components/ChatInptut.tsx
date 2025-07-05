@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { sendMessage } from '@/apis/chat';
 import { useSocket } from 'utils/SocketProvider';
+import uuid from 'react-native-uuid';
 
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
@@ -176,7 +177,7 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
         is_edited?: boolean;
         reaction?: string;
       } = {
-        message_id: `${Date.now()}-${sender_id}`,
+        message_id: uuid.v4(),
         room_id: room_id!,
         sender_id: sender_id!,
         content: content.trim(),

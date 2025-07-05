@@ -70,8 +70,8 @@ export default function ChatBubble({
               {/* Render text content if exists */}
               {content && (
                 <Text
-                  className={`font-poppins-light text-base ${
-                    isSender ? 'text-#F5829B' : 'text-white'
+                  className={`font-poppins-medium text-base ${
+                    isSender ? 'text-white' : 'text-[#F5829B]'
                   }`}
                 >
                   {content}
@@ -97,7 +97,7 @@ export default function ChatBubble({
 
         {/* Time stamp */}
         <Text
-          className={`font-poppins-light text-xs text-gray-500 mt-1 ${
+          className={`font-poppins-light text-xs text-white mt-1 ${
             isSender ? 'text-right' : 'text-left'
           }`}
         >

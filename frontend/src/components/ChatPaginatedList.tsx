@@ -26,7 +26,6 @@ export default function ChatPaginatedList({
 
     return (
       <ChatBubble
-        key={item.message_id}
         message_id={item.message_id}
         content={item.content ?? ''}
         isSender={isSender}

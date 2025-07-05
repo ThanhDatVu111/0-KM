@@ -87,10 +87,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (roomId && socket) {
+      // Fetching conversation
       console.log('Fetching conversation from room ID:', roomId);
+      fetchConversation();
+
+      // Join chat
       socket.emit('join-chat', roomId);
       console.log('Frontend: emitting join-chat');
-      fetchConversation();
     }
   }, [socket, roomId]);
 
@@ -99,6 +102,7 @@ export default function Chat() {
     pageSize: 10,
   });
 
+
   const handleDelete = async (messageId: string) => {
     try {
       await deleteMessage(messageId);
@@ -106,97 +110,6 @@ export default function Chat() {
     } catch (error) {
       console.error('Failed to delete message:', error);
     }
-  };
-
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isSender = item.sender_id === userId;
-    const isMessageSelected = selectedMessage?.message_id === item.message_id;
-
-    return (
-      <View className={`flex-row mb-3 ${isSender ? 'justify-end' : 'justify-start'}`}>
-        {/* Avatar for received messages */}
-        {!isSender && (
-          <Image source={icons.user_icon_female} className="w-8 h-8 rounded-full mr-2 mt-1" />
-        )}
-
-        <View className="flex-1 max-w-[80%]">
-          <Popover
-            isVisible={isMessageSelected}
-            onRequestClose={() => setSelectedMessage(null)}
-            from={
-              <Pressable
-                onLongPress={() => setSelectedMessage(item)}
-                className={`rounded-2xl px-4 py-2.5 ${
-                  isSender ? 'bg-[#F5829B] self-end' : 'bg-gray-100 self-start'
-                }`}
-              >
-                {/* Render text content if exists */}
-                {item.content ? (
-                  <Text
-                    className={`font-poppins-light text-base ${
-                      isSender ? 'text-white' : 'text-gray-900'
-                    }`}
-                  >
-                    {item.content}
-                  </Text>
-                ) : null}
-
-                {/* Render media if exists
-                {item.media_paths && item.media_paths.length > 0 && (
-                  <View className="mt-2">
-                    {item.media_paths.map((mediaPath, index) => (
-                      <Image
-                        key={`${item.message_id}-media-${index}`}
-                        source={{ uri: mediaPath }}
-                        className="w-48 h-48 mb-2 rounded-lg"
-                        resizeMode="cover"
-                      />
-                    ))}
-                  </View> */}
-                {/* )} */}
-              </Pressable>
-            }
-          >
-            <View className="bg-white p-3 rounded-md">
-              <TouchableOpacity
-                className="py-1"
-                onPress={() => {
-                  setEditedContent(item.content ?? '');
-                  setIsEditing(true);
-                }}
-              >
-                <Text>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="py-1"
-                onPress={() => {
-                  handleDelete(item.message_id);
-                  setSelectedMessage(null);
-                }}
-              >
-                <Text className="text-red-500">Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </Popover>
-
-          <Text
-            className={`font-poppins-light text-xs text-gray-500 mt-1 ${
-              isSender ? 'text-right' : 'text-left'
-            }`}
-          >
-            {new Date(item.created_at!).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
-
-        {/* Avatar for sent messages */}
-        {isSender && (
-          <Image source={icons.user_icon_female} className="w-8 h-8 rounded-full ml-2 mt-1" />
-        )}
-      </View>
-    );
   };
 
   return (
@@ -210,19 +123,6 @@ export default function Chat() {
           className="flex-1"
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* <FlatList
-            data={previousChat}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item?.message_id ?? 'unknown'}
-            inverted
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 8 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-            // ListFooterComponent={hasMore ? renderFooter : null}
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.1}
-          /> */}
-
           <ChatPaginatedList
             previousChat={previousChat}
             refreshing={refreshing}
