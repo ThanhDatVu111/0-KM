@@ -1,4 +1,12 @@
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import React, { useState, useEffect } from 'react';
 import icons from '@/constants/icons';
 import useFont from '@/hooks/useFont';
@@ -20,38 +28,6 @@ import { Calendar, DateData } from 'react-native-calendars';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// type CalendarEvent = {
-//   id: string;
-//   summary?: string;
-//   start: { dateTime?: string; date?: string };
-//   end: { dateTime?: string; date?: string };
-// };
-
-// type AgendaItem = {
-//   name: string;
-//   owner: 'me' | 'partner';
-//   startTime: string;
-//   endTime: string;
-//   eventId: string;
-//   height: number;
-//   day: string;
-// };
-
-type FakeEvent = {
-  id: string;
-  title: string;
-  time: string;
-};
-
-// 1) Define two dates with “fake” events:
-const FAKE_EVENTS: Record<string, FakeEvent[]> = {
-  '2025-06-07': [{ id: 'evt1', title: 'Morning Standup', time: '09:00 AM – 09:30 AM' }],
-  '2025-06-08': [
-    { id: 'evt2', title: 'Lunch w/ Partner', time: '12:00 PM – 01:00 PM' },
-    { id: 'evt3', title: 'Project Demo', time: '03:00 PM – 04:00 PM' },
-  ],
-};
-
 function GGCalendar() {
   const { userId, isLoaded, isSignedIn } = useAuth();
   const todayKey = new Date().toISOString().split('T')[0];
@@ -60,6 +36,7 @@ function GGCalendar() {
 
   // --- NEW STATE FOR REAL EVENTS ---
   const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [myOwnEvents, setMyOwnEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -78,50 +55,6 @@ function GGCalendar() {
   // Tokens for partner
   const [other_refresh_token, setOtherRefreshToken] = useState('');
   const [other_access_token, setOtherAccessToken] = useState('');
-
-  // A small set of hard‐coded events to show once both are connected:
-  // const fakeItems: Record<string, AgendaItem[]> = {
-  //   '2025-06-07': [
-  //     {
-  //       name: 'Morning Standup',
-  //       owner: 'me',
-  //       startTime: '09:00',
-  //       endTime: '09:30',
-  //       eventId: 'evt1',
-  //       height: 60,
-  //       day: '2025-06-07',
-  //     },
-  //     {
-  //       name: 'Lunch with Partner',
-  //       owner: 'partner',
-  //       startTime: '12:00',
-  //       endTime: '13:00',
-  //       eventId: 'evt2',
-  //       height: 60,
-  //       day: '2025-06-07',
-  //     },
-  //   ],
-  //   '2025-06-08': [
-  //     {
-  //       name: 'Project Demo',
-  //       owner: 'me',
-  //       startTime: '10:00',
-  //       endTime: '11:00',
-  //       eventId: 'evt3',
-  //       height: 60,
-  //       day: '2025-06-08',
-  //     },
-  //     {
-  //       name: 'Coffee Break',
-  //       owner: 'partner',
-  //       startTime: '15:00',
-  //       endTime: '15:30',
-  //       eventId: 'evt4',
-  //       height: 60,
-  //       day: '2025-06-08',
-  //     },
-  //   ],
-  // };
 
   const redirectUri = makeRedirectUri();
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
@@ -142,17 +75,6 @@ function GGCalendar() {
     },
   });
 
-  console.log(response);
-  if (response?.type === 'success') {
-    console.log('refresh token:', response.authentication?.refreshToken);
-  }
-  // useEffect(() => {
-  //   if (response?.type === 'success' && response.authentication) {
-  //     // This is the correct place to access the refresh token
-  //     console.log('refresh token:', response.authentication.refreshToken);
-  //   }
-  // }, [response]);
-
   // 1) Fetch room and partner ID on mount
   useEffect(() => {
     if (!userId) return;
@@ -161,13 +83,9 @@ function GGCalendar() {
         const room = await fetchRoomByUserId({ user_id: userId });
         setRoomId(room.room_id);
         setOtherUserId(room.other_user_id);
-      } catch (err) {
-        console.error('Error fetching room:', err);
-      }
+      } catch (err) {}
     })();
   }, [userId]);
-
-  console.log(room_id);
 
   // 2) Check if partner is synced
   useEffect(() => {
@@ -244,8 +162,6 @@ function GGCalendar() {
     })();
   }, [syncWithCalendar]);
 
-  console.log('refresh token: ', refresh_token);
-
   // 7) Exchange my refresh token for an access token
   useEffect(() => {
     if (!syncWithCalendar || !refresh_token) return;
@@ -260,7 +176,6 @@ function GGCalendar() {
           refresh_token,
         });
         setAccessToken(tokenResp.access_token);
-        console.log('access token: ', tokenResp.access_token);
       } catch (err) {
         setFetchError('Failed to get access token');
         console.error('Error fetching my access token:', err);
@@ -277,16 +192,21 @@ function GGCalendar() {
       setLoadingEvents(true);
       setFetchError(null);
       try {
-        const events = await fetchCalendarEvents({ partnerAccessToken: other_access_token });
-        setMyEvents(events);
+        // Fetch partner's events
+        const partnerEvents = await fetchCalendarEvents({ partnerAccessToken: other_access_token });
+        setMyEvents(partnerEvents);
+        // Fetch my own events
+        const myEventsResp = await fetchCalendarEvents({ partnerAccessToken: access_token });
+        setMyOwnEvents(myEventsResp);
       } catch (err) {
         setFetchError('Failed to fetch calendar events');
         setMyEvents([]);
+        setMyOwnEvents([]);
       } finally {
         setLoadingEvents(false);
       }
     })();
-  }, [access_token, syncWithCalendar, partnerSyncedWithCalendar]);
+  }, [access_token, syncWithCalendar, partnerSyncedWithCalendar, other_access_token]);
 
   // 8) Handle OAuth “code” response from Google
   useEffect(() => {
@@ -303,7 +223,6 @@ function GGCalendar() {
             refresh_token: refToken ?? '',
           });
           setRefreshToken(refToken ?? '');
-          console.log('New refresh token:', refToken);
         } else {
           console.warn('No refresh_token in token response');
         }
@@ -325,14 +244,6 @@ function GGCalendar() {
         };
       }
     });
-  } else {
-    Object.keys(FAKE_EVENTS).forEach((dateKey) => {
-      markedDates[dateKey] = {
-        marked: true,
-        dotColor: '#E91E63',
-        activeOpacity: 0,
-      };
-    });
   }
   // Also highlight the currently selected date
   markedDates[selectedDate] = {
@@ -343,6 +254,7 @@ function GGCalendar() {
 
   // 5) Pull out events for that date (real or fake):
   let eventsForDate: any[] = [];
+  let myOwnEventsForDate: any[] = [];
   if (syncWithCalendar && partnerSyncedWithCalendar && myEvents.length > 0) {
     // Group events by date
     eventsForDate = myEvents
@@ -358,9 +270,21 @@ function GGCalendar() {
             ? `${new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${new Date(ev.end.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             : 'All Day',
       }));
-  } else {
-    // fallback to fake events
-    eventsForDate = FAKE_EVENTS[selectedDate] || [];
+    myOwnEventsForDate = myOwnEvents
+      ? myOwnEvents
+          .filter((ev) => {
+            const dateKey = ev.start?.dateTime ? ev.start.dateTime.split('T')[0] : ev.start?.date;
+            return dateKey === selectedDate;
+          })
+          .map((ev) => ({
+            id: ev.id,
+            title: ev.summary || '(No title)',
+            time:
+              ev.start?.dateTime && ev.end?.dateTime
+                ? `${new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${new Date(ev.end.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                : 'All Day',
+          }))
+      : [];
   }
 
   const onDayPress = (day: DateData) => {
@@ -445,6 +369,126 @@ function GGCalendar() {
     );
   }
 
+  // --- Mutual Free Time Calculation ---
+  function getTimeSlots(start = 0, end = 24, interval = 30): string[] {
+    const slots = [];
+    for (let hour = start; hour < end; hour++) {
+      for (let min = 0; min < 60; min += interval) {
+        const h = hour.toString().padStart(2, '0');
+        const m = min.toString().padStart(2, '0');
+        slots.push(`${h}:${m}`);
+      }
+    }
+    return slots;
+  }
+
+  // Merge overlapping or adjacent intervals
+  function mergeIntervals(
+    intervals: { start: number; end: number }[],
+  ): { start: number; end: number }[] {
+    if (intervals.length === 0) return [];
+    // Sort by start time
+    intervals.sort((a, b) => a.start - b.start);
+    const merged: { start: number; end: number }[] = [];
+    for (const curr of intervals) {
+      if (!merged.length || merged[merged.length - 1].end < curr.start) {
+        merged.push({ ...curr });
+      } else {
+        merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, curr.end);
+      }
+    }
+
+    return merged;
+  }
+
+  // Check if a slot is busy given busy intervals
+  function isSlotBusyRaw(slot: string, busyIntervals: { start: number; end: number }[]): boolean {
+    const [slotHour, slotMin] = slot.split(':').map(Number);
+    const slotStart = slotHour * 60 + slotMin;
+    const slotEnd = slotStart + 30;
+    return busyIntervals.some(({ start, end }) => slotStart < end && slotEnd > start);
+  }
+
+  // Parse busy intervals from raw event data
+  function getBusyIntervals(events: any[]): { start: number; end: number }[] {
+    const intervals: { start: number; end: number }[] = [];
+    for (const ev of events) {
+      // Only print raw event if it is relevant to the selectedDate
+      let isRelevant = false;
+      if (ev.start?.date && !ev.start?.dateTime) {
+        const startDate = ev.start.date;
+        const endDate = ev.end?.date;
+        if (selectedDate >= startDate && endDate && selectedDate < endDate) {
+          isRelevant = true;
+        }
+      } else if (ev.start?.dateTime && ev.end?.dateTime) {
+        // Use local time for comparison
+        const startDate = new Date(ev.start.dateTime);
+        const endDate = new Date(ev.end.dateTime);
+        // Convert selectedDate to local midnight
+        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+        // Event is relevant if it overlaps with the selected day (local time)
+        if (
+          startDate < new Date(selectedDateObj.getTime() + 24 * 60 * 60 * 1000) &&
+          endDate > selectedDateObj
+        ) {
+          isRelevant = true;
+        }
+      }
+
+      // All day event
+      if (ev.start?.date && !ev.start?.dateTime) {
+        const startDate = ev.start.date;
+        const endDate = ev.end?.date;
+        if (selectedDate >= startDate && endDate && selectedDate < endDate) {
+          intervals.push({ start: 0, end: 24 * 60 });
+        }
+        continue;
+      }
+      // Timed event
+      const startStr = ev.start?.dateTime;
+      const endStr = ev.end?.dateTime;
+      if (startStr && endStr) {
+        const startDate = new Date(startStr);
+        const endDate = new Date(endStr);
+        // Convert selectedDate to local midnight
+        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+        const nextDateObj = new Date(selectedDateObj.getTime() + 24 * 60 * 60 * 1000);
+        // If event does not overlap with selected day, skip
+        if (startDate >= nextDateObj || endDate <= selectedDateObj) continue;
+        // Calculate busy interval within the selected day
+        const busyStart = Math.max(startDate.getTime(), selectedDateObj.getTime());
+        const busyEnd = Math.min(endDate.getTime(), nextDateObj.getTime());
+        const startMin = Math.floor((busyStart - selectedDateObj.getTime()) / 60000);
+        const endMin = Math.floor((busyEnd - selectedDateObj.getTime()) / 60000);
+        if (endMin > startMin) {
+          intervals.push({ start: startMin, end: endMin });
+        }
+      }
+    }
+
+    return mergeIntervals(intervals);
+  }
+
+  // Debug: print mutual free slots
+  let mutualFreeSlots: string[] = [];
+  if (syncWithCalendar && partnerSyncedWithCalendar) {
+    const slots = getTimeSlots();
+    const myBusy = getBusyIntervals(myOwnEvents);
+    const partnerBusy = getBusyIntervals(myEvents);
+    // If either has an all-day event, no mutual free slots
+    if (
+      myBusy.some((b) => b.start === 0 && b.end === 24 * 60) ||
+      partnerBusy.some((b) => b.start === 0 && b.end === 24 * 60)
+    ) {
+      mutualFreeSlots = [];
+    } else {
+      mutualFreeSlots = slots.filter(
+        (slot) => !isSlotBusyRaw(slot, myBusy) && !isSlotBusyRaw(slot, partnerBusy),
+      );
+    }
+  }
+
   // Tab UI
   return (
     <View style={styles.container}>
@@ -468,45 +512,101 @@ function GGCalendar() {
         </TouchableOpacity>
       </View>
 
-      {/* Calendar UI */}
-      <Calendar
-        onDayPress={onDayPress}
-        markedDates={markedDates}
-        theme={{
-          calendarBackground: '#fff',
-          todayTextColor: '#E91E63',
-          dayTextColor: '#333',
-          textDisabledColor: '#d9e1e8',
-          monthTextColor: '#333',
-          arrowColor: '#333',
-        }}
-      />
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Calendar UI */}
+        <Calendar
+          onDayPress={onDayPress}
+          markedDates={markedDates}
+          theme={{
+            calendarBackground: '#fff',
+            todayTextColor: '#E91E63',
+            dayTextColor: '#333',
+            textDisabledColor: '#d9e1e8',
+            monthTextColor: '#333',
+            arrowColor: '#333',
+          }}
+        />
 
-      {/* Tab Content */}
-      {activeTab === 'partner' ? (
-        <View>
-          {/* Below the calendar, show a header and list of partner's events */}
-          <View style={styles.eventsHeaderContainer}>
-            <Text style={styles.eventsHeaderText}>
-              {eventsForDate.length > 0
-                ? `Events on ${selectedDate}`
-                : `No events on ${selectedDate}`}
-            </Text>
+        {/* Tab Content */}
+        {activeTab === 'partner' ? (
+          <View>
+            {/* Below the calendar, show a header and list of partner's events */}
+            <View style={styles.eventsHeaderContainer}>
+              <Text style={styles.eventsHeaderText}>
+                {eventsForDate.length > 0
+                  ? `Events on ${selectedDate}`
+                  : `No events on ${selectedDate}`}
+              </Text>
+            </View>
+            <View style={styles.eventsListContainer}>
+              {eventsForDate.map((evt) => (
+                <View key={evt.id} style={styles.eventItem}>
+                  <Text style={styles.eventTitle}>{evt.title}</Text>
+                  <Text style={styles.eventTime}>{evt.time}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-          <View style={styles.eventsListContainer}>
-            {eventsForDate.map((evt) => (
-              <View key={evt.id} style={styles.eventItem}>
-                <Text style={styles.eventTitle}>{evt.title}</Text>
-                <Text style={styles.eventTime}>{evt.time}</Text>
+        ) : (
+          <View style={{ flexDirection: 'column', paddingHorizontal: 20, marginTop: 16 }}>
+            <View style={{ flexDirection: 'row' }}>
+              {/* My Events */}
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#E91E63' }}>You</Text>
+                {myOwnEventsForDate.length > 0 ? (
+                  myOwnEventsForDate.map((evt) => (
+                    <View key={evt.id} style={styles.eventItem}>
+                      <Text style={styles.eventTitle}>{evt.title}</Text>
+                      <Text style={styles.eventTime}>{evt.time}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ color: '#888' }}>No events</Text>
+                )}
               </View>
-            ))}
+              {/* Partner's Events */}
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#2196F3' }}>
+                  Partner
+                </Text>
+                {eventsForDate.length > 0 ? (
+                  eventsForDate.map((evt) => (
+                    <View key={evt.id} style={styles.eventItem}>
+                      <Text style={styles.eventTitle}>{evt.title}</Text>
+                      <Text style={styles.eventTime}>{evt.time}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ color: '#888' }}>No events</Text>
+                )}
+              </View>
+            </View>
+            {/* Mutual Free Time */}
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 8, color: '#43A047' }}>
+                Mutual Free Time
+              </Text>
+              {mutualFreeSlots.length > 0 ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {mutualFreeSlots.map((slot) => (
+                    <View
+                      key={slot}
+                      style={{ backgroundColor: '#E0F2F1', borderRadius: 6, padding: 6, margin: 4 }}
+                    >
+                      <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
+                        {slot} -{' '}
+                        {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={{ color: '#888' }}>No mutual free slots</Text>
+              )}
+            </View>
           </View>
-        </View>
-      ) : (
-        <View style={styles.eventsHeaderContainer}>
-          <Text style={styles.eventsHeaderText}>No events to display.</Text>
-        </View>
-      )}
+        )}
+      </ScrollView>
     </View>
   );
 }
