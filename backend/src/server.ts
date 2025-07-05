@@ -109,6 +109,7 @@ io.on('connection', (socket) => {
       // Broadcast to all in room
       io.to(entryId).emit('awareness-states', states);
     });
+    
     socket.on('disconnect', () => {
       // Remove awareness state for this user
       let states = awarenessStates.get(entryId) || [];

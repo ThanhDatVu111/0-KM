@@ -84,7 +84,7 @@ export default function EntryForm({
   const providerRef = useRef<any>(null);
 
   const MAX_MEDIA = 16; // Maximum number of media items allowed
-  const MAX_WORDS = 100;
+  const MAX_WORDS = 500;
 
   // ─── Collaborative Yjs logic ──────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -518,7 +518,6 @@ export default function EntryForm({
                   )}
                 </TouchableOpacity>
               </View>
-
               {/* ─── Media Thumbnails ─── */}
               {selectedMedia.length > 0 && (
                 <View className="px-3 mb-2">
