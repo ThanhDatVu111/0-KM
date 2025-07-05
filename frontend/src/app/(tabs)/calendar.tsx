@@ -65,7 +65,9 @@ function GGCalendar() {
   const [other_refresh_token, setOtherRefreshToken] = useState('');
   const [other_access_token, setOtherAccessToken] = useState('');
 
-  const redirectUri = makeRedirectUri();
+  const redirectUri = makeRedirectUri({
+    preferLocalhost: true,
+  });
   console.log(redirectUri);
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
   const iosClientId = process.env.EXPO_PUBLIC_IOS_CLIENT_ID!;
