@@ -22,6 +22,6 @@ export default {
   navBarBackground,
   entry,
   startButton,
-  onboardPairingBg,,
+  onboardPairingBg,
   chatBg,
 };

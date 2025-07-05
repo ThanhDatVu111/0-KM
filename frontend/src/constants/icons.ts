@@ -21,5 +21,5 @@ export default {
   google_pixel,
   person,
   phone,
-  video,,
+  video,
 };
