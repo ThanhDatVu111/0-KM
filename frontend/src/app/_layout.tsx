@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import '@/app/globals.css';
 import { useEntryGuard } from '@/hooks/useEntryGuard';
+import useFont from '@/hooks/useFont';
 
 function AuthenticatedLayout() {
   // Use the custom hook for authentication and redirection
@@ -18,6 +19,10 @@ function AuthenticatedLayout() {
 }
 
 export default function RootLayout() {
+  const fontsLoaded = useFont(); // <-- call the hook
+
+  if (!fontsLoaded) return null; // or a loading spinner
+
   return (
     <ClerkProvider tokenCache={tokenCache}>
       <AuthenticatedLayout />
