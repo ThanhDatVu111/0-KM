@@ -5,14 +5,12 @@ import {
   View,
   Text,
   Alert,
-  Image,
   TouchableOpacity,
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
 import { SignOutButton } from '@/components/SignOutButton';
 import FormInput from '@/components/FormInput';
@@ -192,6 +190,14 @@ const JoinRoom = () => {
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const getRoom = async () => {
+      const room = await fetchRoom({ user_id: userId ?? '' });
+      setRoomId(room.room_id);
+    };
+    getRoom();
+  }, [userId]);
 
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
 
