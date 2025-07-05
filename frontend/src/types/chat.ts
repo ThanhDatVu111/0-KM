@@ -25,12 +25,16 @@ export interface GetMessageById {
 }
 
 export interface SendMessage {
-  message_id: string;
   room_id: string;
+  message_id: string;
   content?: string | null;
   sender_id: string;
   created_at: string; // Default to now
+  sender_photo_url?: string;
   is_sent: boolean;
+  is_read?: boolean;
+  is_edited?: boolean;
+  reaction?: string;
   media_paths?: string[];
 }
 

@@ -12,6 +12,7 @@ import {
   Pressable,
   ImageBackground,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -20,10 +21,6 @@ import icons from '@/constants/icons';
 import { Message } from '@/types/chat';
 import { fetchMessages, sendMessage, deleteMessage, editMessage } from '@/apis/chat';
 import { fetchRoom } from '@/apis/room';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useMessageActions } from '@/hooks/useMessageAction';
 import * as ImagePicker from 'expo-image-picker';
 import Popover from 'react-native-popover-view';
 import images from '@/constants/images';
@@ -31,8 +28,13 @@ import ChatHeader from '@/components/ChatHeader';
 import { fetchUser } from '@/apis/user';
 import { BASE_URL } from '@/apis/apiClient';
 import io from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { usePagination } from '@/hooks/usePagination';
+import ChatInput from '@/components/ChatInptut';
+import { useSocket } from 'utils/SocketProvider';
 
 export default function Chat() {
+  const socket = useSocket();
   const { userId, isLoaded, isSignedIn } = useAuth();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
@@ -43,9 +45,8 @@ export default function Chat() {
   const [editedContent, setEditedContent] = useState('');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const socketRef = useRef<SocketIOClient.Socket | null>(null);
+  const [socketId, setSocketId] = useState<string | null>('');
 
   const onRecordPress = () => {};
 
@@ -71,29 +72,6 @@ export default function Chat() {
     loadRoom();
   }, [isLoaded, isSignedIn, userId]);
 
-  // Create socket connection with authentication
-  socketRef.current = io(BASE_URL, {
-    transports: ['websocket', 'polling'],
-    auth: {
-      userId: userId,
-    },
-    query: {
-      userId: userId,
-    },
-  });
-  const socket = socketRef.current;
-
-  // Connection event handlers
-  socket.on('connect', () => {
-    console.log('✅ Connected to socket server:', socket.id);
-    setIsConnected(true);
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log('❌ Disconnected from socket:', reason);
-    setIsConnected(false);
-  });
-
   // Retrieve previous conversation
   const fetchConversation = useCallback(async () => {
     if (!roomId) return;
@@ -107,36 +85,18 @@ export default function Chat() {
   }, [roomId]);
 
   useEffect(() => {
-    if (roomId) {
-      console.log('Room ID changed, fetching conversation:', roomId);
+    if (roomId && socket) {
+      console.log('Fetching conversation from room ID:', roomId);
+      socket.emit('join-chat', roomId);
+      console.log('Frontend: emitting join-chat');
       fetchConversation();
     }
-  }, [roomId]);
+  }, [socket, roomId]);
 
-  const handleSendMessage = async () => {
-    if (!message.trim() && !selectedImages.length) return;
-    if (!roomId) return;
-
-    try {
-      const messagePayload = {
-        message_id: `${Date.now()}-${userId}`,
-        room_id: roomId,
-        sender_id: userId!,
-        content: message.trim(),
-        media_paths: selectedImages.length > 0 ? selectedImages : undefined,
-        created_at: new Date().toISOString(),
-        is_sent: true,
-      };
-
-      await sendMessage(messagePayload);
-      setMessage('');
-      socket.emit('send-message', messagePayload);
-      setSelectedImages([]);
-      setPreviousChat((prev) => [...prev, messagePayload]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
+  const { messages, loading, hasMore, refreshing, loadMore, refresh } = usePagination({
+    fetched: previousChat,
+    pageSize: 10,
+  });
 
   const handleDelete = async (messageId: string) => {
     try {
@@ -313,65 +273,14 @@ export default function Chat() {
             inverted
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 8 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+            // ListFooterComponent={hasMore ? renderFooter : null}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.1}
           />
 
           {/* Chat Input */}
-          <View className="bg-linear-to-r/increasing from-[#FFC6F9]-100 to-[#6536DA]-100 border-t border-gray-200 px-3 py-2 flex-row items-center overflow-scroll container mx-auto">
-            {/* Selected Images Preview */}
-            {selectedImages.length > 0 && (
-              <View className="absolute bottom-20 left-0 right-0 bg-white border-t border-gray-200 p-2">
-                <View className="flex-row flex-wrap gap-2">
-                  {selectedImages.map((imageUri, index) => (
-                    <View key={index} className="relative">
-                      <Image
-                        source={{ uri: imageUri }}
-                        className="w-16 h-16 rounded-lg"
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        onPress={() =>
-                          setSelectedImages((prev) => prev.filter((_, i) => i !== index))
-                        }
-                        className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 justify-center items-center"
-                      >
-                        <Text className="text-white text-xs">×</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            <View className="flex-1 flex-row bg-white border border-accent px-4 py-2 mr-2 rounded-lg">
-              {/* Image Button */}
-              <TouchableOpacity onPress={onImagePress} className="mt-0.5">
-                <FontAwesome name="camera" size={24} color="#F5829B" />
-              </TouchableOpacity>
-              {/* Text Input : Messages */}
-              <TextInput
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Type a message..."
-                multiline
-                className=" text-base p-1 items-center px-4 font-poppins-light mr-5"
-                style={{ maxHeight: 100 }}
-                placeholderTextColor="#F5829B"
-              />
-              {/* Voice Button */}
-              {!message && (
-                <TouchableOpacity onPress={onRecordPress} className="mt-2.5 absolute right-4">
-                  <MaterialIcons name="keyboard-voice" size={24} color="#F5829B" />
-                </TouchableOpacity>
-              )}
-            </View>
-            {/* Send Button */}
-            <TouchableOpacity
-              onPress={handleSendMessage}
-              className="w-12 h-12 rounded-full bg-accent justify-center items-center"
-            >
-              <Ionicons name="send" size={22} color="white" />
-            </TouchableOpacity>
-          </View>
+          <ChatInput room_id={roomId} sender_id={userId!} message_id={`${userId}-${Date.now()}`} />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>

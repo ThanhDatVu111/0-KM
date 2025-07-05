@@ -33,6 +33,7 @@ export default function socketHandler(io: Server) {
 
       socket.join(room_id);
       console.log(`🏠 Socket ${socket.id} joined room ${room_id}`);
+      console.log(`Backend: User ${user_socket_id} joined room ${room_id}`);
 
       // Notify others in the room that user joined
       socket.to(room_id).emit('user-joined', {
@@ -51,7 +52,17 @@ export default function socketHandler(io: Server) {
     // Handle sending messages
     socket.on('send-message', async (messageData) => {
       try {
-        const { room_id, content, sender_id, media_paths } = messageData;
+        const {
+          room_id,
+          content,
+          sender_id,
+          media_paths,
+          created_at,
+          is_edited,
+          is_read,
+          is_sent,
+          reaction,
+        } = messageData;
 
         // Validation
         if (!room_id) {
@@ -82,6 +93,10 @@ export default function socketHandler(io: Server) {
           sender_id,
           media_paths,
           created_at: new Date().toISOString(),
+          is_sent,
+          is_edited,
+          is_read,
+          reaction,
         });
 
         // Broadcast message to all users in the room (including sender)

@@ -10,6 +10,12 @@ import LibraryRouter from './routes/libraryRoutes';
 import ChatRouter from './routes/chatRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 import socketHandler from './socket';
+import {
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketMessageData,
+} from './types/socket';
 
 // import other routers like TripRouter, NotificationRouter if needed
 
@@ -20,7 +26,12 @@ const server = createServer(app);
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 const LOCAL_URL = process.env.LOCAL_URL;
 const PUBLIC_URL = process.env.PUBLIC_URL;
-const io = new Server(server, {
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketMessageData
+>(server, {
   cors: {
     origin: PUBLIC_URL,
     methods: ['GET', 'POST'],

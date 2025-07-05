@@ -39,8 +39,13 @@ export async function sendMessage(input: {
   room_id: string;
   content?: string | null;
   sender_id: string;
+  sender_photo_url?: string;
   created_at: string;
   media_paths?: string[];
+  is_sent: boolean;
+  is_read?: boolean;
+  is_edited?: boolean;
+  reaction?: string;
 }) {
   try {
     const newMessage = await chatModel.sendMessage(input);

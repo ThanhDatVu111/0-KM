@@ -53,6 +53,10 @@ export async function sendMessage(attrs: {
   sender_id: string;
   created_at: string;
   media_paths?: string[];
+  is_sent: boolean;
+  is_read?: boolean;
+  is_edited?: boolean;
+  reaction?: string;
 }) {
   if (!attrs.room_id || (!attrs.content && !attrs.media_paths)) return;
   const { data, error } = await supabase.from('chat').insert([attrs]).select().single(); // Expect 1 row
