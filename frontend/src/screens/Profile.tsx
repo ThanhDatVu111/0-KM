@@ -197,7 +197,7 @@ const Profile = () => {
   return (
     <ImageBackground
       source={images.profileBg}
-      style={{ flex: 1, width: '100%', height: '100%' }}
+      style={{ flex: 1, width: '100%', height: '105%' }}
       resizeMode="cover"
     >
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
