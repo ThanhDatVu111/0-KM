@@ -66,7 +66,8 @@ function GGCalendar() {
   const [other_access_token, setOtherAccessToken] = useState('');
 
   const redirectUri = makeRedirectUri({
-    preferLocalhost: true,
+    native:
+      'com.googleusercontent.apps.152482242112-2c1othbu00qpt0725oki6u782hoppagj:/oauth2redirect/google',
   });
   console.log(redirectUri);
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
