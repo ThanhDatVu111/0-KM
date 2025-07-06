@@ -9,6 +9,7 @@ import navBarBackground from '@/assets/images/navBarBackground.png';
 import entry from '@/assets/images/entry.png';
 import startButton from '@/assets/images/startButton.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
+import profileBg from '@/assets/images/profileBg.png';
 
 export default {
   polaroid,
@@ -22,4 +23,5 @@ export default {
   entry,
   startButton,
   onboardPairingBg,
+  profileBg
 };

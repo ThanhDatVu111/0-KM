@@ -135,3 +135,18 @@ export async function fetchRoom(
     next(err);
   }
 }
+
+export async function updateRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { room_id } = req.params;
+    const { user_id } = req.body;
+    if (!room_id || !user_id) {
+      res.status(400).json({ error: 'Missing room_id or user_id' });
+      return;
+    }
+    const updatedRoom = await roomService.updateRoom(room_id, user_id);
+    res.json({ data: updatedRoom });
+  } catch (err) {
+    next(err);
+  }
+}

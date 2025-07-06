@@ -16,8 +16,6 @@ import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useLocalSearchParams } from 'expo-router';
 import { onboardUser } from '@/apis/user';
-import { createRoom } from '@/apis/room';
-import uuid from 'react-native-uuid';
 
 function RetroHeader({ title }: { title: string }) {
   return (
@@ -363,7 +361,6 @@ const OnboardingFlow = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const { user_id } = useLocalSearchParams();
   const router = useRouter();
-  const roomId = uuid.v4();
 
   const handleFinish = async () => {
     try {
@@ -373,23 +370,8 @@ const OnboardingFlow = () => {
         birthdate: birthdate.toISOString(),
         photo_url: photo || '',
       });
-
       console.log('✅ User updated (onboard) in database:', user);
-
-      const room = await createRoom({
-        room_id: roomId as string,
-        user_1: user_id as string,
-      });
-      console.log('✅ Room created:', room);
-
-      // Navigate only if both user and room creation are successful
-      router.push({
-        pathname: '/(onboard)/join-room',
-        params: {
-          userId: user_id,
-          roomId: roomId,
-        },
-      });
+      router.push('/(onboard)/join-room');
     } catch (err) {
       console.error('❌ Error onboarding user or creating room:', err);
     }

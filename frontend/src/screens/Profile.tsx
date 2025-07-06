@@ -1,22 +1,40 @@
-import { Text, View, ActivityIndicator, Image, Alert, Button, Pressable } from 'react-native';
+import {
+  Text,
+  View,
+  ActivityIndicator,
+  Image,
+  Alert,
+  Button,
+  Pressable,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchUser, updateUserProfileUnified } from '@/apis/user';
+import { fetchRoom, updateRoom, deleteRoom } from '@/apis/room';
 import FormInput from '@/components/FormInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import images from '@/constants/images';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 
 const Profile = () => {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const router = useRouter();
+  const { isLoaded, isSignedIn, userId, signOut } = useAuth();
   const [user, setUser] = useState<any>(null);
+  const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editUsername, setEditUsername] = useState('');
   const [editBirthdate, setEditBirthdate] = useState('');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
   const [newPhoto, setNewPhoto] = useState<any>(null);
+  let isLastUser = false;
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -28,8 +46,11 @@ const Profile = () => {
         setEditUsername(userData?.username || '');
         setEditBirthdate(userData?.birthdate || '');
         setPhotoUrl(userData?.photo_url);
+        // Fetch room info
+        const roomData = await fetchRoom({ user_id: userId! });
+        setRoom(roomData);
       } catch (err) {
-        Alert.alert('Error', 'Failed to fetch user info');
+        Alert.alert('Error', 'Failed to fetch user or room info');
       } finally {
         setLoading(false);
       }
@@ -101,6 +122,54 @@ const Profile = () => {
     }
   };
 
+  const leaveRoom = async () => {
+    if (!isLastUser) {
+      Alert.alert('Leave Room', 'Are you sure you want to leave the room?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await updateRoom(room.room_id, user.user_id);
+              isLastUser = true;
+              router.replace('/(onboard)/join-room');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to leave the room.');
+            }
+          },
+        },
+      ]);
+      return;
+    } else {
+      Alert.alert(
+        'Notice',
+        'You are the last user. The room will be deleted when you leave. Do you want to proceed?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Leave',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteRoom(room.room_id); // You need to implement this API
+                router.replace('/(onboard)/join-room');
+              } catch (err) {
+                Alert.alert('Error', 'Failed to leave and delete the room.');
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace('/(auth)/signin'); // Adjust route as needed
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -118,70 +187,350 @@ const Profile = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <Pressable onPress={editing ? pickImage : undefined} disabled={!editing || uploading}>
-        {photoUrl ? (
-          <Image
-            source={{ uri: photoUrl }}
-            style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 16 }}
-          />
-        ) : (
+    <ImageBackground
+      source={images.profileBg}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: '92%',
+            maxWidth: 400,
+            shadowColor: '#000',
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            borderWidth: 2,
+            borderColor: 'black',
+            borderRadius: 12,
+            backgroundColor: 'transparent',
+          }}
+        >
+          {/* Purple Header Section */}
           <View
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: '#eee',
-              marginBottom: 16,
+              backgroundColor: '#6536DD',
+              borderBottomWidth: 4,
+              borderColor: 'black',
+              paddingHorizontal: 16,
+              paddingVertical: 16,
               alignItems: 'center',
-              justifyContent: 'center',
+              borderTopLeftRadius: 12,
+              borderTopRightRadius: 12,
+              position: 'relative',
             }}
           >
-            <Text>+</Text>
+            {/* Edit Icon Button in the absolute top right corner */}
+            {!editing && (
+              <Pressable
+                onPress={() => setEditing(true)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: 12,
+                  backgroundColor: '#F24187',
+                  borderRadius: 8,
+                  borderWidth: 2,
+                  borderColor: '#6536DD',
+                  padding: 6,
+                  shadowColor: '#6536DD',
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                  elevation: 8,
+                  zIndex: 10,
+                }}
+              >
+                <MaterialIcons name="edit" size={24} color="#fff" />
+              </Pressable>
+            )}
+            <View style={{ alignItems: 'center', justifyContent: 'center', height: 40 }}>
+              <View style={{ position: 'absolute' }}>
+                {[
+                  [-3, 0],
+                  [3, 0],
+                  [0, -3],
+                  [0, 3],
+                ].map(([dx, dy], index) => (
+                  <Text
+                    key={index}
+                    style={{
+                      position: 'absolute',
+                      fontFamily: 'PressStart2P',
+                      fontSize: 25,
+                      color: 'white',
+                      left: dx,
+                      top: dy,
+                    }}
+                  >
+                    Profile
+                  </Text>
+                ))}
+                <Text
+                  style={{
+                    fontFamily: 'PressStart2P',
+                    fontSize: 25,
+                    color: '#F24187',
+                  }}
+                >
+                  Profile
+                </Text>
+              </View>
+            </View>
           </View>
-        )}
-        {editing && <Text style={{ color: '#6536DD', textAlign: 'center' }}>Change Photo</Text>}
-      </Pressable>
-      {editing ? (
-        <>
-          <FormInput
-            label="Username"
-            value={editUsername}
-            onChangeText={setEditUsername}
-            borderColor="#6536DD"
-            style={{ marginBottom: 8, width: 240 }}
-          />
-          <FormInput
-            label="Birthdate"
-            value={editBirthdate}
-            onChangeText={setEditBirthdate}
-            borderColor="#6536DD"
-            style={{ marginBottom: 8, width: 240 }}
-            placeholder="YYYY-MM-DD"
-          />
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            <Button
-              title={saving ? 'Saving...' : 'Save'}
-              onPress={handleSave}
-              disabled={saving || uploading}
-            />
-            <Button title="Cancel" onPress={handleCancel} disabled={saving || uploading} />
+          {/* White Form Section */}
+          <View
+            style={{
+              backgroundColor: 'white',
+              paddingHorizontal: 32,
+              paddingVertical: 32,
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8,
+            }}
+          >
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={{ width: '100%' }}
+            >
+              <View style={{ alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                <Pressable onPress={editing ? pickImage : undefined}>
+                  <Image
+                    source={{ uri: photoUrl }}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 40,
+                      marginBottom: 16,
+                      alignSelf: 'center',
+                    }}
+                  />
+                  {editing && (
+                    <Text style={{ color: '#6536DD', textAlign: 'center' }}>Change Photo</Text>
+                  )}
+                </Pressable>
+                {editing ? (
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      marginTop: 15,
+                    }}
+                  >
+                    <FormInput
+                      value={editUsername}
+                      onChangeText={setEditUsername}
+                      borderColor="#6536DD"
+                      style={{ marginBottom: 8, width: 240, alignSelf: 'center', marginLeft: 16 }}
+                    />
+                    <FormInput
+                      value={editBirthdate}
+                      onChangeText={setEditBirthdate}
+                      borderColor="#6536DD"
+                      style={{ marginBottom: 8, width: 240, alignSelf: 'center', marginLeft: 16 }}
+                      placeholder="YYYY-MM-DD"
+                    />
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        gap: 12,
+                        marginBottom: 12,
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Pressable
+                        onPress={handleSave}
+                        disabled={saving}
+                        style={{
+                          backgroundColor: '#F24187',
+                          borderRadius: 8,
+                          borderWidth: 2,
+                          borderColor: '#6536DD',
+                          paddingVertical: 8,
+                          paddingHorizontal: 24,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          shadowColor: '#6536DD',
+                          shadowOffset: { width: 2, height: 2 },
+                          shadowOpacity: 1,
+                          shadowRadius: 0,
+                          elevation: 8,
+                          marginRight: 8,
+                          opacity: saving ? 0.6 : 1,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#fff',
+                            fontFamily: 'PressStart2P',
+                            fontSize: 12,
+                            letterSpacing: 2,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {saving ? 'Saving...' : 'Save'}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={handleCancel}
+                        disabled={saving}
+                        style={{
+                          backgroundColor: '#6536DD',
+                          borderRadius: 8,
+                          borderWidth: 2,
+                          borderColor: '#F24187',
+                          paddingVertical: 8,
+                          paddingHorizontal: 24,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          shadowColor: '#F24187',
+                          shadowOffset: { width: 2, height: 2 },
+                          shadowOpacity: 1,
+                          shadowRadius: 0,
+                          elevation: 8,
+                          opacity: saving ? 0.6 : 1,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#fff',
+                            fontFamily: 'PressStart2P',
+                            fontSize: 12,
+                            letterSpacing: 2,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          Cancel
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
+                      {user?.username || 'No username'}
+                    </Text>
+                    <Text style={{ fontSize: 16, marginBottom: 8 }}>{user?.birthdate}</Text>
+                    <Text style={{ fontSize: 16, marginBottom: 8 }}>{user?.email}</Text>
+                    <Text style={{ fontSize: 14, color: 'gray', marginTop: 8 }}>
+                      Account created: {createdAt}
+                    </Text>
+                    {/* Button group for room actions */}
+                    <View style={{ width: '100%', alignItems: 'center', marginTop: 16 }}>
+                      {room?.room_id && (
+                        <Pressable
+                          onPress={async () => {
+                            await Clipboard.setStringAsync(room.room_id);
+                            Alert.alert(
+                              'Copied!',
+                              `Room code ${room.room_id} copied to clipboard.`,
+                            );
+                          }}
+                          style={{
+                            backgroundColor: '#6536DD',
+                            borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: '#F24187',
+                            paddingVertical: 8,
+                            paddingHorizontal: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            shadowColor: '#F24187',
+                            shadowOffset: { width: 2, height: 2 },
+                            shadowOpacity: 1,
+                            shadowRadius: 0,
+                            elevation: 8,
+                            marginTop: 0,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: '#fff',
+                              fontFamily: 'PressStart2P',
+                              fontSize: 12,
+                              letterSpacing: 2,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            Copy Room Code
+                          </Text>
+                        </Pressable>
+                      )}
+                      {!editing && (
+                        <Pressable
+                          onPress={leaveRoom}
+                          style={{
+                            backgroundColor: '#F24187',
+                            borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: '#6536DD',
+                            paddingVertical: 8,
+                            paddingHorizontal: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            shadowColor: '#6536DD',
+                            shadowOffset: { width: 2, height: 2 },
+                            shadowOpacity: 1,
+                            shadowRadius: 0,
+                            elevation: 8,
+                            marginTop: 16,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: '#fff',
+                              fontFamily: 'PressStart2P',
+                              fontSize: 12,
+                              letterSpacing: 2,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            Leave Room
+                          </Text>
+                        </Pressable>
+                      )}
+                      {!editing && (
+                        <Pressable
+                          onPress={handleLogout}
+                          style={{
+                            backgroundColor: '#6536DD',
+                            borderRadius: 8,
+                            borderWidth: 2,
+                            borderColor: '#F24187',
+                            paddingVertical: 8,
+                            paddingHorizontal: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            shadowColor: '#F24187',
+                            shadowOffset: { width: 2, height: 2 },
+                            shadowOpacity: 1,
+                            shadowRadius: 0,
+                            elevation: 8,
+                            marginTop: 16,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: '#fff',
+                              fontFamily: 'PressStart2P',
+                              fontSize: 12,
+                              letterSpacing: 2,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            Log Out
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </KeyboardAvoidingView>
           </View>
-        </>
-      ) : (
-        <>
-          <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
-            {user?.username || 'No username'}
-          </Text>
-          <Text style={{ fontSize: 16 }}>{user?.birthdate}</Text>
-          <Button title="Edit" onPress={() => setEditing(true)} />
-        </>
-      )}
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>{user?.email}</Text>
-      <Text style={{ fontSize: 14, color: 'gray', marginTop: 8 }}>
-        Account created: {createdAt}
-      </Text>
-    </SafeAreaView>
+        </View>
+      </View>
+    </ImageBackground>
   );
 };
 

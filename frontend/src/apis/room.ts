@@ -99,3 +99,19 @@ export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomRes
     throw err;
   }
 }
+
+export async function updateRoom(room_id: string, user_id: string): Promise<void> {
+  try {
+    const response = await fetch(`${BASE_URL}/rooms/${room_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id }),
+    });
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to update room');
+    }
+  } catch (err: any) {
+    throw err;
+  }
+}

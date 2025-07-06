@@ -80,3 +80,23 @@ export async function fetchRoom(user_id: string) {
   console.log('✅ Room data found:', data);
   return data;
 }
+
+export async function updateRoom(room_id: string, updates: Record<string, any>) {
+  const { data, error } = await supabase
+    .from('room')
+    .update(updates)
+    .eq('room_id', room_id)
+    .select()
+    .single();
+  if (error) {
+    console.error('❌ Supabase updateRoom error:', error);
+    throw error;
+  }
+  return data;
+}
+
+export async function getRoomById(room_id: string) {
+  const { data, error } = await supabase.from('room').select().eq('room_id', room_id).single();
+  if (error) throw error;
+  return data;
+}

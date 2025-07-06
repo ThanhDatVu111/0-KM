@@ -17,6 +17,8 @@ import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
+import { createRoom } from '@/apis/room';
+import uuid from 'react-native-uuid';
 
 function PairingStep({
   myCode,
@@ -33,6 +35,24 @@ function PairingStep({
   error: string;
   loading: boolean;
 }) {
+  const roomId = uuid.v4();
+  const { userId } = useAuth();
+  useEffect(() => {
+    if (!userId) return;
+    const createRoomFunction = async () => {
+      try {
+        const room = await createRoom({
+          room_id: roomId,
+          user_1: userId,
+        });
+        console.log('✅ Room created:', room);
+      } catch (err) {
+        console.error('❌ Failed to create room:', err);
+      }
+    };
+    createRoomFunction();
+  }, [userId]);
+
   const handleCopy = async () => {
     if (!myCode || myCode.length === 0) {
       Alert.alert('Error', 'No code available to copy.');
