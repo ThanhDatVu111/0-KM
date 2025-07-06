@@ -69,7 +69,7 @@ function GGCalendar() {
     native:
       'com.googleusercontent.apps.152482242112-2c1othbu00qpt0725oki6u782hoppagj:/oauth2redirect/google',
   });
-  console.log(redirectUri);
+  console.log('redirect: ', redirectUri);
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
   const iosClientId = process.env.EXPO_PUBLIC_IOS_CLIENT_ID!;
   const clientSecret = process.env.EXPO_PUBLIC_CLIENT_SECRET!;
