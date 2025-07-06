@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { sendMessage } from '@/apis/chat';
 import { useSocket } from 'utils/SocketProvider';
 import uuid from 'react-native-uuid';
+import { useChatSocket } from '@/hooks/useSocketChat';
 
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
@@ -32,6 +33,10 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
   const socket = useSocket();
+  const { handleSendMessage } = useChatSocket({
+    room_id: room_id!,
+    user_id: sender_id!,
+  });
 
   const MAX_MEDIA = 10; // Max number
   // const MAX_WORDS
@@ -188,10 +193,7 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
         is_edited: false,
         reaction: '',
       };
-      console.log('Sending: ', messageData);
-      socket.emit('send-message', messageData);
-      console.log('Frontend: emit send-message');
-      // await sendMessage(messageData);
+      handleSendMessage(messageData);
       setContent('');
       setSelectedMedia([]);
     } catch (error) {

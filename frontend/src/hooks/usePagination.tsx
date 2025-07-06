@@ -20,10 +20,10 @@ export const usePagination = ({ room_id, pageSize = 10 }: UsePaginationProps) =>
       const pageData = await fetchMessages({ room_id, pageParam: page });
 
       if (replace) {
-        setMessages(pageData.reverse()); // Oldest at top
+        setMessages(pageData); // Oldest at top
         setPageNo(page); // reset page number
       } else {
-        setMessages((prev) => [...pageData.reverse(), ...prev]);
+        setMessages((prev) => [...prev, ...pageData]);
         setPageNo(page); // update to new page number
       }
 
@@ -50,6 +50,13 @@ export const usePagination = ({ room_id, pageSize = 10 }: UsePaginationProps) =>
     setRefreshing(false);
   };
 
+  const reset = () => {
+    setMessages([]);
+    setPageNo(0);
+    setLoading(false);
+    setHasMore(true);
+  };
+
   useEffect(() => {
     if (room_id) {
       loadMessages(0, true); // initial load
@@ -63,5 +70,6 @@ export const usePagination = ({ room_id, pageSize = 10 }: UsePaginationProps) =>
     refreshing,
     loadMore,
     refresh,
+    reset,
   };
 };

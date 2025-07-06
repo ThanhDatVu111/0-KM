@@ -15,11 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
-import icons from '@/constants/icons';
-import { Message } from '@/types/chat';
-import { fetchMessages, sendMessage, deleteMessage, editMessage } from '@/apis/chat';
 import { fetchRoom } from '@/apis/room';
 import * as ImagePicker from 'expo-image-picker';
 import Popover from 'react-native-popover-view';
@@ -33,21 +29,18 @@ import { usePagination } from '@/hooks/usePagination';
 import ChatInput from '@/components/ChatInptut';
 import { useSocket } from 'utils/SocketProvider';
 import ChatPaginatedList from '@/components/ChatPaginatedList';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useFocusEffect, useNavigation } from 'expo-router';
 
 export default function Chat() {
   const socket = useSocket();
   const { userId, isLoaded, isSignedIn } = useAuth();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
-  // const [message, setMessage] = useState<string>('');
-  // const [previousChat, setPreviousChat] = useState<Message[]>([]);
-  // const [popoverVisible, setPopoverVisible] = useState<string | null>(null);
-  // const [isEditing, setIsEditing] = useState(false);
-  // const [editedContent, setEditedContent] = useState('');
-  // const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  // const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  // const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  // const [socketId, setSocketId] = useState<string | null>('');
+  const nav = useNavigation();
+  const { messages, hasMore, refreshing, loadMore, refresh, reset } = usePagination({
+    room_id: roomId!,
+  });
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -71,18 +64,6 @@ export default function Chat() {
     loadRoom();
   }, [isLoaded, isSignedIn, userId]);
 
-  // Retrieve previous conversation
-  // const fetchConversation = useCallback(async () => {
-  //   if (!roomId) return;
-  //   try {
-  //     const prevChat = await fetchMessages({ room_id: roomId });
-  //     console.log('Messages fetched successfully:', prevChat?.length || 0, 'messages');
-  //     setPreviousChat(prevChat || []);
-  //   } catch (err: any) {
-  //     console.error(err);
-  //   }
-  // }, [roomId]);
-
   useEffect(() => {
     if (roomId && socket) {
       // Fetching conversation
@@ -93,17 +74,15 @@ export default function Chat() {
       socket.emit('join-chat', roomId);
       console.log('Frontend: emitting join-chat');
     }
-  }, [socket, roomId]);
 
-  const { messages, loading, hasMore, refreshing, loadMore, refresh } = usePagination({
-    room_id: roomId!,
-  });
+
+  }, [socket, roomId, nav, reset]);
 
   return (
     <ImageBackground source={images.chatBg} className="flex-1" resizeMode="cover">
       <SafeAreaView className="flex-1 p-5">
         {/* Chat Header */}
-        <ChatHeader partnerName={partnerName} />
+        <ChatHeader room_id={roomId!} partnerName={partnerName} />
 
         {/* Chat Main View */}
         <KeyboardAvoidingView

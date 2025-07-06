@@ -43,27 +43,17 @@ export const useChatSocket = ({ room_id, user_id }: { room_id: string; user_id: 
     };
   }, [socket, room_id]);
 
-  const handleSendMessage = async (content: string, room_id: string, media_paths?: string[]) => {
-    if (!content.trim() && !media_paths?.length) return;
+  const handleSendMessage = async (messageData: SendMessage) => {
+    if (!messageData.content?.trim() && !messageData.media_paths?.length) return;
 
-    const payload: SendMessage = {
-      room_id: room_id,
-      message_id: `${Date.now()}-${user_id}`,
-      sender_id: user_id,
-      content,
-      media_paths,
-      created_at: new Date().toISOString(),
-      is_sent: true,
-    };
-
-    socket?.emit('send-message', payload);
-
-    try {
-      const savedMessage = await sendMessage(payload);
-      setMessages((prev) => [...prev, savedMessage]);
-    } catch (error) {
-      console.error('Failed to persist message:', error);
-    }
+    socket?.emit('send-message', messageData);
+    console.log('Message sent using socket: ', messageData);
+    // try {
+    //   const savedMessage = await sendMessage(messageData);
+    //   setMessages((prev) => [...prev, savedMessage]);
+    // } catch (error) {
+    //   console.error('Failed to persist message:', error);
+    // }
   };
 
   const handleEditMessage = async (messageId: string, newContent: string) => {
@@ -100,7 +90,7 @@ export const useChatSocket = ({ room_id, user_id }: { room_id: string; user_id: 
 
   const loadMessages = async () => {
     try {
-      const fetched = await fetchMessages(room_id);
+      const fetched = await fetchMessages({ room_id });
       setMessages(fetched);
     } catch (error) {
       console.error('Error loading messages:', error);

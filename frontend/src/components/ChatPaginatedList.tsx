@@ -1,5 +1,12 @@
-import React from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  View,
+} from 'react-native';
 import ChatBubble from './ChatBubble';
 import { Message } from '@/types/chat';
 import { useAuth } from '@clerk/clerk-expo';
@@ -29,36 +36,49 @@ export default function ChatPaginatedList({
         message_id={item.message_id}
         content={item.content ?? ''}
         isSender={isSender}
-        sender_avatar_url={item.sender_photo_url!}
+        sender_avatar_url={item.sender_photo_url ?? ''}
         isVoice={false}
-        isRead={item.is_read!}
-        isEdited={item.is_edited!}
+        isRead={item.is_read ?? false}
+        isEdited={item.is_edited ?? false}
         media_paths={item.media_paths}
         reaction={item.reaction}
-        isSent={item.is_sent!}
+        isSent={item.is_sent ?? true}
         createdAt={item.created_at}
         isSelected={false}
       />
     );
   };
 
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset } = event.nativeEvent;
+      if (contentOffset.y <= 0 && hasMore && !refreshing) {
+        loadMore(); // Load older messages when scrolled to top
+      }
+    },
+    [hasMore, refreshing, loadMore],
+  );
+
   return (
     <FlatList
       data={messages}
       renderItem={renderMessage}
-      keyExtractor={(item) => item?.message_id ?? 'unknown'}
+      inverted
+      keyExtractor={(item) => item.message_id}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      onEndReached={() => {
+        if (hasMore && !refreshing) loadMore();
+      }}
+      onEndReachedThreshold={0.1} // fire loadMore when near bottom (which is top visually)
+      scrollEventThrottle={100}
       ListFooterComponent={
         hasMore ? (
-          <View style={{ padding: 16 }}>
-            <ActivityIndicator size={'small'} />
+          <View style={{ paddingVertical: 16 }}>
+            <ActivityIndicator size="small" />
           </View>
         ) : null
       }
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.5}
     />
   );
 }

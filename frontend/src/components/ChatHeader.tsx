@@ -5,8 +5,10 @@ import icons from '@/constants/icons';
 import { fetchRoom } from '@/apis/room';
 import { fetchUser } from '@/apis/user';
 import { Feather } from '@expo/vector-icons';
+import { usePagination } from '@/hooks/usePagination';
 
 interface ChatHeaderProps {
+  room_id: string;
   partnerName?: string;
   avatar_url?: string;
   isOnline?: boolean;
@@ -25,6 +27,7 @@ const getAvatarSource = (avatar_url?: string): ImageSourcePropType => {
 };
 
 export default function ChatHeader({
+  room_id,
   partnerName,
   avatar_url,
   isOnline = true,
@@ -38,6 +41,7 @@ export default function ChatHeader({
       onBackPress();
     } else {
       router.push('/(tabs)/home');
+
     }
   };
 
