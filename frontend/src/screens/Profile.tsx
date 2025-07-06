@@ -123,45 +123,53 @@ const Profile = () => {
   };
 
   const leaveRoom = async () => {
-    if (!isLastUser) {
-      Alert.alert('Leave Room', 'Are you sure you want to leave the room?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateRoom(room.room_id, user.user_id);
-              isLastUser = true;
-              router.replace('/(onboard)/join-room');
-            } catch (err) {
-              Alert.alert('Error', 'Failed to leave the room.');
-            }
-          },
-        },
-      ]);
-      return;
-    } else {
-      Alert.alert(
-        'Notice',
-        'You are the last user. The room will be deleted when you leave. Do you want to proceed?',
-        [
+    try {
+      // Always fetch the latest room data before deciding
+      const latestRoom = await fetchRoom({ user_id: user.user_id });
+      const usersInRoom = [latestRoom.user_1, latestRoom.user_2].filter(Boolean);
+      const isLastUser = usersInRoom.length === 1 && usersInRoom[0] === user.user_id;
+
+      if (!isLastUser) {
+        Alert.alert('Leave Room', 'Are you sure you want to leave the room?', [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Leave',
             style: 'destructive',
             onPress: async () => {
               try {
-                await deleteRoom(room.room_id); // You need to implement this API
+                await updateRoom(latestRoom.room_id, user.user_id);
                 router.replace('/(onboard)/join-room');
               } catch (err) {
-                Alert.alert('Error', 'Failed to leave and delete the room.');
+                Alert.alert('Error', 'Failed to leave the room.');
               }
             },
           },
-        ],
-      );
-      return;
+        ]);
+        return;
+      } else {
+        Alert.alert(
+          'Notice',
+          'You are the last user. The room will be deleted when you leave. Do you want to proceed?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Leave',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteRoom({ room_id: latestRoom.room_id });
+                  router.replace('/(onboard)/join-room');
+                } catch (err) {
+                  Alert.alert('Error', 'Failed to leave and delete the room.');
+                }
+              },
+            },
+          ],
+        );
+        return;
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to check room status.');
     }
   };
 

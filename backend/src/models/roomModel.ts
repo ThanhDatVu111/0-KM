@@ -64,9 +64,9 @@ export async function updateRoomForLeaving(room_id: string, user_id: string) {
   let updates: any = {};
   // Determine which user slot to clear based on user_id
   if (room.user_1 === user_id) {
-    updates = { user_1: null, filled: false };
+    updates = { user_1: null, filled: true };
   } else if (room.user_2 === user_id) {
-    updates = { user_2: null, filled: false };
+    updates = { user_2: null, filled: true };
   } else {
     throw new Error('User not in this room');
   }
