@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import ChatBubble from './ChatBubble';
 import { Message } from '@/types/chat';
 import { useAuth } from '@clerk/clerk-expo';
@@ -51,8 +51,14 @@ export default function ChatPaginatedList({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-      ListFooterComponent={hasMore ? <View style={{ padding: 16 }} /> : null}
-      onEndReached={loadMore}
+      ListFooterComponent={
+        hasMore ? (
+          <View style={{ padding: 16 }}>
+            <ActivityIndicator size={'small'} />
+          </View>
+        ) : null
+      }
+      onPointerUp={loadMore}
       onEndReachedThreshold={0.1}
     />
   );

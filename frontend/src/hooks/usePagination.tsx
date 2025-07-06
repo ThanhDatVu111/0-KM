@@ -1,40 +1,39 @@
 import { fetchMessages } from '@/apis/chat';
 import { Message } from '@/types/chat';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
 
-interface usePaginationProps {
-  fetched: Message[];
-  pageSize: number;
+interface UsePaginationProps {
+  room_id: string;
+  pageSize?: number;
 }
 
-export const usePagination = ({ fetched, pageSize = 10 }: usePaginationProps) => {
+export const usePagination = ({ room_id, pageSize = 10 }: UsePaginationProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [pageNo, setPageNo] = useState(1);
+  const [pageNo, setPageNo] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadMessages = async (page = 1, replace = false) => {
+  const loadMessages = async (page: number, replace = false) => {
     try {
       setLoading(true);
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const pageData = fetched.slice(start, end);
-      setMessages((prev) => (replace || page === 1 ? pageData : [...prev, ...pageData]));
+      const pageData = await fetchMessages({ room_id, pageParam: page });
 
-      setHasMore(end < fetched.length);
-      setPageNo(page);
+      if (replace) {
+        setMessages(pageData.reverse()); // Oldest at top
+        setPageNo(page); // reset page number
+      } else {
+        setMessages((prev) => [...pageData.reverse(), ...prev]);
+        setPageNo(page); // update to new page number
+      }
+
+      setHasMore(pageData.length === pageSize);
     } catch (error) {
-      console.error('Failed to paginate:', error);
+      console.error('Failed to fetch messages:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadMessages(1, true); // First page renders
-  }, [fetched]);
 
   const loadMore = () => {
     if (hasMore && !loading) {
@@ -42,23 +41,25 @@ export const usePagination = ({ fetched, pageSize = 10 }: usePaginationProps) =>
     }
   };
 
-  const refresh = () => {
+  const refresh = async () => {
     setRefreshing(true);
+    setMessages([]);
+    setPageNo(0);
     setHasMore(true);
-    loadMessages(1, true);
+    await loadMessages(0, true);
     setRefreshing(false);
   };
 
-  // const renderFooter = () => {
-  //   if (!hasMore || fetched.length < pageSize) return null;
-  //   return <ActivityIndicator animating size="large/>
-  // }
+  useEffect(() => {
+    if (room_id) {
+      loadMessages(0, true); // initial load
+    }
+  }, [room_id]);
 
   return {
     messages,
-    pageNo,
-    hasMore,
     loading,
+    hasMore,
     refreshing,
     loadMore,
     refresh,

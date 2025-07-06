@@ -39,17 +39,15 @@ export default function Chat() {
   const { userId, isLoaded, isSignedIn } = useAuth();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
-  const [message, setMessage] = useState<string>('');
-  const [previousChat, setPreviousChat] = useState<Message[]>([]);
-  const [popoverVisible, setPopoverVisible] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState('');
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const [socketId, setSocketId] = useState<string | null>('');
-
-  const onRecordPress = () => {};
+  // const [message, setMessage] = useState<string>('');
+  // const [previousChat, setPreviousChat] = useState<Message[]>([]);
+  // const [popoverVisible, setPopoverVisible] = useState<string | null>(null);
+  // const [isEditing, setIsEditing] = useState(false);
+  // const [editedContent, setEditedContent] = useState('');
+  // const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  // const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  // const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  // const [socketId, setSocketId] = useState<string | null>('');
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -74,22 +72,22 @@ export default function Chat() {
   }, [isLoaded, isSignedIn, userId]);
 
   // Retrieve previous conversation
-  const fetchConversation = useCallback(async () => {
-    if (!roomId) return;
-    try {
-      const prevChat = await fetchMessages(roomId);
-      console.log('Messages fetched successfully:', prevChat?.length || 0, 'messages');
-      setPreviousChat(prevChat || []);
-    } catch (err: any) {
-      console.error(err);
-    }
-  }, [roomId]);
+  // const fetchConversation = useCallback(async () => {
+  //   if (!roomId) return;
+  //   try {
+  //     const prevChat = await fetchMessages({ room_id: roomId });
+  //     console.log('Messages fetched successfully:', prevChat?.length || 0, 'messages');
+  //     setPreviousChat(prevChat || []);
+  //   } catch (err: any) {
+  //     console.error(err);
+  //   }
+  // }, [roomId]);
 
   useEffect(() => {
     if (roomId && socket) {
       // Fetching conversation
       console.log('Fetching conversation from room ID:', roomId);
-      fetchConversation();
+      // fetchConversation();
 
       // Join chat
       socket.emit('join-chat', roomId);
@@ -98,19 +96,8 @@ export default function Chat() {
   }, [socket, roomId]);
 
   const { messages, loading, hasMore, refreshing, loadMore, refresh } = usePagination({
-    fetched: previousChat,
-    pageSize: 10,
+    room_id: roomId!,
   });
-
-
-  const handleDelete = async (messageId: string) => {
-    try {
-      await deleteMessage(messageId);
-      setPreviousChat((prev) => prev.filter((msg) => msg.message_id !== messageId));
-    } catch (error) {
-      console.error('Failed to delete message:', error);
-    }
-  };
 
   return (
     <ImageBackground source={images.chatBg} className="flex-1" resizeMode="cover">
@@ -124,7 +111,7 @@ export default function Chat() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ChatPaginatedList
-            previousChat={previousChat}
+            previousChat={messages}
             refreshing={refreshing}
             refresh={refresh}
             loadMore={loadMore}

@@ -14,9 +14,15 @@ if (!host || !port) {
   throw new Error('Missing LOCAL_HOST_URL or PORT in your environment');
 }
 
-export async function fetchMessages(room_id: string): Promise<Message[]> {
+export async function fetchMessages({
+  room_id,
+  pageParam = 0,
+}: {
+  room_id: string;
+  pageParam?: number;
+}): Promise<Message[]> {
   try {
-    const response = await fetch(`${BASE_URL}/chat?room_id=${room_id}`, {
+    const response = await fetch(`${BASE_URL}/chat?room_id=${room_id}&pageParam=${pageParam}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -33,6 +39,7 @@ export async function fetchMessages(room_id: string): Promise<Message[]> {
     throw error;
   }
 }
+
 export async function getMessageById(message_id: string): Promise<Message> {
   try {
     const response = await fetch(`${BASE_URL}/chat/${message_id}`, {
