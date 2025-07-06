@@ -40,6 +40,7 @@ export async function createRoom(request: RoomRequest): Promise<CreatedRoom> {
 
 export async function pairRoom(request: PairRequest): Promise<void> {
   try {
+    console.log('Pairing request:', request);
     const response = await fetch(`${BASE_URL}/rooms/${request.room_id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

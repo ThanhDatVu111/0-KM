@@ -9,7 +9,7 @@ export interface CheckRoomBody {
 
 export interface JoinRoomBody {
   room_id: string;
-  user_2: string;
+  user_id: string;
 }
 
 export interface DeleteRoomParams {

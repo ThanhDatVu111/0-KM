@@ -35,24 +35,6 @@ function PairingStep({
   error: string;
   loading: boolean;
 }) {
-  const roomId = uuid.v4();
-  const { userId } = useAuth();
-  useEffect(() => {
-    if (!userId) return;
-    const createRoomFunction = async () => {
-      try {
-        const room = await createRoom({
-          room_id: roomId,
-          user_1: userId,
-        });
-        console.log('✅ Room created:', room);
-      } catch (err) {
-        console.error('❌ Failed to create room:', err);
-      }
-    };
-    createRoomFunction();
-  }, [userId]);
-
   const handleCopy = async () => {
     if (!myCode || myCode.length === 0) {
       Alert.alert('Error', 'No code available to copy.');
@@ -205,22 +187,35 @@ function PairingStep({
 
 const JoinRoom = () => {
   const router = useRouter();
-  const { userId } = useAuth();
-  const [roomId, setRoomId] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roomId, setRoomId] = useState<string>(uuid.v4() as string);
+  const { userId } = useAuth();
 
   useEffect(() => {
-    const getRoom = async () => {
-      const room = await fetchRoom({ user_id: userId ?? '' });
-      setRoomId(room.room_id);
+    const createRoomFunction = async () => {
+      try {
+        const existingRoom = await fetchRoom({ user_id: userId ?? '' });
+        if (existingRoom) {
+          setRoomId(existingRoom.room_id);
+          return;
+        }
+      } catch (err: any) {
+        if (err.message && err.message.includes('Room not found')) {
+          const room = await createRoom({
+            room_id: roomId,
+            user_1: userId ?? '',
+          });
+          setRoomId(room.room_id);
+          console.log('✅ Room created:', room);
+        }
+      }
     };
-    getRoom();
+    createRoomFunction();
   }, [userId]);
 
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
-
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
       setError('Cannot enter your own code');
@@ -234,7 +229,7 @@ const JoinRoom = () => {
 
       await pairRoom({
         room_id: partnerCode,
-        user_2: Array.isArray(userId) ? userId[0] : userId,
+        user_id: Array.isArray(userId) ? userId[0] : userId,
       });
 
       console.log('Deleting room with ID:', roomIdString);

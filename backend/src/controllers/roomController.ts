@@ -56,9 +56,10 @@ export async function joinRoom(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { room_id, user_2 } = req.body;
+    const { room_id, user_id } = req.body;
+    console.log('joinRoom in controller called with:', { room_id, user_id });
 
-    if (!room_id || !user_2) {
+    if (!room_id || !user_id) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -69,7 +70,7 @@ export async function joinRoom(
       return;
     }
 
-    await roomService.joinRoom({ room_id, user_2 });
+    await roomService.joinRoom({ room_id, user_id });
     res.status(204).send();
   } catch (err: any) {
     next(err);
