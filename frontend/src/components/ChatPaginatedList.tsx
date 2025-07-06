@@ -5,7 +5,7 @@ import { Message } from '@/types/chat';
 import { useAuth } from '@clerk/clerk-expo';
 
 interface ChatPaginatedListProps {
-  previousChat: Message[];
+  messages: Message[];
   refreshing: boolean;
   refresh: () => void;
   loadMore: () => void;
@@ -13,7 +13,7 @@ interface ChatPaginatedListProps {
 }
 
 export default function ChatPaginatedList({
-  previousChat,
+  messages,
   refreshing,
   refresh,
   loadMore,
@@ -44,10 +44,9 @@ export default function ChatPaginatedList({
 
   return (
     <FlatList
-      data={previousChat}
+      data={messages}
       renderItem={renderMessage}
       keyExtractor={(item) => item?.message_id ?? 'unknown'}
-      inverted
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingVertical: 8 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
@@ -58,8 +57,8 @@ export default function ChatPaginatedList({
           </View>
         ) : null
       }
-      onPointerUp={loadMore}
-      onEndReachedThreshold={0.1}
+      onEndReached={loadMore}
+      onEndReachedThreshold={0.5}
     />
   );
 }

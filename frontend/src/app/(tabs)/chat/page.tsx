@@ -111,7 +111,7 @@ export default function Chat() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ChatPaginatedList
-            previousChat={messages}
+            messages={messages}
             refreshing={refreshing}
             refresh={refresh}
             loadMore={loadMore}
