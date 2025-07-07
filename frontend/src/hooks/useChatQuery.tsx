@@ -1,52 +1,27 @@
-// import { useInfiniteQuery } from '@tanstack/react-query';
-// import { useSocket } from 'utils/SocketProvider';
-// import qs from 'query-string';
+import React from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { fetchMessages } from '@/apis/chat';
+import { Message } from '@/types/chat';
 
-// interface ChatQueryProps {
-//   queryKey: string;
-//   apiUrl: string;
-//   paramKey: string; // room ID
-//   paramValue: string; // page number
-// }
+export function useInfiniteQueryChat(room_id: string): {
+  prevChat: Message[];
+  isFetching: boolean;
+  fetchNextPage: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage: boolean;
+} {
+    const PAGE_SIZE = 10
+  const { data, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ['chat', room_id],
+    queryFn: ({ pageParam = 0 }: { pageParam?: number }) => fetchMessages({ room_id, pageParam }),
+    initialPageParam: 0,
+      getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.length < PAGE_SIZE) return undefined;
+        return allPages.length; 
+    },
+  });
 
-// export const useChatQuery = ({ queryKey, apiUrl, paramKey, paramValue }: ChatQueryProps) => {
-//   const socket = useSocket();
-//   const isConnected = socket?.connected;
+  const prevChat: Message[] = data?.pages.flat() ?? [];
+  return { prevChat, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage };
+}
 
-//   const fetchPage = async ({ pageParam }: { pageParam?: string | null }) => {
-//     const url = qs.stringifyUrl(
-//       {
-//         url: `${apiUrl}`,
-//         query: {
-//           cursor: pageParam,
-//           [paramKey]: paramValue,
-//         },
-//       },
-//       { skipNull: true },
-//     );
-
-//     const res = await fetch(url, {
-//       method: 'GET',
-//       headers: { 'Content-Type': 'application/json' },
-//     });
-
-//     if (!res.ok) throw new Error('Failed to fetch messages');
-//     return res.json();
-//   };
-
-//   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useInfiniteQuery({
-//     queryKey: [queryKey],
-//     queryFn: fetchPage,
-//     initialPageParam: null,
-//     getNextPageParam: (lastPage) => lastPage?.nextCursor,
-//     refetchInterval: isConnected ? false : 1000,
-//   });
-
-//   return {
-//     data,
-//     fetchNextPage,
-//     hasNextPage,
-//     isFetchingNextPage,
-//     status,
-//   };
-// };

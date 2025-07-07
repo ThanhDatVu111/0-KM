@@ -1,9 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import ChatBubble from './ChatBubble';
 import { Message } from '@/types/chat';
 import { useAuth } from '@clerk/clerk-expo';
@@ -11,7 +7,7 @@ import { useAuth } from '@clerk/clerk-expo';
 interface ChatPaginatedListProps {
   messages: Message[];
   refreshing: boolean;
-  refresh: () => void;
+  refresh: boolean;
   loadMore: () => void;
   hasMore: boolean;
 }
@@ -46,7 +42,6 @@ export default function ChatPaginatedList({
     );
   };
 
-
   return (
     <FlatList
       data={messages}
@@ -61,7 +56,7 @@ export default function ChatPaginatedList({
       onEndReachedThreshold={0.1} // fire loadMore when near bottom (which is top visually)
       scrollEventThrottle={100}
       ListFooterComponent={
-        hasMore ? (
+        refresh || hasMore ? (
           <View style={{ paddingVertical: 16 }}>
             <ActivityIndicator size="small" />
           </View>

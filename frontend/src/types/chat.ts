@@ -54,3 +54,8 @@ export interface ReactToMessage {
   message_id: string;
   reaction: string;
 }
+
+export interface FetchMessagesResponse {
+  results: Message[];
+  info: { next: string | null };
+}

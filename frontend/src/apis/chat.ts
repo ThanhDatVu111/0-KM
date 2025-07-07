@@ -6,6 +6,7 @@ import {
   SendMessage,
   EditMessage,
   DeleteMessage,
+  FetchMessagesResponse,
 } from '@/types/chat';
 import { BASE_URL } from './apiClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -35,11 +36,12 @@ export async function fetchMessages({
     });
 
     const result = await response.json();
+    console.log('Fetched messages response:', result); // 🔍 Check the full shape
 
     if (!response.ok) {
       throw new Error(result.error);
     }
-
+    await delay(800);
     return result.data;
   } catch (error: any) {
     console.error('Error fetching chat:', error);

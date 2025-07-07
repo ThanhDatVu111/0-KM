@@ -1,53 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Image,
-  Text,
-  StatusBar,
-  Platform,
-  FlatList,
-  KeyboardAvoidingView,
-  TextInput,
-  Pressable,
-  ImageBackground,
-  Alert,
-  RefreshControl,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, KeyboardAvoidingView, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
-import * as ImagePicker from 'expo-image-picker';
-import Popover from 'react-native-popover-view';
 import images from '@/constants/images';
 import ChatHeader from '@/components/ChatHeader';
 import { fetchUser } from '@/apis/user';
-import { BASE_URL } from '@/apis/apiClient';
-import io from 'socket.io-client';
-import { Socket } from 'socket.io-client';
-import { usePagination } from '@/hooks/usePagination';
 import ChatInput from '@/components/ChatInptut';
 import { useSocket } from 'utils/SocketProvider';
 import ChatPaginatedList from '@/components/ChatPaginatedList';
-import { useFocusEffect, useNavigation } from 'expo-router';
 import { useChatSocket } from '@/hooks/useSocketChat';
+import { useInfiniteQueryChat } from '@/hooks/useChatQuery';
 
 export default function Chat() {
   const socket = useSocket();
   const { userId, isLoaded, isSignedIn } = useAuth();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
-  const nav = useNavigation();
-  const {
-    messages: previousChat,
-    hasMore,
-    refreshing,
-    loadMore,
-    refresh,
-    reset,
-  } = usePagination({
-    room_id: roomId!,
-  });
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -75,15 +44,32 @@ export default function Chat() {
     if (roomId && socket) {
       // Fetching conversation
       console.log('Fetching conversation from room ID:', roomId);
-      // fetchConversation();
 
       // Join chat
       socket.emit('join-chat', roomId);
       console.log('Frontend: emitting join-chat');
     }
-  }, [socket, roomId, nav, reset]);
+  }, [socket, roomId]);
 
   const { messages: socketMessage } = useChatSocket({ room_id: roomId!, user_id: userId! });
+  const { prevChat, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQueryChat(roomId!);
+
+  const combinedMessages = React.useMemo(() => {
+    if (!prevChat || !socketMessage) return prevChat || [];
+
+    // Assuming messages have unique ids, merge and remove duplicates:
+    const map = new Map();
+
+    // Add socket messages (new messages or edits) first, since it is an inverted list
+    socketMessage.forEach((msg) => map.set(msg.message_id, msg));
+
+    // Add all prevChat messages after
+    prevChat.forEach((msg) => map.set(msg.message_id, msg));
+
+    // Convert back to array, descending order
+    return Array.from(map.values()).sort((a, b) => b.createdAt - a.createdAt);
+  }, [prevChat, socketMessage]);
 
   return (
     <ImageBackground source={images.chatBg} className="flex-1" resizeMode="cover">
@@ -97,11 +83,11 @@ export default function Chat() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ChatPaginatedList
-            messages={socketMessage}
-            refreshing={refreshing}
-            refresh={refresh}
-            loadMore={loadMore}
-            hasMore={hasMore}
+            messages={combinedMessages}
+            refreshing={isFetchingNextPage}
+            refresh={isFetching}
+            loadMore={fetchNextPage}
+            hasMore={hasNextPage!}
           />
 
           {/* Chat Input */}
