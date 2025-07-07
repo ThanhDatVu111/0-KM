@@ -76,3 +76,25 @@ export async function fetchUser(
     next(err);
   }
 }
+
+// Update Profile
+export async function updateProfile(
+  req: Request<{ userId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    console.log('req.body in controller:', req.body);
+    const { userId } = req.params;
+    const { username, birthdate, photo_url } = req.body;
+    const updated = await userService.updateUserProfile({
+      user_id: userId,
+      ...(username !== undefined && { username }),
+      ...(birthdate !== undefined && { birthdate }),
+      ...(photo_url !== undefined && { photo_url }),
+    });
+    res.status(200).json({ data: updated });
+  } catch (err) {
+    next(err);
+  }
+}

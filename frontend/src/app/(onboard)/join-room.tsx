@@ -5,20 +5,20 @@ import {
   View,
   Text,
   Alert,
-  Image,
   TouchableOpacity,
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { pairRoom, deleteRoom } from '@/apis/room';
 import { SignOutButton } from '@/components/SignOutButton';
 import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
+import { createRoom } from '@/apis/room';
+import uuid from 'react-native-uuid';
 
 function PairingStep({
   myCode,
@@ -187,11 +187,33 @@ function PairingStep({
 
 const JoinRoom = () => {
   const router = useRouter();
-  const { userId } = useAuth();
-  const [roomId, setRoomId] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roomId, setRoomId] = useState<string>(uuid.v4() as string);
+  const { userId } = useAuth();
+
+  useEffect(() => {
+    const createRoomFunction = async () => {
+      try {
+        const existingRoom = await fetchRoom({ user_id: userId ?? '' });
+        if (existingRoom) {
+          setRoomId(existingRoom.room_id);
+          return;
+        }
+      } catch (err: any) {
+        if (err.message && err.message.includes('Room not found')) {
+          const room = await createRoom({
+            room_id: roomId,
+            user_1: userId ?? '',
+          });
+          setRoomId(room.room_id);
+          console.log('✅ Room created:', room);
+        }
+      }
+    };
+    createRoomFunction();
+  }, [userId]);
 
   useEffect(() => {
     const getRoom = async () => {
@@ -202,7 +224,6 @@ const JoinRoom = () => {
   }, [userId]);
 
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
-
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
       setError('Cannot enter your own code');
@@ -216,7 +237,7 @@ const JoinRoom = () => {
 
       await pairRoom({
         room_id: partnerCode,
-        user_2: Array.isArray(userId) ? userId[0] : userId,
+        user_id: Array.isArray(userId) ? userId[0] : userId,
       });
 
       console.log('Deleting room with ID:', roomIdString);
