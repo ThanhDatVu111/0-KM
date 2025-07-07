@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Message,
   FetchMessages,
@@ -7,12 +8,17 @@ import {
   DeleteMessage,
 } from '@/types/chat';
 import { BASE_URL } from './apiClient';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 const host = process.env.EXPO_PUBLIC_API_HOST;
 const port = process.env.EXPO_PUBLIC_API_PORT;
 
 if (!host || !port) {
   throw new Error('Missing LOCAL_HOST_URL or PORT in your environment');
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function fetchMessages({
@@ -40,7 +46,6 @@ export async function fetchMessages({
     throw error;
   }
 }
-
 
 export async function getMessageById(message_id: string): Promise<Message> {
   try {
