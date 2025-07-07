@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   Platform,
+  ImageBackground,
+  Dimensions,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import icons from '@/constants/icons';
@@ -30,6 +32,16 @@ import { fetchCalendarEvents, createCalendarEvent, createEvent } from '@/apis/ca
 import { fetchUser } from '@/apis/user';
 
 import { Calendar, DateData } from 'react-native-calendars';
+import images from '@/constants/images';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const FRAME_W = SCREEN_W * 0.88; // 92% of screen width
+const CALENDAR_W = FRAME_W * 0.85; // Calendar takes 85% of frame width
+const CALENDAR_H = CALENDAR_W * 1.47; // Calendar height based on width (adjust ratio as needed)
+const FRAME_H = CALENDAR_H + 60; // Frame height = calendar height + padding
+
+/* margins */
+const INNER_MARGIN = 12; // Increased horizontal margin
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -601,232 +613,359 @@ function GGCalendar() {
 
   // --- Tab UI ---
   return (
-    <View style={styles.container}>
-      {/* Tab Switcher */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'partner' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('partner')}
-        >
-          <Text style={[styles.tabText, activeTab === 'partner' && styles.tabTextActive]}>
-            Partner's Schedule
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'mutual' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('mutual')}
-        >
-          <Text style={[styles.tabText, activeTab === 'mutual' && styles.tabTextActive]}>
-            Compare Schedule
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <ImageBackground
+      source={images.Background}
+      style={{ flex: 1 }} // <— key line
+      resizeMode="contain"
+    >
+      <View style={styles.container}>
+        {/* Tab Switcher */}
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'partner' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('partner')}
+          >
+            <Text style={[styles.tabText, activeTab === 'partner' && styles.tabTextActive]}>
+              Partner's Schedule
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'mutual' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('mutual')}
+          >
+            <Text style={[styles.tabText, activeTab === 'mutual' && styles.tabTextActive]}>
+              Compare Schedule
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Calendar UI */}
-        <Calendar
-          onDayPress={onDayPress}
-          markedDates={markedDates}
-          theme={{
-            calendarBackground: '#fff',
-            todayTextColor: '#E91E63',
-            dayTextColor: '#333',
-            textDisabledColor: '#d9e1e8',
-            monthTextColor: '#333',
-            arrowColor: '#333',
-          }}
-        />
+        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          {/* Calendar UI */}
+          <ImageBackground
+            source={images.Frame}
+            resizeMode="stretch" // ⬅ Changed to "stretch" to fit our custom dimensions
+            style={styles.frame}
+          >
+            <View style={styles.inner}>
+              <Calendar
+                onDayPress={onDayPress}
+                markedDates={markedDates}
+                style={styles.calendar}
+                theme={{
+                  calendarBackground: 'transparent',
+                  todayTextColor: '#E91E63',
+                  dayTextColor: '#333',
+                  textDisabledColor: '#d9e1e8',
+                  monthTextColor: '#333',
+                  arrowColor: '#333',
+                  textDayFontSize: 16, // Increase font size for better visibility
+                  textMonthFontSize: 18,
+                  textMonthFontWeight: 'bold',
+                  textDayHeaderFontSize: 14,
+                  textMonthFontFamily: 'Poppins-Light',
+                  textDayFontFamily: 'Poppins-Light',
+                  textDayHeaderFontFamily: 'Poppins-Light',
+                }}
+              />
+            </View>
+          </ImageBackground>
 
-        {/* Tab Content */}
-        {activeTab === 'partner' ? (
-          <View>
-            {/* Below the calendar, show a header and list of partner's events */}
-            <View style={styles.eventsHeaderContainer}>
-              <Text style={styles.eventsHeaderText}>
-                {eventsForDate.length > 0
-                  ? `Events on ${selectedDate}`
-                  : `No events on ${selectedDate}`}
-              </Text>
-            </View>
-            <View style={styles.eventsListContainer}>
-              {eventsForDate.map((evt) => (
-                <View key={evt.id} style={styles.eventItem}>
-                  <Text style={styles.eventTitle}>{evt.title}</Text>
-                  <Text style={styles.eventTime}>{evt.time}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : (
-          <View style={{ flexDirection: 'column', paddingHorizontal: 20, marginTop: 16 }}>
-            <View style={{ flexDirection: 'row' }}>
-              {/* My Events */}
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#E91E63' }}>You</Text>
-                {myOwnEventsForDate.length > 0 ? (
-                  myOwnEventsForDate.map((evt) => (
-                    <View key={evt.id} style={styles.eventItem}>
-                      <Text style={styles.eventTitle}>{evt.title}</Text>
-                      <Text style={styles.eventTime}>{evt.time}</Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={{ color: '#888' }}>No events</Text>
-                )}
-              </View>
-              {/* Partner's Events */}
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#2196F3' }}>
-                  Partner
+          {/* Tab Content */}
+          {activeTab === 'partner' ? (
+            <View>
+              {/* Below the calendar, show a header and list of partner's events */}
+              <View style={styles.eventsHeaderContainer}>
+                <Text style={styles.eventsHeaderText}>
+                  {eventsForDate.length > 0
+                    ? `Events on ${selectedDate}`
+                    : `No events on ${selectedDate}`}
                 </Text>
-                {eventsForDate.length > 0 ? (
-                  eventsForDate.map((evt) => (
-                    <View key={evt.id} style={styles.eventItem}>
-                      <Text style={styles.eventTitle}>{evt.title}</Text>
-                      <Text style={styles.eventTime}>{evt.time}</Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={{ color: '#888' }}>No events</Text>
-                )}
+              </View>
+              <View style={styles.eventsListContainer}>
+                {eventsForDate.map((evt) => (
+                  <View key={evt.id} style={styles.eventItem}>
+                    <Text style={styles.eventTitle}>{evt.title}</Text>
+                    <Text style={styles.eventTime}>{evt.time}</Text>
+                  </View>
+                ))}
               </View>
             </View>
-            {/* Mutual Free Time */}
-            <View style={{ marginTop: 24, alignItems: 'center', width: '100%', marginBottom: 20 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 15, marginBottom: 8, color: '#43A047' }}>
-                Mutual Free Time
-              </Text>
-              {mutualFreeSlots.length > 0 ? (
-                <View
+          ) : (
+            <View style={{ flexDirection: 'column', paddingHorizontal: 35, marginTop: 16 }}>
+              <View style={{ flexDirection: 'row' }}>
+                {/* My Events */}
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text
+                    style={{
+                      fontWeight: 'bold',
+                      marginBottom: 8,
+                      color: '#8b0000',
+                      fontSize: 18,
+                      fontFamily: 'Poppins-Medium',
+                    }}
+                  >
+                    You
+                  </Text>
+                  {myOwnEventsForDate.length > 0 ? (
+                    myOwnEventsForDate.map((evt) => (
+                      <View key={evt.id} style={styles.eventItem}>
+                        <Text style={styles.eventTitle}>{evt.title}</Text>
+                        <Text style={styles.eventTime}>{evt.time}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: '#dce2f1' }}>No events</Text>
+                  )}
+                </View>
+                {/* Partner's Events */}
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text
+                    style={{
+                      fontWeight: 'bold',
+                      marginBottom: 8,
+                      color: '#aadffc',
+                      fontSize: 18,
+                      fontFamily: 'Poppins-Medium',
+                    }}
+                  >
+                    Partner
+                  </Text>
+                  {eventsForDate.length > 0 ? (
+                    eventsForDate.map((evt) => (
+                      <View key={evt.id} style={styles.eventItem}>
+                        <Text style={styles.eventTitle}>{evt.title}</Text>
+                        <Text style={styles.eventTime}>{evt.time}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: '#dce2f1' }}>No events</Text>
+                  )}
+                </View>
+              </View>
+              {/* Mutual Free Time */}
+              <View
+                style={{ marginTop: 24, alignItems: 'center', width: '100%', marginBottom: 20 }}
+              >
+                <Text
                   style={{
-                    justifyContent: 'flex-start',
+                    fontWeight: 'bold',
+                    fontSize: 18,
+                    marginBottom: 8,
+                    color: '#c7edcc',
+                    fontFamily: 'Poppins-Medium',
                   }}
                 >
+                  Mutual Free Time
+                </Text>
+                {mutualFreeSlots.length > 0 ? (
+                  <View
+                    style={{
+                      justifyContent: 'flex-start',
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        width: '100%',
+                      }}
+                    >
+                      {mutualFreeSlots.map((slot) => (
+                        <TouchableOpacity
+                          key={slot}
+                          onPress={() => {
+                            setSelectedSlot(slot);
+                            setModalVisible(true);
+                          }}
+                          disabled={scheduling}
+                          style={{ opacity: scheduling ? 0.5 : 1 }}
+                        >
+                          <View
+                            style={{
+                              backgroundColor: '#FFC6F9',
+                              borderRadius: 6,
+                              padding: 12,
+                              margin: 5,
+                              minWidth: 100,
+                              alignItems: 'center',
+                              opacity: 0.8,
+                            }}
+                          >
+                            <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
+                              {slot} -{' '}
+                              {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={{ color: '#888' }}>No mutual free slots</Text>
+                )}
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#00000099',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <ImageBackground
+              source={images.Frame}
+              resizeMode="stretch"
+              style={{
+                alignSelf: 'center',
+              }}
+            >
+              {/* Empty container that defines the modal frame size */}
+              <View
+                style={{
+                  width: SCREEN_W * 0.85, // 85% of screen width
+                  height: 300, // Fixed height for modal
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    paddingHorizontal: 40,
+                    paddingTop: 40,
+                    paddingBottom: 70,
+                    justifyContent: 'flex-start',
+                    alignItems: 'stretch',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: 'bold',
+                      fontSize: 18,
+                      marginBottom: 5,
+                      textAlign: 'left',
+                      color: '#333',
+                      fontFamily: 'Poppins-Light',
+                    }}
+                  >
+                    Schedule Event
+                  </Text>
+
+                  <Text
+                    style={{
+                      marginBottom: 8,
+                      textAlign: 'left',
+                      color: '#666',
+                      fontFamily: 'Poppins-Light',
+                    }}
+                  >
+                    Time: {selectedSlot} -{' '}
+                    {selectedSlot &&
+                      `${(Number(selectedSlot.split(':')[0]) + (Number(selectedSlot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(selectedSlot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
+                  </Text>
+
+                  <TextInput
+                    placeholder="Event Title"
+                    value={eventTitle}
+                    onChangeText={setEventTitle}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      borderRadius: 6,
+                      padding: 8,
+                      marginBottom: 12,
+                      backgroundColor: '#fff',
+                      fontFamily: 'Poppins-Light',
+                    }}
+                    editable={!scheduling}
+                  />
+
+                  <TextInput
+                    placeholder="Description (optional)"
+                    value={eventDescription}
+                    onChangeText={setEventDescription}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      borderRadius: 6,
+                      padding: 8,
+                      marginBottom: 12,
+                      minHeight: 40,
+                      backgroundColor: '#fff',
+                      fontFamily: 'Poppins-Light',
+                    }}
+                    editable={!scheduling}
+                    multiline
+                  />
+
                   <View
                     style={{
                       flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      justifyContent: 'center',
-                      width: '100%',
+                      justifyContent: 'flex-end',
+                      marginTop: 'auto',
                     }}
                   >
-                    {mutualFreeSlots.map((slot) => (
-                      <TouchableOpacity
-                        key={slot}
-                        onPress={() => {
-                          setSelectedSlot(slot);
-                          setModalVisible(true);
+                    <TouchableOpacity
+                      onPress={() => setModalVisible(false)}
+                      style={{
+                        justifyContent: 'center',
+                        paddingVertical: 8,
+                        paddingHorizontal: 18,
+                        borderRadius: 6,
+                        backgroundColor: 'transparent',
+                      }}
+                      disabled={scheduling}
+                    >
+                      <Text
+                        style={{
+                          color: '#666',
+                          fontWeight: 'bold',
+                          fontFamily: 'Poppins-Light',
                         }}
-                        disabled={scheduling}
-                        style={{ opacity: scheduling ? 0.5 : 1 }}
                       >
-                        <View
-                          style={{
-                            backgroundColor: '#E0F2F1',
-                            borderRadius: 6,
-                            padding: 12,
-                            margin: 5,
-                            minWidth: 100,
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Text style={{ color: '#00796B', fontWeight: 'bold' }}>
-                            {slot} -{' '}
-                            {`${(Number(slot.split(':')[0]) + (Number(slot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(slot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={handleScheduleEvent}
+                      disabled={scheduling || !eventTitle}
+                      style={{
+                        backgroundColor: '#E91E63',
+                        borderRadius: 6,
+                        paddingVertical: 8,
+                        paddingHorizontal: 18,
+                        opacity: scheduling || !eventTitle ? 0.6 : 1,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#fff',
+                          fontWeight: 'bold',
+                          fontFamily: 'Poppins-Light',
+                        }}
+                      >
+                        {scheduling ? 'Scheduling...' : 'Schedule'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-              ) : (
-                <Text style={{ color: '#888' }}>No mutual free slots</Text>
-              )}
-            </View>
+              </View>
+            </ImageBackground>
           </View>
-        )}
-      </ScrollView>
-
-      {/* Event Creation Modal */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: '#00000099',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 24, width: '85%' }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>
-              Schedule Event
-            </Text>
-            <Text style={{ marginBottom: 8 }}>
-              Time: {selectedSlot} -{' '}
-              {selectedSlot &&
-                `${(Number(selectedSlot.split(':')[0]) + (Number(selectedSlot.split(':')[1]) + 30 >= 60 ? 1 : 0)).toString().padStart(2, '0')}:${((Number(selectedSlot.split(':')[1]) + 30) % 60).toString().padStart(2, '0')}`}
-            </Text>
-            <TextInput
-              placeholder="Event Title"
-              value={eventTitle}
-              onChangeText={setEventTitle}
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 6,
-                padding: 8,
-                marginBottom: 12,
-              }}
-              editable={!scheduling}
-            />
-            <TextInput
-              placeholder="Description (optional)"
-              value={eventDescription}
-              onChangeText={setEventDescription}
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 6,
-                padding: 8,
-                marginBottom: 12,
-                minHeight: 40,
-              }}
-              editable={!scheduling}
-              multiline
-            />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={{ marginRight: 16, justifyContent: 'center' }}
-                disabled={scheduling}
-              >
-                <Text style={{ color: '#888', fontWeight: 'bold' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleScheduleEvent}
-                disabled={scheduling || !eventTitle}
-                style={{
-                  backgroundColor: '#E91E63',
-                  borderRadius: 6,
-                  paddingVertical: 8,
-                  paddingHorizontal: 18,
-                  opacity: scheduling || !eventTitle ? 0.6 : 1,
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                  {scheduling ? 'Scheduling...' : 'Schedule'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </ImageBackground>
   );
 }
 
@@ -834,7 +973,7 @@ function GGCalendar() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'transparent',
   },
   eventsHeaderContainer: {
     marginTop: 16,
@@ -858,16 +997,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    fontFamily: 'Poppins-Light',
   },
   eventTitle: {
     fontSize: 15,
     fontWeight: '500',
     color: '#212121',
+    fontFamily: 'Poppins-Medium',
   },
   eventTime: {
     fontSize: 13,
     color: '#777',
     marginTop: 4,
+    fontFamily: 'Poppins-Light',
   },
   tabBar: {
     flexDirection: 'row',
@@ -878,10 +1020,11 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     paddingVertical: 8,
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     borderRadius: 20,
     backgroundColor: '#eee',
     marginHorizontal: 8,
+    marginTop: 8,
   },
   tabButtonActive: {
     backgroundColor: '#E91E63',
@@ -890,9 +1033,32 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '600',
     fontSize: 16,
+    fontFamily: 'Poppins-Light',
   },
   tabTextActive: {
     color: '#fff',
+  },
+  frame: {
+    width: FRAME_W,
+    height: FRAME_H,
+    alignSelf: 'center',
+  },
+  inner: {
+    height: 500,
+    flex: 1,
+    paddingHorizontal: INNER_MARGIN,
+    paddingTop: 100,
+    paddingBottom: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  calendar: {
+    marginTop: 30,
+    marginBottom: 15,
+    width: CALENDAR_W, // ⬅ Specific width for calendar
+    height: CALENDAR_H, // ⬅ Specific height for calendar
+    backgroundColor: 'transparent',
   },
 });
 
