@@ -15,8 +15,8 @@ import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
 import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
-import { SpotifyWidget } from '@/components/music/SpotifyWidget';
-import { SpotifyInput } from '@/components/music/SpotifyInput';
+import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
+import { SpotifySearch } from '@/components/music/SpotifySearch';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
 import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
@@ -319,45 +319,36 @@ const Home = () => {
           )}
         </View>
 
-        {/* Spotify Music Widget */}
+        {/* Unified Spotify Widget */}
         <View className="mb-4">
           <Text className="text-lg text-white font-pmedium mb-3">
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
-          {roomTrack ? (
-            <SpotifyWidget
-              track={{
-                id: roomTrack.track_id,
-                name: roomTrack.track_name,
-                artist: roomTrack.artist_name,
-                album: roomTrack.album_name,
-                albumArt: roomTrack.album_art_url,
-                duration: Math.floor(roomTrack.duration_ms / 1000),
-                uri: roomTrack.track_uri,
-              }}
-              onPress={roomTrack.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
-              canControl={true}
-              onPlayPause={() => console.log('Play/Pause clicked')}
-              onNext={() => console.log('Next clicked')}
-              onPrevious={() => console.log('Previous clicked')}
-            />
-          ) : (
-            <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
-              <Text className="text-white/70 font-pregular text-center px-4">
-                {canAddVideo
-                  ? 'No music playing. Tap + Add to start listening together!'
-                  : 'Waiting for your partner to add music...'}
-              </Text>
-              {canAddVideo && (
-                <TouchableOpacity
-                  onPress={() => setShowSpotifyInput(true)}
-                  className="bg-white/20 px-3 py-1 rounded-full mt-2"
-                >
-                  <Text className="text-white font-pregular text-sm">+ Add</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+          <UnifiedSpotifyWidget
+            track={
+              roomTrack
+                ? {
+                    id: roomTrack.track_id,
+                    name: roomTrack.track_name,
+                    artist: roomTrack.artist_name,
+                    album: roomTrack.album_name,
+                    albumArt: roomTrack.album_art_url,
+                    duration: Math.floor(roomTrack.duration_ms / 1000),
+                    uri: roomTrack.track_uri,
+                  }
+                : undefined
+            }
+            onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
+            canControl={true}
+            onPlayPause={() => console.log('Play/Pause clicked')}
+            onNext={() => console.log('Next clicked')}
+            onPrevious={() => console.log('Previous clicked')}
+            onAddTrack={() => setShowSpotifyInput(true)}
+            onSignOut={() => {
+              console.log('Spotify signed out');
+              // You can add additional cleanup logic here if needed
+            }}
+          />
         </View>
 
         {/* Join Room Widget */}
@@ -392,15 +383,34 @@ const Home = () => {
         </View>
       </Modal>
 
-      {/* Spotify Input Modal */}
-      <SpotifyInput
-        isVisible={showSpotifyInput}
-        onClose={() => setShowSpotifyInput(false)}
-        onTrackAdded={() => {
-          setShowSpotifyInput(false);
-          refetchRoomTrack();
-        }}
-      />
+      {/* Spotify Search Modal */}
+      <Modal
+        visible={showSpotifyInput}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSpotifyInput(false)}
+      >
+        <View className="flex-1 bg-black/90">
+          <SpotifySearch
+            onTrackSelect={(track) => {
+              // Convert the track format to match your backend
+              const trackData = {
+                track_id: track.id,
+                track_name: track.name,
+                artist_name: track.artist,
+                album_name: track.album,
+                album_art_url: track.albumArt,
+                duration_ms: track.duration * 1000,
+                track_uri: track.uri,
+              };
+
+              handleAddSpotifyTrack(trackData);
+              setShowSpotifyInput(false);
+            }}
+            onCancel={() => setShowSpotifyInput(false)}
+          />
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };

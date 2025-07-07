@@ -9,6 +9,19 @@ import {
   RoomSpotifyTrack,
 } from '../models/spotifyModel';
 import { AuthenticatedRequest } from '../middleware/auth';
+import SpotifyWebApi from 'spotify-web-api-node';
+
+// Initialize Spotify API
+const spotifyApi = new SpotifyWebApi({
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+  redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+});
+
+// Debug: Log the redirect URI being used
+console.log('🔍 Spotify Redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
+console.log('🔍 Spotify Client ID:', process.env.SPOTIFY_CLIENT_ID ? 'Set' : 'Not set');
+console.log('🔍 Spotify Client Secret:', process.env.SPOTIFY_CLIENT_SECRET ? 'Set' : 'Not set');
 
 export interface CreateRoomSpotifyTrackRequest {
   user_id: string;
@@ -161,67 +174,161 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
  */
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
-    // This would integrate with Spotify Web API
-    // For now, return mock data
-    const mockTracks: SpotifyTrack[] = [
-      {
-        id: '1',
-        name: 'Bohemian Rhapsody',
-        artist: 'Queen',
-        album: 'A Night at the Opera',
-        albumArt: 'https://example.com/album1.jpg',
-        duration: 354, // 5:54 in seconds
-        uri: 'spotify:track:3z8h0TU7ReDPLIbEnYhWZb',
-      },
-      {
-        id: '2',
-        name: 'Hotel California',
-        artist: 'Eagles',
-        album: 'Hotel California',
-        albumArt: 'https://example.com/album2.jpg',
-        duration: 391, // 6:31 in seconds
-        uri: 'spotify:track:40riOy7x9W7udXy6SA5vKc',
-      },
-      {
-        id: '3',
-        name: 'Imagine',
-        artist: 'John Lennon',
-        album: 'Imagine',
-        albumArt: 'https://example.com/album3.jpg',
-        duration: 183, // 3:03 in seconds
-        uri: 'spotify:track:7pKfPomDEeI4TPT6EOYjn9',
-      },
-    ];
+    // Check if we have access token
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available, returning mock data');
+      return getMockTracks(query);
+    }
 
-    // Filter tracks based on query
-    const filteredTracks = mockTracks.filter(
-      (track) =>
-        track.name.toLowerCase().includes(query.toLowerCase()) ||
-        track.artist.toLowerCase().includes(query.toLowerCase()) ||
-        track.album.toLowerCase().includes(query.toLowerCase()),
-    );
+    // Search using Spotify API
+    const response = await spotifyApi.searchTracks(query, { limit: 10 });
 
-    return filteredTracks;
+    if (!response.body.tracks) {
+      return [];
+    }
+
+    return response.body.tracks.items.map((track: any) => ({
+      id: track.id,
+      name: track.name,
+      artist: track.artists[0]?.name || 'Unknown Artist',
+      album: track.album?.name || 'Unknown Album',
+      albumArt: track.album?.images[0]?.url || '',
+      duration: Math.floor(track.duration_ms / 1000),
+      uri: track.uri,
+    }));
   } catch (error) {
-    console.error('Error in searchSpotifyTracks service:', error);
+    console.error('Error searching Spotify tracks:', error);
+    // Fallback to mock data
+    return getMockTracks(query);
+  }
+}
+
+/**
+ * Get mock tracks for fallback
+ */
+function getMockTracks(query: string): SpotifyTrack[] {
+  const mockTracks: SpotifyTrack[] = [
+    {
+      id: '1',
+      name: 'Bohemian Rhapsody',
+      artist: 'Queen',
+      album: 'A Night at the Opera',
+      albumArt: 'https://example.com/album1.jpg',
+      duration: 354, // 5:54 in seconds
+      uri: 'spotify:track:3z8h0TU7ReDPLIbEnYhWZb',
+    },
+    {
+      id: '2',
+      name: 'Hotel California',
+      artist: 'Eagles',
+      album: 'Hotel California',
+      albumArt: 'https://example.com/album2.jpg',
+      duration: 391, // 6:31 in seconds
+      uri: 'spotify:track:40riOy7x9W7udXy6SA5vKc',
+    },
+    {
+      id: '3',
+      name: 'Imagine',
+      artist: 'John Lennon',
+      album: 'Imagine',
+      albumArt: 'https://example.com/album3.jpg',
+      duration: 183, // 3:03 in seconds
+      uri: 'spotify:track:7pKfPomDEeI4TPT6EOYjn9',
+    },
+  ];
+
+  // Filter tracks based on query
+  return mockTracks.filter(
+    (track) =>
+      track.name.toLowerCase().includes(query.toLowerCase()) ||
+      track.artist.toLowerCase().includes(query.toLowerCase()) ||
+      track.album.toLowerCase().includes(query.toLowerCase()),
+  );
+}
+
+/**
+ * Get Spotify authorization URL
+ */
+export function getSpotifyAuthUrl(): string {
+  const scopes = [
+    'user-read-private',
+    'user-read-email',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'user-read-currently-playing',
+    'streaming',
+    'playlist-read-private',
+    'playlist-read-collaborative',
+  ];
+
+  const authUrl = spotifyApi.createAuthorizeURL(scopes, 'state');
+  console.log('🔗 Generated Spotify Auth URL:', authUrl);
+  return authUrl;
+}
+
+/**
+ * Exchange authorization code for access token
+ */
+export async function exchangeCodeForToken(code: string): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}> {
+  try {
+    const data = await spotifyApi.authorizationCodeGrant(code);
+
+    // Set the access token
+    spotifyApi.setAccessToken(data.body.access_token);
+    spotifyApi.setRefreshToken(data.body.refresh_token);
+
+    return {
+      access_token: data.body.access_token,
+      refresh_token: data.body.refresh_token,
+      expires_in: data.body.expires_in,
+    };
+  } catch (error) {
+    console.error('Error exchanging code for token:', error);
     throw error;
   }
 }
 
 /**
- * Play a Spotify track (would integrate with Spotify Web API)
+ * Refresh access token
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<{
+  access_token: string;
+  expires_in: number;
+}> {
+  try {
+    spotifyApi.setRefreshToken(refreshToken);
+    const data = await spotifyApi.refreshAccessToken();
+
+    spotifyApi.setAccessToken(data.body.access_token);
+
+    return {
+      access_token: data.body.access_token,
+      expires_in: data.body.expires_in,
+    };
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Play a Spotify track (requires Spotify Premium)
  */
 export async function playSpotifyTrack(user_id: string, track_uri: string): Promise<void> {
   try {
-    // This would integrate with Spotify Web API to start playback
-    console.log(`Playing track ${track_uri} for user ${user_id}`);
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available');
+      return;
+    }
 
-    // Mock implementation - in real app, this would:
-    // 1. Get user's Spotify access token
-    // 2. Call Spotify Web API to start playback
-    // 3. Handle any errors from Spotify API
+    await spotifyApi.play({
+      uris: [track_uri],
+    });
 
-    // For now, just log the action
     console.log('🎵 Spotify playback started:', { user_id, track_uri });
   } catch (error) {
     console.error('Error in playSpotifyTrack service:', error);
@@ -230,15 +337,17 @@ export async function playSpotifyTrack(user_id: string, track_uri: string): Prom
 }
 
 /**
- * Pause Spotify playback (would integrate with Spotify Web API)
+ * Pause Spotify playback
  */
 export async function pauseSpotifyPlayback(user_id: string): Promise<void> {
   try {
-    // This would integrate with Spotify Web API to pause playback
-    console.log(`Pausing playback for user ${user_id}`);
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available');
+      return;
+    }
 
-    // Mock implementation
-    console.log('🎵 Spotify playback paused:', { user_id });
+    await spotifyApi.pause();
+    console.log('⏸️ Spotify playback paused for user:', user_id);
   } catch (error) {
     console.error('Error in pauseSpotifyPlayback service:', error);
     throw error;
@@ -246,15 +355,17 @@ export async function pauseSpotifyPlayback(user_id: string): Promise<void> {
 }
 
 /**
- * Skip to next track (would integrate with Spotify Web API)
+ * Skip to next track
  */
 export async function skipToNextTrack(user_id: string): Promise<void> {
   try {
-    // This would integrate with Spotify Web API to skip to next track
-    console.log(`Skipping to next track for user ${user_id}`);
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available');
+      return;
+    }
 
-    // Mock implementation
-    console.log('🎵 Spotify skipped to next track:', { user_id });
+    await spotifyApi.skipToNext();
+    console.log('⏭️ Skipped to next track for user:', user_id);
   } catch (error) {
     console.error('Error in skipToNextTrack service:', error);
     throw error;
@@ -262,15 +373,17 @@ export async function skipToNextTrack(user_id: string): Promise<void> {
 }
 
 /**
- * Skip to previous track (would integrate with Spotify Web API)
+ * Skip to previous track
  */
 export async function skipToPreviousTrack(user_id: string): Promise<void> {
   try {
-    // This would integrate with Spotify Web API to skip to previous track
-    console.log(`Skipping to previous track for user ${user_id}`);
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available');
+      return;
+    }
 
-    // Mock implementation
-    console.log('🎵 Spotify skipped to previous track:', { user_id });
+    await spotifyApi.skipToPrevious();
+    console.log('⏮️ Skipped to previous track for user:', user_id);
   } catch (error) {
     console.error('Error in skipToPreviousTrack service:', error);
     throw error;
@@ -278,15 +391,17 @@ export async function skipToPreviousTrack(user_id: string): Promise<void> {
 }
 
 /**
- * Set playback volume (would integrate with Spotify Web API)
+ * Set playback volume
  */
 export async function setPlaybackVolume(user_id: string, volume: number): Promise<void> {
   try {
-    // This would integrate with Spotify Web API to set volume
-    console.log(`Setting volume to ${volume} for user ${user_id}`);
+    if (!spotifyApi.getAccessToken()) {
+      console.log('No Spotify access token available');
+      return;
+    }
 
-    // Mock implementation
-    console.log('🎵 Spotify volume set:', { user_id, volume });
+    await spotifyApi.setVolume(volume);
+    console.log('🔊 Set volume to', volume, 'for user:', user_id);
   } catch (error) {
     console.error('Error in setPlaybackVolume service:', error);
     throw error;

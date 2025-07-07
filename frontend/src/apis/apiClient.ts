@@ -87,7 +87,19 @@ class ApiClient {
 
   async delete(endpoint: string, userToken?: string | null) {
     const response = await this.request(endpoint, { method: 'DELETE' }, userToken);
-    return response.json();
+
+    // Handle empty responses (like 204 No Content)
+    if (response.status === 204) {
+      return null;
+    }
+
+    // Try to parse JSON, but handle empty responses gracefully
+    try {
+      return await response.json();
+    } catch (error) {
+      // If response is empty or not JSON, return null
+      return null;
+    }
   }
 }
 

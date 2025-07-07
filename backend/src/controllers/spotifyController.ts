@@ -4,16 +4,76 @@ import {
   getRoomTrack,
   updateRoomTrack,
   deleteRoomTrack,
-  searchSpotifyTracks,
-  playSpotifyTrack,
-  pauseSpotifyPlayback,
-  skipToNextTrack,
-  skipToPreviousTrack,
-  setPlaybackVolume,
+  searchSpotifyTracks as searchSpotifyTracksService,
+  playSpotifyTrack as playSpotifyTrackService,
+  pauseSpotifyPlayback as pauseSpotifyPlaybackService,
+  skipToNextTrack as skipToNextTrackService,
+  skipToPreviousTrack as skipToPreviousTrackService,
+  setPlaybackVolume as setPlaybackVolumeService,
+  getSpotifyAuthUrl,
+  exchangeCodeForToken,
+  refreshAccessToken,
   CreateRoomSpotifyTrackRequest,
   UpdateRoomSpotifyTrackRequest,
 } from '../services/spotifyService';
 import { AuthenticatedRequest } from '../middleware/auth';
+
+/**
+ * Get Spotify authorization URL
+ */
+export async function getAuthUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const authUrl = getSpotifyAuthUrl();
+    res.json({ auth_url: authUrl });
+  } catch (error: any) {
+    console.error('Error in getAuthUrl controller:', error);
+    next(error);
+  }
+}
+
+/**
+ * Handle Spotify OAuth callback
+ */
+export async function handleAuthCallback(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      res.status(400).json({ error: 'Authorization code is required' });
+      return;
+    }
+
+    const tokenData = await exchangeCodeForToken(code);
+    res.json(tokenData);
+  } catch (error: any) {
+    console.error('Error in handleAuthCallback controller:', error);
+    next(error);
+  }
+}
+
+/**
+ * Refresh Spotify access token
+ */
+export async function refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { refresh_token } = req.body;
+
+    if (!refresh_token) {
+      res.status(400).json({ error: 'Refresh token is required' });
+      return;
+    }
+
+    const tokenData = await refreshAccessToken(refresh_token);
+    res.json(tokenData);
+  } catch (error: any) {
+    console.error('Error in refreshToken controller:', error);
+    next(error);
+  }
+}
 
 /**
  * Create a new room Spotify track
@@ -118,7 +178,7 @@ export async function getRoomSpotifyTrack(
  * Update room Spotify track
  */
 export async function updateRoomSpotifyTrack(
-  req: Request<{ user_id: string }, {}, UpdateRoomSpotifyTrackRequest>,
+  req: Request<{ user_id: string }>,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -132,30 +192,20 @@ export async function updateRoomSpotifyTrack(
     }
 
     const request: UpdateRoomSpotifyTrackRequest = {
+      id: '', // Will be set in service
       ...updateData,
     };
 
     const track = await updateRoomTrack(user_id, request);
 
     if (!track) {
-      res.status(404).json({ error: 'No track found in room' });
+      res.status(404).json({ error: 'Failed to update room track' });
       return;
     }
 
     res.status(200).json(track);
   } catch (error: any) {
     console.error('Error in updateRoomSpotifyTrack controller:', error);
-
-    if (error.message === 'User is not in a room') {
-      res.status(400).json({ error: 'User must be in a room to update tracks' });
-      return;
-    }
-
-    if (error.message === 'No track found in room') {
-      res.status(404).json({ error: 'No track found in room' });
-      return;
-    }
-
     next(error);
   }
 }
@@ -179,24 +229,13 @@ export async function deleteRoomSpotifyTrack(
     const success = await deleteRoomTrack(user_id);
 
     if (!success) {
-      res.status(404).json({ error: 'No track found in room' });
+      res.status(404).json({ error: 'Failed to delete room track' });
       return;
     }
 
     res.status(204).send();
   } catch (error: any) {
     console.error('Error in deleteRoomSpotifyTrack controller:', error);
-
-    if (error.message === 'User is not in a room') {
-      res.status(400).json({ error: 'User must be in a room to delete tracks' });
-      return;
-    }
-
-    if (error.message === 'No track found in room') {
-      res.status(404).json({ error: 'No track found in room' });
-      return;
-    }
-
     next(error);
   }
 }
@@ -204,23 +243,23 @@ export async function deleteRoomSpotifyTrack(
 /**
  * Search Spotify tracks
  */
-export async function searchSpotifyTracksController(
-  req: Request<{}, {}, {}, { q: string }>,
+export async function searchSpotifyTracks(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
     const { q } = req.query;
 
-    if (!q) {
+    if (!q || typeof q !== 'string') {
       res.status(400).json({ error: 'Query parameter "q" is required' });
       return;
     }
 
-    const tracks = await searchSpotifyTracks(q);
+    const tracks = await searchSpotifyTracksService(q);
     res.status(200).json(tracks);
   } catch (error: any) {
-    console.error('Error in searchSpotifyTracksController:', error);
+    console.error('Error in searchSpotifyTracks controller:', error);
     next(error);
   }
 }
@@ -228,8 +267,8 @@ export async function searchSpotifyTracksController(
 /**
  * Play Spotify track
  */
-export async function playSpotifyTrackController(
-  req: Request<{}, {}, { user_id: string; track_uri: string }>,
+export async function playSpotifyTrack(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -241,10 +280,10 @@ export async function playSpotifyTrackController(
       return;
     }
 
-    await playSpotifyTrack(user_id, track_uri);
+    await playSpotifyTrackService(user_id, track_uri);
     res.status(200).json({ message: 'Playback started' });
   } catch (error: any) {
-    console.error('Error in playSpotifyTrackController:', error);
+    console.error('Error in playSpotifyTrack controller:', error);
     next(error);
   }
 }
@@ -252,8 +291,8 @@ export async function playSpotifyTrackController(
 /**
  * Pause Spotify playback
  */
-export async function pauseSpotifyPlaybackController(
-  req: Request<{}, {}, { user_id: string }>,
+export async function pauseSpotifyPlayback(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -265,10 +304,10 @@ export async function pauseSpotifyPlaybackController(
       return;
     }
 
-    await pauseSpotifyPlayback(user_id);
+    await pauseSpotifyPlaybackService(user_id);
     res.status(200).json({ message: 'Playback paused' });
   } catch (error: any) {
-    console.error('Error in pauseSpotifyPlaybackController:', error);
+    console.error('Error in pauseSpotifyPlayback controller:', error);
     next(error);
   }
 }
@@ -276,8 +315,8 @@ export async function pauseSpotifyPlaybackController(
 /**
  * Skip to next track
  */
-export async function skipToNextTrackController(
-  req: Request<{}, {}, { user_id: string }>,
+export async function skipToNextTrack(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -289,10 +328,10 @@ export async function skipToNextTrackController(
       return;
     }
 
-    await skipToNextTrack(user_id);
+    await skipToNextTrackService(user_id);
     res.status(200).json({ message: 'Skipped to next track' });
   } catch (error: any) {
-    console.error('Error in skipToNextTrackController:', error);
+    console.error('Error in skipToNextTrack controller:', error);
     next(error);
   }
 }
@@ -300,8 +339,8 @@ export async function skipToNextTrackController(
 /**
  * Skip to previous track
  */
-export async function skipToPreviousTrackController(
-  req: Request<{}, {}, { user_id: string }>,
+export async function skipToPreviousTrack(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -313,10 +352,10 @@ export async function skipToPreviousTrackController(
       return;
     }
 
-    await skipToPreviousTrack(user_id);
+    await skipToPreviousTrackService(user_id);
     res.status(200).json({ message: 'Skipped to previous track' });
   } catch (error: any) {
-    console.error('Error in skipToPreviousTrackController:', error);
+    console.error('Error in skipToPreviousTrack controller:', error);
     next(error);
   }
 }
@@ -324,16 +363,16 @@ export async function skipToPreviousTrackController(
 /**
  * Set playback volume
  */
-export async function setPlaybackVolumeController(
-  req: Request<{}, {}, { user_id: string; volume: number }>,
+export async function setPlaybackVolume(
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
     const { user_id, volume } = req.body;
 
-    if (!user_id || volume === undefined) {
-      res.status(400).json({ error: 'user_id and volume are required' });
+    if (!user_id || typeof volume !== 'number') {
+      res.status(400).json({ error: 'user_id and volume (number) are required' });
       return;
     }
 
@@ -342,10 +381,10 @@ export async function setPlaybackVolumeController(
       return;
     }
 
-    await setPlaybackVolume(user_id, volume);
+    await setPlaybackVolumeService(user_id, volume);
     res.status(200).json({ message: 'Volume set' });
   } catch (error: any) {
-    console.error('Error in setPlaybackVolumeController:', error);
+    console.error('Error in setPlaybackVolume controller:', error);
     next(error);
   }
 }

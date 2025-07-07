@@ -48,6 +48,29 @@ export interface UpdateRoomSpotifyTrackRequest {
   track_uri?: string;
 }
 
+// OAuth and Token Management
+export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
+  const response = await apiClient.get('/spotify/auth/url');
+  return response;
+}
+
+export async function exchangeSpotifyCode(code: string): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}> {
+  const response = await apiClient.post('/spotify/auth/callback', { code });
+  return response;
+}
+
+export async function refreshSpotifyToken(refreshToken: string): Promise<{
+  access_token: string;
+  expires_in: number;
+}> {
+  const response = await apiClient.post('/spotify/auth/refresh', { refresh_token: refreshToken });
+  return response;
+}
+
 // Spotify Search API
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
@@ -96,7 +119,9 @@ export async function deleteRoomSpotifyTrack(
   user_id: string,
   apiClientInstance: any,
 ): Promise<void> {
-  await apiClientInstance.delete(`/spotify/room/${user_id}`);
+  const response = await apiClientInstance.delete(`/spotify/room/${user_id}`);
+  // The response will be null for 204 status, which is expected
+  return;
 }
 
 // Spotify playback control functions
@@ -126,26 +151,6 @@ export async function setPlaybackVolume(
   apiClientInstance: any,
 ): Promise<void> {
   await apiClientInstance.post('/spotify/volume', { user_id, volume });
-}
-
-// Spotify authentication
-export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
-  const response = await apiClient.get('/spotify/auth/url');
-  return response;
-}
-
-export async function exchangeSpotifyCode(
-  code: string,
-): Promise<{ access_token: string; refresh_token: string }> {
-  const response = await apiClient.post('/spotify/auth/callback', { code });
-  return response;
-}
-
-export async function refreshSpotifyToken(
-  refresh_token: string,
-): Promise<{ access_token: string; refresh_token: string }> {
-  const response = await apiClient.post('/spotify/auth/refresh', { refresh_token });
-  return response;
 }
 
 // Spotify user profile
