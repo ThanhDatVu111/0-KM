@@ -1,6 +1,5 @@
 // src/api/apiClient.ts
 import { Platform } from 'react-native';
-import { useAuth } from '@clerk/clerk-expo';
 
 const HOST = process.env.EXPO_PUBLIC_API_HOST!;
 const PORT = process.env.EXPO_PUBLIC_API_PORT!;
@@ -26,17 +25,8 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  async request(endpoint: string, options: RequestInit = {}) {
+  async request(endpoint: string, options: RequestInit = {}, userToken?: string | null) {
     const url = `${this.baseURL}${endpoint}`;
-
-    // Get user token for authentication
-    let userToken = null;
-    try {
-      const { getToken } = useAuth();
-      userToken = await getToken();
-    } catch (error) {
-      console.log('No user token available:', error);
-    }
 
     const config: RequestInit = {
       headers: {
@@ -66,32 +56,53 @@ class ApiClient {
     }
   }
 
-  async get(endpoint: string) {
-    const response = await this.request(endpoint, { method: 'GET' });
+  async get(endpoint: string, userToken?: string | null) {
+    const response = await this.request(endpoint, { method: 'GET' }, userToken);
     return response.json();
   }
 
-  async post(endpoint: string, data?: any) {
-    const response = await this.request(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  async post(endpoint: string, data?: any, userToken?: string | null) {
+    const response = await this.request(
+      endpoint,
+      {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      userToken,
+    );
     return response.json();
   }
 
-  async put(endpoint: string, data?: any) {
-    const response = await this.request(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  async put(endpoint: string, data?: any, userToken?: string | null) {
+    const response = await this.request(
+      endpoint,
+      {
+        method: 'PUT',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      userToken,
+    );
     return response.json();
   }
 
-  async delete(endpoint: string) {
-    const response = await this.request(endpoint, { method: 'DELETE' });
+  async delete(endpoint: string, userToken?: string | null) {
+    const response = await this.request(endpoint, { method: 'DELETE' }, userToken);
     return response.json();
   }
 }
 
 // Export the API client instance
 export const apiClient = new ApiClient(BASE_URL);
+
+// Helper function to get user token (to be used in components)
+export const getUserToken = async () => {
+  try {
+    const { useAuth } = await import('@clerk/clerk-expo');
+    // Note: This function should be called from within a React component
+    // where useAuth() is valid
+    return null; // For now, return null to avoid hook issues
+  } catch (error) {
+    console.log('No user token available:', error);
+    return null;
+  }
+};

@@ -59,17 +59,21 @@ export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]
   }
 }
 
-// Room-based track functions
+// Room-based track functions (these will be used with authenticated client)
 export async function createRoomSpotifyTrack(
   request: CreateRoomSpotifyTrackRequest,
+  apiClientInstance: any,
 ): Promise<RoomSpotifyTrack> {
-  const response = await apiClient.post('/spotify/room', request);
+  const response = await apiClientInstance.post('/spotify/room', request);
   return response;
 }
 
-export async function getRoomSpotifyTrack(user_id: string): Promise<RoomSpotifyTrack | null> {
+export async function getRoomSpotifyTrack(
+  user_id: string,
+  apiClientInstance: any,
+): Promise<RoomSpotifyTrack | null> {
   try {
-    const response = await apiClient.get(`/spotify/room/${user_id}`);
+    const response = await apiClientInstance.get(`/spotify/room/${user_id}`);
     return response;
   } catch (error: any) {
     if (error.status === 404) {
@@ -82,34 +86,46 @@ export async function getRoomSpotifyTrack(user_id: string): Promise<RoomSpotifyT
 export async function updateRoomSpotifyTrack(
   user_id: string,
   request: UpdateRoomSpotifyTrackRequest,
+  apiClientInstance: any,
 ): Promise<RoomSpotifyTrack> {
-  const response = await apiClient.put(`/spotify/room/${user_id}`, request);
+  const response = await apiClientInstance.put(`/spotify/room/${user_id}`, request);
   return response;
 }
 
-export async function deleteRoomSpotifyTrack(user_id: string): Promise<void> {
-  await apiClient.delete(`/spotify/room/${user_id}`);
+export async function deleteRoomSpotifyTrack(
+  user_id: string,
+  apiClientInstance: any,
+): Promise<void> {
+  await apiClientInstance.delete(`/spotify/room/${user_id}`);
 }
 
 // Spotify playback control functions
-export async function playSpotifyTrack(user_id: string, track_uri: string): Promise<void> {
-  await apiClient.post('/spotify/play', { user_id, track_uri });
+export async function playSpotifyTrack(
+  user_id: string,
+  track_uri: string,
+  apiClientInstance: any,
+): Promise<void> {
+  await apiClientInstance.post('/spotify/play', { user_id, track_uri });
 }
 
-export async function pauseSpotifyPlayback(user_id: string): Promise<void> {
-  await apiClient.post('/spotify/pause', { user_id });
+export async function pauseSpotifyPlayback(user_id: string, apiClientInstance: any): Promise<void> {
+  await apiClientInstance.post('/spotify/pause', { user_id });
 }
 
-export async function skipToNextTrack(user_id: string): Promise<void> {
-  await apiClient.post('/spotify/next', { user_id });
+export async function skipToNextTrack(user_id: string, apiClientInstance: any): Promise<void> {
+  await apiClientInstance.post('/spotify/next', { user_id });
 }
 
-export async function skipToPreviousTrack(user_id: string): Promise<void> {
-  await apiClient.post('/spotify/previous', { user_id });
+export async function skipToPreviousTrack(user_id: string, apiClientInstance: any): Promise<void> {
+  await apiClientInstance.post('/spotify/previous', { user_id });
 }
 
-export async function setPlaybackVolume(user_id: string, volume: number): Promise<void> {
-  await apiClient.post('/spotify/volume', { user_id, volume });
+export async function setPlaybackVolume(
+  user_id: string,
+  volume: number,
+  apiClientInstance: any,
+): Promise<void> {
+  await apiClientInstance.post('/spotify/volume', { user_id, volume });
 }
 
 // Spotify authentication

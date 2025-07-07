@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { getRoomSpotifyTrack, RoomSpotifyTrack } from '@/apis/spotify';
+import { useApiClient } from './useApiClient';
 
 export function useRoomSpotifyTrack(refetchInterval: number = 15000) {
   const { userId } = useAuth();
+  const apiClient = useApiClient();
   const [roomTrack, setRoomTrack] = useState<RoomSpotifyTrack | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasRoom, setHasRoom] = useState(false);
@@ -13,7 +15,7 @@ export function useRoomSpotifyTrack(refetchInterval: number = 15000) {
 
     setIsLoading(true);
     try {
-      const trackData = await getRoomSpotifyTrack(userId);
+      const trackData = await getRoomSpotifyTrack(userId, apiClient);
       setRoomTrack(trackData);
       setHasRoom(true); // If we can fetch room track, user is in a room
     } catch (error: any) {

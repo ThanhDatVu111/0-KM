@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { getRoomVideo, RoomYouTubeVideo } from '@/apis/youtube';
+import { useApiClient } from './useApiClient';
 
 export function useRoomYouTubeVideo(refetchInterval: number = 15000) {
   const { userId } = useAuth();
+  const apiClient = useApiClient();
   const [roomVideo, setRoomVideo] = useState<RoomYouTubeVideo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasRoom, setHasRoom] = useState(false);
@@ -13,7 +15,7 @@ export function useRoomYouTubeVideo(refetchInterval: number = 15000) {
 
     setIsLoading(true);
     try {
-      const videoData = await getRoomVideo(userId);
+      const videoData = await getRoomVideo(userId, apiClient);
       setRoomVideo(videoData);
       setHasRoom(true); // If we can fetch room video, user is in a room
     } catch (error: any) {

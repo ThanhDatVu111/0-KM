@@ -19,14 +19,20 @@ export interface UpdateRoomVideoRequest {
 }
 
 // Room-based video functions (new shared experience)
-export async function createRoomVideo(request: CreateRoomVideoRequest): Promise<RoomYouTubeVideo> {
-  const response = await apiClient.post('/youtube/room', request);
+export async function createRoomVideo(
+  request: CreateRoomVideoRequest,
+  apiClientInstance: any,
+): Promise<RoomYouTubeVideo> {
+  const response = await apiClientInstance.post('/youtube/room', request);
   return response;
 }
 
-export async function getRoomVideo(user_id: string): Promise<RoomYouTubeVideo | null> {
+export async function getRoomVideo(
+  user_id: string,
+  apiClientInstance: any,
+): Promise<RoomYouTubeVideo | null> {
   try {
-    const response = await apiClient.get(`/youtube/room/${user_id}`);
+    const response = await apiClientInstance.get(`/youtube/room/${user_id}`);
     return response;
   } catch (error: any) {
     if (error.status === 404) {
@@ -39,13 +45,14 @@ export async function getRoomVideo(user_id: string): Promise<RoomYouTubeVideo | 
 export async function updateRoomVideo(
   user_id: string,
   request: UpdateRoomVideoRequest,
+  apiClientInstance: any,
 ): Promise<RoomYouTubeVideo> {
-  const response = await apiClient.put(`/youtube/room/${user_id}`, request);
+  const response = await apiClientInstance.put(`/youtube/room/${user_id}`, request);
   return response;
 }
 
-export async function deleteRoomVideo(user_id: string): Promise<void> {
-  await apiClient.delete(`/youtube/room/${user_id}`);
+export async function deleteRoomVideo(user_id: string, apiClientInstance: any): Promise<void> {
+  await apiClientInstance.delete(`/youtube/room/${user_id}`);
 }
 
 // Legacy functions for backward compatibility

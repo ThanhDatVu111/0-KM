@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
 import { searchSpotifyTracks, createRoomSpotifyTrack } from '@/apis/spotify';
+import { useApiClient } from '@/hooks/useApiClient';
 
 type SpotifyTrack = {
   id: string;
@@ -33,6 +34,7 @@ type Props = {
 
 export function SpotifyInput({ isVisible, onClose, onTrackAdded }: Props) {
   const { userId } = useAuth();
+  const apiClient = useApiClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +75,7 @@ export function SpotifyInput({ isVisible, onClose, onTrackAdded }: Props) {
         album_art_url: track.albumArt,
         duration_ms: track.duration * 1000, // Convert to milliseconds
         track_uri: track.uri,
-      });
+      }, apiClient);
 
       Alert.alert('Success', 'Track added successfully!');
       onTrackAdded();

@@ -21,6 +21,7 @@ import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
 import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
 import { createRoomSpotifyTrack, deleteRoomSpotifyTrack } from '@/apis/spotify';
+import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -44,6 +45,7 @@ const WidgetCard = ({
 const Home = () => {
   const { userId } = useAuth();
   const router = useRouter();
+  const apiClient = useApiClient();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,10 +96,13 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await createRoomVideo({
-        user_id: userId,
-        video_id: videoId,
-      });
+      await createRoomVideo(
+        {
+          user_id: userId,
+          video_id: videoId,
+        },
+        apiClient,
+      );
       setShowYouTubeInput(false);
       // Refetch the room video to update the UI
       refetchRoomVideo();
@@ -110,7 +115,7 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await deleteRoomVideo(userId);
+      await deleteRoomVideo(userId, apiClient);
     } catch (error) {
       console.error('Failed to remove YouTube video:', error);
     }
@@ -120,16 +125,19 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await createRoomSpotifyTrack({
-        user_id: userId,
-        track_id: trackData.track_id,
-        track_name: trackData.track_name,
-        artist_name: trackData.artist_name,
-        album_name: trackData.album_name,
-        album_art_url: trackData.album_art_url,
-        duration_ms: trackData.duration_ms,
-        track_uri: trackData.track_uri,
-      });
+      await createRoomSpotifyTrack(
+        {
+          user_id: userId,
+          track_id: trackData.track_id,
+          track_name: trackData.track_name,
+          artist_name: trackData.artist_name,
+          album_name: trackData.album_name,
+          album_art_url: trackData.album_art_url,
+          duration_ms: trackData.duration_ms,
+          track_uri: trackData.track_uri,
+        },
+        apiClient,
+      );
       setShowSpotifyInput(false);
       // Refetch the room track to update the UI
       refetchRoomTrack();
@@ -142,7 +150,7 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await deleteRoomSpotifyTrack(userId);
+      await deleteRoomSpotifyTrack(userId, apiClient);
       refetchRoomTrack();
     } catch (error) {
       console.error('Failed to remove Spotify track:', error);
