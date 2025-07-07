@@ -90,3 +90,36 @@ export async function fetchUser(userId: string): Promise<FetchedUserResponse> {
     throw err;
   }
 }
+
+export async function updateUserProfileUnified(
+  userId: string,
+  data: {
+    username?: string;
+    birthdate?: string;
+    photo_url?: string;
+  },
+) {
+  // Only include fields that are present in the data object
+  const updatePayload: Record<string, any> = {};
+  if (data.username) updatePayload.username = data.username; // string
+  if (data.birthdate) updatePayload.birthdate = data.birthdate; // string
+  if (data.photo_url) updatePayload.photo_url = data.photo_url; // string (local uri)
+
+  try {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatePayload),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to update user profile');
+    return result.data;
+  } catch (err: any) {
+    if (err.name === 'TypeError') {
+      throw new Error(
+        `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
+      );
+    }
+    throw err;
+  }
+}

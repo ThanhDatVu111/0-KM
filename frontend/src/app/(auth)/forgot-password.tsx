@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ImageBackground,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  Image,
+} from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import Button from '@/components/Button';
 import FormInput from '@/components/FormInput';
-import images from '@/constants/images'; 
+import images from '@/constants/images';
 
 export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -62,74 +70,172 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-primary px-6">
-      <Image source={images.logo} className="w-full max-h-28" resizeMode="contain" />
-      <View className="w-[300px]">
-        {!isCodeSent ? (
-          <>
-            <FormInput
-              label=""
-              borderColor="#F5829B"
-              autoCapitalize="none"
-              value={email}
-              placeholder="Enter your email"
-              onChangeText={setEmail}
-            />
-            <Button
-              label="Send Reset Code"
-              onPress={sendResetCode}
-              size="py-3 px-4"
-              color="bg-accent"
-              className="w-full mb-3"
-              textClassName="text-white text-[16px]"
-              textStyle={{ fontFamily: 'Poppins-Regular' }}
-            />
-          </>
-        ) : (
-          <>
-            <FormInput
-              label="Verification Code"
-              borderColor="#F5829B"
-              value={code}
-              placeholder="Enter verification code"
-              onChangeText={setCode}
-            />
-            <FormInput
-              label="New Password"
-              borderColor="#F5829B"
-              value={newPassword}
-              placeholder="Enter new password"
-              secureTextEntry
-              onChangeText={setNewPassword}
-            />
-            <Button
-              label="Reset Password"
-              onPress={resetPassword}
-              size="py-3 px-4"
-              color="bg-accent"
-              className="w-full mb-3"
-              textClassName="text-white text-[16px]"
-              textStyle={{ fontFamily: 'Poppins-Regular' }}
-            />
-          </>
-        )}
+    <ImageBackground
+      source={images.entry}
+      style={{ flex: 1, width: '100%', height: '100%' }}
+      resizeMode="cover"
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 items-center justify-center">
+            {/* Retro Auth Container */}
+            <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+              {/* Purple Header Section */}
+              <View className="bg-[#6536DD] border-b-4 border-black px-4 py-4 items-center rounded-t-md">
+                <View className="relative">
+                  {/* So it renders 4 <Text> components: 1 for each corner */}
+                  {[
+                    [-3, 0],
+                    [3, 0],
+                    [0, -3],
+                    [0, 3],
+                  ].map(([dx, dy], index) => (
+                    <Text
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        fontFamily: 'PressStart2P',
+                        fontSize: 23,
+                        color: 'white',
+                        left: dx,
+                        top: dy,
+                      }}
+                    >
+                      Reset Password
+                    </Text>
+                  ))}
 
-        {error && (
-          <Text className="text-red-600 text-center mb-2" style={{ fontFamily: 'Poppins-Regular' }}>
-            {error}
-          </Text>
-        )}
+                  {/* Foreground Red Text */}
+                  <Text
+                    style={{
+                      fontFamily: 'PressStart2P',
+                      fontSize: 23,
+                      color: '#F24187',
+                    }}
+                  >
+                    Reset Password
+                  </Text>
+                </View>
+              </View>
 
-        <Button
-          label="I remember my password"
-          onPress={() => router.push('../(auth)/authscreen')}
-          size=""
-          color=""
-          className="w-full"
-          textClassName="text-[16px] underline text-accent"
-          textStyle={{ fontFamily: 'Poppins-Medium' }}
-        />
-      </View>
-    </View>
+              {/* White Form Section */}
+              <View className="bg-white px-8 py-8 rounded-b-md">
+                <View className="w-full">
+                  {!isCodeSent ? (
+                    <>
+                      {/* Email Input */}
+
+                      <FormInput
+                        label="Email Address"
+                        borderColor="#6536DD"
+                        autoCapitalize="none"
+                        value={email}
+                        placeholder="Enter your email"
+                        onChangeText={setEmail}
+                      />
+                      {/* Error Message */}
+                      {error && (
+                        <Text
+                          className="text-red-600 text-center mb-4"
+                          style={{ fontFamily: 'Poppins-Regular' }}
+                        >
+                          {error}
+                        </Text>
+                      )}
+
+                      {/* Send Reset Code Button */}
+                      <TouchableOpacity
+                        onPress={sendResetCode}
+                        className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 4, height: 4 },
+                          shadowOpacity: 1,
+                          shadowRadius: 0,
+                          elevation: 8,
+                        }}
+                      >
+                        <View className="bg-[#6536DD] px-4 py-3">
+                          <Text
+                            className="text-white text-center text-[16px] font-bold"
+                            style={{ fontFamily: 'Poppins-Bold' }}
+                          >
+                            SEND RESET CODE
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      {/* Reset Password Form */}
+                      <View className="mb-6">
+                        <FormInput
+                          label="Verification Code"
+                          borderColor="#6536DD"
+                          value={code}
+                          placeholder="Enter verification code"
+                          onChangeText={setCode}
+                        />
+                        <FormInput
+                          label="New Password"
+                          borderColor="#6536DD"
+                          value={newPassword}
+                          placeholder="Enter new password"
+                          secureTextEntry
+                          onChangeText={setNewPassword}
+                        />
+                      </View>
+
+                      {/* Reset Password Button */}
+                      <TouchableOpacity
+                        onPress={resetPassword}
+                        className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+                        style={{
+                          shadowColor: '#000',
+                          shadowOffset: { width: 4, height: 4 },
+                          shadowOpacity: 1,
+                          shadowRadius: 0,
+                          elevation: 8,
+                        }}
+                      >
+                        <View className="bg-[#6536DD] px-4 py-3">
+                          <Text
+                            className="text-white text-center text-[16px] font-bold"
+                            style={{ fontFamily: 'Poppins-Bold' }}
+                          >
+                            RESET PASSWORD
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  {/* Back to Login Link */}
+                  <TouchableOpacity
+                    onPress={() => router.push('../(auth)/authscreen')}
+                    className="mt-2"
+                  >
+                    <Text
+                      className="text-[#6536DD] text-center text-[16px] underline"
+                      style={{ fontFamily: 'Poppins-Medium' }}
+                    >
+                      I remember my password
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }

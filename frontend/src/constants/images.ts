@@ -11,6 +11,10 @@ import createEntryBg from '@/assets/images/createEntryBg.png';
 import entryFormBg from '@/assets/images/entryFormBg.png';
 import entryCardBg from '@/assets/images/entryCardBg.png';
 import loadingScreen from '@/assets/images/loadingScreen.png';
+import entry from '@/assets/images/entry.png';
+import startButton from '@/assets/images/startButton.png';
+import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
+import profileBg from '@/assets/images/profileBg.png';
 
 export default {
   polaroid,
@@ -19,6 +23,10 @@ export default {
   polaroid_picture,
   highlight,
   navBarBackground,
+  entry,
+  startButton,
+  onboardPairingBg,
+  profileBg,
   libraryBg,
   libraryTitle,
   sortButtonBg,

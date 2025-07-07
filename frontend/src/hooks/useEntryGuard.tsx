@@ -57,7 +57,7 @@ export function useEntryGuard() {
         });
 
         // If no room exists or room is not filled, redirect to pairing
-        if (!room || !room.filled) {
+        if (!room.filled) {
           console.log('⚠️ User needs to complete room pairing');
           router.replace({
             pathname: '/(onboard)/join-room',

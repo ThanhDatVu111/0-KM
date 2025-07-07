@@ -5,6 +5,7 @@ import speech_bubble from '@/assets/icons/speechBubble.png';
 import topic from '@/assets/icons/topic.png';
 import user_icon_female from '@/assets/icons/userIconFemale.png';
 import google from '@/assets/icons/google.png';
+import google_pixel from '@/assets/icons/google_pixel.png';
 import person from '@/assets/icons/person.png';
 import photo from '@/assets/icons/photo.png';
 import location from '@/assets/icons/location.png';
@@ -25,6 +26,7 @@ export default {
   topic,
   user_icon_female,
   google,
+  google_pixel,
   person,
   photo,
   location,

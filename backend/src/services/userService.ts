@@ -37,3 +37,12 @@ export function onboardUser(input: OnboardUserInput) {
 export function fetchUser(input: FetchUserInput) {
   return userModel.getUser(input.userId);
 }
+
+export function updateUserProfile(input: {
+  user_id: string;
+  username?: string;
+  birthdate?: string;
+  photo_url?: string;
+}) {
+  return userModel.updateUserProfile(input);
+}
