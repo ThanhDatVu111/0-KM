@@ -42,6 +42,7 @@ export async function createRoom(request: RoomRequest): Promise<CreatedRoom> {
 
 export async function pairRoom(request: PairRequest): Promise<void> {
   try {
+    console.log('Pairing request:', request);
     const response = await fetch(`${BASE_URL}/rooms/${request.room_id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -120,5 +121,20 @@ export async function fetchRoomByUserId(
     return { room_id: room_id, other_user_id: other_user_id } as FetchRoomByUserIdResponse;
   } catch (error: any) {
     throw new Error(error?.message || 'An unknown error occurred in fetchRoomByUserId');
+  }
+}
+export async function updateRoom(room_id: string, user_id: string): Promise<void> {
+  try {
+    const response = await fetch(`${BASE_URL}/rooms/${room_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id }),
+    });
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to update room');
+    }
+  } catch (err: any) {
+    throw err;
   }
 }

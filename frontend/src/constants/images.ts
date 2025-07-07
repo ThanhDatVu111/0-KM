@@ -12,6 +12,7 @@ import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import Background from '@/assets/images/Background.png';
 import Frame from '@/assets/images/Frame.png';
 
+import profileBg from '@/assets/images/profileBg.png';
 
 export default {
   polaroid,
@@ -26,5 +27,6 @@ export default {
   startButton,
   onboardPairingBg,
   Background,
-  Frame
+  Frame,
+  profileBg
 };
