@@ -10,6 +10,7 @@ import entry from '@/assets/images/entry.png';
 import startButton from '@/assets/images/startButton.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import chatBg from '@/assets/images/chatBg.png';
+import profileBg from '@/assets/images/profileBg.png';
 
 export default {
   polaroid,
@@ -24,4 +25,5 @@ export default {
   startButton,
   onboardPairingBg,
   chatBg,
+  profileBg
 };

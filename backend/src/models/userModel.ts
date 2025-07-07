@@ -53,3 +53,23 @@ export async function getUser(userId: string) {
   console.log('✅ User fetched successfully:', data);
   return data;
 }
+
+export async function updateUserProfile(attrs: {
+  user_id: string;
+  username?: string;
+  birthdate?: string;
+  photo_url?: string;
+}) {
+  const updateFields: any = {};
+  if (attrs.username !== undefined) updateFields.username = attrs.username;
+  if (attrs.birthdate !== undefined) updateFields.birthdate = attrs.birthdate;
+  if (attrs.photo_url !== undefined) updateFields.photo_url = attrs.photo_url;
+  const { data, error } = await supabase
+    .from('users')
+    .update(updateFields)
+    .eq('user_id', attrs.user_id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}

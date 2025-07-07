@@ -12,7 +12,7 @@ export interface CreatedRoom {
 
 export interface PairRequest {
   room_id: string;
-  user_2: string;
+  user_id: string;
 }
 
 export interface DeleteRoomRequest {

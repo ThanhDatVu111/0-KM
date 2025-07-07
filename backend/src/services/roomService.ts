@@ -10,14 +10,11 @@ export async function registerRoom(input: any) {
   });
 }
 
-export async function joinRoom(input: any) {
-  return roomModel.joinRoom({
-    room_id: input.room_id,
-    user_2: input.user_2,
-  });
+export async function joinRoom(input: { room_id: string; user_id: string }) {
+  return roomModel.joinRoom(input);
 }
 
-export async function checkRoom(input: any){
+export async function checkRoom(input: any) {
   return roomModel.checkRoom({
     room_id: input.room_id,
   });
@@ -33,3 +30,10 @@ export async function fetchRoom(user_id: string) {
   return roomModel.fetchRoom(user_id);
 }
 
+export async function updateRoom(room_id: string, user_id: string) {
+  return roomModel.updateRoomForLeaving(room_id, user_id);
+}
+
+export async function getRoomById(room_id: string) {
+  return roomModel.getRoomById(room_id);
+}

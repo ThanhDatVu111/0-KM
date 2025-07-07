@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -29,8 +29,8 @@ import { usePagination } from '@/hooks/usePagination';
 import ChatInput from '@/components/ChatInptut';
 import { useSocket } from 'utils/SocketProvider';
 import ChatPaginatedList from '@/components/ChatPaginatedList';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useFocusEffect, useNavigation } from 'expo-router';
+import { useChatSocket } from '@/hooks/useSocketChat';
 
 export default function Chat() {
   const socket = useSocket();
@@ -38,7 +38,14 @@ export default function Chat() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
   const nav = useNavigation();
-  const { messages, hasMore, refreshing, loadMore, refresh, reset } = usePagination({
+  const {
+    messages: previousChat,
+    hasMore,
+    refreshing,
+    loadMore,
+    refresh,
+    reset,
+  } = usePagination({
     room_id: roomId!,
   });
 
@@ -74,9 +81,9 @@ export default function Chat() {
       socket.emit('join-chat', roomId);
       console.log('Frontend: emitting join-chat');
     }
-
-
   }, [socket, roomId, nav, reset]);
+
+  const { messages: socketMessage } = useChatSocket({ room_id: roomId!, user_id: userId! });
 
   return (
     <ImageBackground source={images.chatBg} className="flex-1" resizeMode="cover">
@@ -90,7 +97,7 @@ export default function Chat() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ChatPaginatedList
-            messages={messages}
+            messages={socketMessage}
             refreshing={refreshing}
             refresh={refresh}
             loadMore={loadMore}

@@ -2,8 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useSocket } from 'utils/SocketProvider';
 import type { Message, SendMessage } from '@/types/chat';
 import { sendMessage, editMessage, deleteMessage, fetchMessages } from '@/apis/chat';
+import { usePagination } from './usePagination';
 
-export const useChatSocket = ({ room_id, user_id }: { room_id: string; user_id: string }) => {
+export type ChatSocketProps = {
+  room_id: string;
+  user_id: string;
+};
+
+export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
   const socket = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState<{ [key: string]: boolean }>({});
@@ -17,7 +23,7 @@ export const useChatSocket = ({ room_id, user_id }: { room_id: string; user_id: 
     socket.emit('join-room', { roomId: room_id });
 
     socket.on('receive-message', (message: Message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => [message, ...prev]);
     });
 
     socket.on('message-edited', (message: Message) => {

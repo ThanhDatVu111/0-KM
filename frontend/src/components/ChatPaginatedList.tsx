@@ -2,9 +2,6 @@ import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  RefreshControl,
   View,
 } from 'react-native';
 import ChatBubble from './ChatBubble';
@@ -49,15 +46,6 @@ export default function ChatPaginatedList({
     );
   };
 
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset } = event.nativeEvent;
-      if (contentOffset.y <= 0 && hasMore && !refreshing) {
-        loadMore(); // Load older messages when scrolled to top
-      }
-    },
-    [hasMore, refreshing, loadMore],
-  );
 
   return (
     <FlatList

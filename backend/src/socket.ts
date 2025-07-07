@@ -80,6 +80,9 @@ export default function socketHandler(io: Server) {
           return;
         }
 
+        io.to(room_id).emit('receive-message', messageData);
+        console.log(`✅ Message sent successfully in room ${room_id}`);
+
         // Generate unique message_id
         const message_id = `${Date.now()}-${sender_id}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -100,12 +103,6 @@ export default function socketHandler(io: Server) {
         });
 
         // Broadcast message to all users in the room (including sender)
-        io.to(room_id).emit('receive-message', {
-          ...savedMessage,
-          timestamp: new Date().toISOString(),
-        });
-
-        console.log(`✅ Message sent successfully in room ${room_id}`);
       } catch (error) {
         console.error('❌ Error sending message:', error);
         socket.emit('error', {

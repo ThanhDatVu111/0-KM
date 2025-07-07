@@ -7,6 +7,7 @@ import {
   DeleteMessage,
 } from '@/types/chat';
 import { BASE_URL } from './apiClient';
+
 const host = process.env.EXPO_PUBLIC_API_HOST;
 const port = process.env.EXPO_PUBLIC_API_PORT;
 
@@ -39,6 +40,7 @@ export async function fetchMessages({
     throw error;
   }
 }
+
 
 export async function getMessageById(message_id: string): Promise<Message> {
   try {
