@@ -6,6 +6,7 @@ import {
   Image,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -23,6 +24,7 @@ import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
 import { createRoomSpotifyTrack, deleteRoomSpotifyTrack } from '@/apis/spotify';
 import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -59,6 +61,9 @@ const Home = () => {
     isLoading: spotifyLoading,
     refetchRoomTrack,
   } = useRoomSpotifyTrack();
+
+  // Real Spotify playback controls
+  const { playTrack } = useSpotifyPlayback();
 
   // Debug logging
   useEffect(() => {
@@ -141,6 +146,19 @@ const Home = () => {
       setShowSpotifyInput(false);
       // Refetch the room track to update the UI
       refetchRoomTrack();
+
+      // Automatically play the track when added
+      try {
+        await playTrack(trackData.track_uri);
+        console.log('🎵 Auto-playing track:', trackData.track_name);
+        Alert.alert('Success!', `Now playing: ${trackData.track_name}`);
+      } catch (playError) {
+        console.error('Failed to auto-play track:', playError);
+        Alert.alert(
+          'Track Added',
+          `${trackData.track_name} was added to your room, but couldn't start playing automatically. Make sure you have Spotify open on another device.`,
+        );
+      }
     } catch (error) {
       console.error('Failed to add Spotify track:', error);
     }
@@ -340,9 +358,6 @@ const Home = () => {
             }
             onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
             canControl={true}
-            onPlayPause={() => console.log('Play/Pause clicked')}
-            onNext={() => console.log('Next clicked')}
-            onPrevious={() => console.log('Previous clicked')}
             onAddTrack={() => setShowSpotifyInput(true)}
             onSignOut={() => {
               console.log('Spotify signed out');

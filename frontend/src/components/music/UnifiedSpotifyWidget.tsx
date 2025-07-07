@@ -6,6 +6,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
+import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
 
 type SpotifyTrack = {
   id: string;
@@ -21,10 +22,6 @@ type Props = {
   track?: SpotifyTrack;
   onPress?: () => void;
   className?: string;
-  isPlaying?: boolean;
-  onPlayPause?: () => void;
-  onNext?: () => void;
-  onPrevious?: () => void;
   canControl?: boolean;
   onAddTrack?: () => void;
   onSignOut?: () => void;
@@ -36,10 +33,6 @@ export function UnifiedSpotifyWidget({
   track,
   onPress,
   className = '',
-  isPlaying = false,
-  onPlayPause,
-  onNext,
-  onPrevious,
   canControl = false,
   onAddTrack,
   onSignOut,
@@ -49,6 +42,19 @@ export function UnifiedSpotifyWidget({
   const [isConnecting, setIsConnecting] = useState(false);
   const [spotifyState, setSpotifyState] = useState<SpotifyState>('not-connected');
   const [hasConnectedBefore, setHasConnectedBefore] = useState(false);
+
+  // Real Spotify playback controls
+  const {
+    playbackState,
+    isLoading: playbackLoading,
+    error: playbackError,
+    playTrack,
+    togglePlayPause,
+    skipToNext,
+    skipToPrevious,
+    setVolume,
+    seekToPosition,
+  } = useSpotifyPlayback();
 
   // Determine the current state
   useEffect(() => {
@@ -394,11 +400,26 @@ export function UnifiedSpotifyWidget({
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: playbackState
+                    ? `${(playbackState.progress / (playbackState.currentTrack?.duration || 1)) * 1000 * 100}%`
+                    : `${progressPercentage}%`,
+                },
+              ]}
+            />
           </View>
           <View style={styles.timeInfo}>
-            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-            <Text style={styles.timeText}>{formatTime(track.duration)}</Text>
+            <Text style={styles.timeText}>
+              {playbackState
+                ? formatTime(Math.floor(playbackState.progress / 1000))
+                : formatTime(currentTime)}
+            </Text>
+            <Text style={styles.timeText}>
+              {playbackState?.currentTrack?.duration || formatTime(track.duration)}
+            </Text>
           </View>
         </View>
 
@@ -406,18 +427,30 @@ export function UnifiedSpotifyWidget({
         {canControl && (
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={onPrevious}
+              onPress={skipToPrevious}
               style={styles.controlButton}
-              disabled={!onPrevious}
+              disabled={playbackLoading}
             >
               <Ionicons name="play-skip-back" size={24} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
-              <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="white" />
+            <TouchableOpacity
+              onPress={togglePlayPause}
+              style={styles.playButton}
+              disabled={playbackLoading}
+            >
+              <Ionicons
+                name={playbackState?.isPlaying ? 'pause' : 'play'}
+                size={32}
+                color="white"
+              />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={onNext} style={styles.controlButton} disabled={!onNext}>
+            <TouchableOpacity
+              onPress={skipToNext}
+              style={styles.controlButton}
+              disabled={playbackLoading}
+            >
               <Ionicons name="play-skip-forward" size={24} color="white" />
             </TouchableOpacity>
           </View>
