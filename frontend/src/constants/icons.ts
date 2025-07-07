@@ -7,6 +7,8 @@ import user_icon_female from '@/assets/icons/userIconFemale.png';
 import google from '@/assets/icons/google.png';
 import google_pixel from '@/assets/icons/google_pixel.png';
 import person from '@/assets/icons/person.png';
+import phone from '@/assets/icons/phone.png';
+import video from '@/assets/icons/video.png';
 
 export default {
   books,
@@ -18,4 +20,6 @@ export default {
   google,
   google_pixel,
   person,
+  phone,
+  video,
 };
