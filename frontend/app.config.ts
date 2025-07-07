@@ -8,10 +8,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: '0km-app',
   
   orientation: 'portrait',
-  icon: './src/assets/icon.png',
+  icon: './src/assets/images/logo.png',
   userInterfaceStyle: 'light',
   splash: {
-    image: './src/assets/splash.png',
+    image: './src/assets/images/logo.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './src/assets/adaptive-icon.png',
+      foregroundImage: './src/assets/images/logo.png',
       backgroundColor: '#ffffff',
     },
   },

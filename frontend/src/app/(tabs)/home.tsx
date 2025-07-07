@@ -37,7 +37,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
 
-  const { roomVideo, hasRoom, isLoading: videoLoading } = useRoomYouTubeVideo();
+  const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
 
   // Debug logging
   useEffect(() => {
@@ -71,16 +71,17 @@ const Home = () => {
     }
   };
 
-  const handleAddYouTubeVideo = async (videoId: string, title?: string) => {
+  const handleAddYouTubeVideo = async (videoId: string) => {
     if (!userId) return;
 
     try {
       await createRoomVideo({
         user_id: userId,
         video_id: videoId,
-        title,
       });
       setShowYouTubeInput(false);
+      // Refetch the room video to update the UI
+      refetchRoomVideo();
     } catch (error) {
       console.error('Failed to add YouTube video:', error);
     }
@@ -228,53 +229,29 @@ const Home = () => {
 
         {/* YouTube Music Widget */}
         <View className="mb-4">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-lg text-white font-pmedium">
-              {hasRoom ? "What We're Watching" : 'My Music Video'}
-            </Text>
-            {canAddVideo && (
-              <TouchableOpacity
-                onPress={() => setShowYouTubeInput(true)}
-                className="bg-white/20 px-3 py-1 rounded-full"
-              >
-                <Text className="text-white font-pregular text-sm">+ Add</Text>
-              </TouchableOpacity>
-            )}
-            {roomVideo && roomVideo.added_by_user_id === userId && (
-              <TouchableOpacity
-                onPress={handleRemoveYouTubeVideo}
-                className="bg-red-500/20 px-3 py-1 rounded-full ml-2"
-              >
-                <Text className="text-red-200 font-pregular text-sm">Remove</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {hasRoom ? (
-            // Show shared room video
-            roomVideo ? (
-              <YouTubeWidget
-                videoId={roomVideo.video_id}
-                title={roomVideo.title || 'Shared Music Video'}
-                onPress={() => {
-                  // Could open in full screen or external app
-                }}
-              />
-            ) : (
-              <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
-                <Text className="text-white/70 font-pregular text-center px-4">
-                  {canAddVideo
-                    ? 'No video playing. Tap + Add to start watching together!'
-                    : 'Waiting for your partner to add a video...'}
-                </Text>
-              </View>
-            )
+          <Text className="text-lg text-white font-pmedium mb-3">
+            {hasRoom ? "What We're Watching" : 'My Music Video'}
+          </Text>
+          {roomVideo ? (
+            <YouTubeWidget
+              videoId={roomVideo.video_id}
+              onPress={roomVideo.added_by_user_id === userId ? handleRemoveYouTubeVideo : undefined}
+            />
           ) : (
-            // Show placeholder when not in a room
             <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
               <Text className="text-white/70 font-pregular text-center px-4">
-                Join a room to watch videos together!
+                {canAddVideo
+                  ? 'No video playing. Tap + Add to start watching together!'
+                  : 'Waiting for your partner to add a video...'}
               </Text>
+              {canAddVideo && (
+                <TouchableOpacity
+                  onPress={() => setShowYouTubeInput(true)}
+                  className="bg-white/20 px-3 py-1 rounded-full mt-2"
+                >
+                  <Text className="text-white font-pregular text-sm">+ Add</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>

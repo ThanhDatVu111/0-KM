@@ -4,7 +4,6 @@ export interface RoomYouTubeVideo {
   id: string;
   room_id: string;
   video_id: string;
-  title?: string;
   added_by_user_id: string;
   created_at: string;
   updated_at: string;
@@ -13,12 +12,10 @@ export interface RoomYouTubeVideo {
 export interface CreateRoomVideoRequest {
   user_id: string;
   video_id: string;
-  title?: string;
 }
 
 export interface UpdateRoomVideoRequest {
   video_id: string;
-  title?: string;
 }
 
 // Room-based video functions (new shared experience)
@@ -56,7 +53,6 @@ export interface YouTubeVideo {
   id: string;
   user_id: string;
   video_id: string;
-  title?: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,7 +60,6 @@ export interface YouTubeVideo {
 export async function upsertYouTubeVideo(request: {
   user_id: string;
   video_id: string;
-  title?: string;
 }): Promise<YouTubeVideo> {
   const response = await apiClient.post('/youtube', request);
   return response;

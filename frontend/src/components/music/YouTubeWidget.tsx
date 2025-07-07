@@ -6,14 +6,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 type Props = {
   videoId: string;
-  title?: string;
   onPress?: () => void;
   className?: string;
 };
 
-export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props) {
+export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
   // Debug logging
-  console.log('🎬 YouTubeWidget Debug:', { videoId, title, className });
+  console.log('🎬 YouTubeWidget Debug:', { videoId, className });
 
   if (!videoId) {
     console.log('🎬 YouTubeWidget: No videoId provided, showing empty state');
@@ -77,8 +76,7 @@ export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props
   }
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
+    <View
       className={`border border-black bg-white/10 shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
       style={{ borderWidth: 1.5 }}
     >
@@ -93,39 +91,51 @@ export function YouTubeWidget({ videoId, title, onPress, className = '' }: Props
           zIndex: -1,
         }}
       />
-      {title && (
-        <View className="p-3">
-          <Text className="text-white font-pmedium text-base" numberOfLines={1}>
-            {title}
-          </Text>
-        </View>
-      )}
+
       <View style={styles.container}>
         <YoutubePlayer
-          height={200}
+          height={220}
           play={false}
           videoId={videoId}
           webViewProps={{
             style: { borderRadius: 12, overflow: 'hidden' },
           }}
-          onError={(error) => {
+          onError={(error: any) => {
             console.error('🎬 YouTube player error:', error);
           }}
           onReady={() => {
             console.log('🎬 YouTube player ready for video:', videoId);
           }}
         />
+
+        {/* Remove button overlay positioned at bottom right - only show if onPress is provided */}
+        {onPress && (
+          <TouchableOpacity
+            onPress={onPress}
+            style={styles.removeButton}
+            className="bg-red-500/80 rounded-full p-2"
+          >
+            <Ionicons name="close" size={16} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    aspectRatio: 16 / 9,
+    height: 220,
     borderRadius: 12,
     backgroundColor: '#000',
     overflow: 'hidden',
+    position: 'relative',
+  },
+  removeButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    zIndex: 10,
   },
 });
