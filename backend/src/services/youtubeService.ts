@@ -12,12 +12,10 @@ import {
 export interface CreateRoomVideoRequest {
   user_id: string;
   video_id: string;
-  title?: string;
 }
 
 export interface UpdateRoomVideoRequest {
   video_id: string;
-  title?: string;
 }
 
 /**
@@ -36,7 +34,6 @@ export async function createRoomVideo(
     const input: CreateRoomYouTubeVideoInput = {
       room_id: roomId,
       video_id: request.video_id,
-      title: request.title,
       added_by_user_id: request.user_id,
     };
 
@@ -87,7 +84,6 @@ export async function updateRoomVideo(
     const input: UpdateRoomYouTubeVideoInput = {
       id: currentVideo.id,
       video_id: request.video_id,
-      title: request.title,
     };
 
     return await updateRoomYouTubeVideo(input);
@@ -124,13 +120,11 @@ export async function deleteRoomVideo(user_id: string): Promise<boolean> {
 export interface CreateVideoRequest {
   user_id: string;
   video_id: string;
-  title?: string;
 }
 
 export interface UpdateVideoRequest {
   user_id: string;
   video_id: string;
-  title?: string;
 }
 
 /**
@@ -142,7 +136,6 @@ export async function createVideo(request: CreateVideoRequest) {
     return await createYouTubeVideo({
       user_id: request.user_id,
       video_id: request.video_id,
-      title: request.title,
     });
   } catch (error) {
     console.error('Error in createVideo service:', error);

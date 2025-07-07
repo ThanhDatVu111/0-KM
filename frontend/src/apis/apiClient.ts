@@ -1,5 +1,6 @@
 // src/api/apiClient.ts
 import { Platform } from 'react-native';
+import { useAuth } from '@clerk/clerk-expo';
 
 const HOST = process.env.EXPO_PUBLIC_API_HOST!;
 const PORT = process.env.EXPO_PUBLIC_API_PORT!;
@@ -28,9 +29,19 @@ class ApiClient {
   async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseURL}${endpoint}`;
 
+    // Get user token for authentication
+    let userToken = null;
+    try {
+      const { getToken } = useAuth();
+      userToken = await getToken();
+    } catch (error) {
+      console.log('No user token available:', error);
+    }
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...(userToken && { Authorization: `Bearer ${userToken}` }),
         ...options.headers,
       },
       ...options,

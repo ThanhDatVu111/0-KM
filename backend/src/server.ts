@@ -2,11 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import supabase from '../utils/supabase';
+import { authMiddleware } from './middleware/auth';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
 import YouTubeRouter from './routes/youtubeRoutes';
+import SpotifyRouter from './routes/spotifyRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
@@ -24,12 +26,16 @@ app.use(
   }),
 );
 
+// Apply auth middleware to all routes
+app.use(authMiddleware);
+
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
 app.use('/library', LibraryRouter);
 app.use('/entries', EntriesRouter);
 app.use('/youtube', YouTubeRouter);
+app.use('/spotify', SpotifyRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(

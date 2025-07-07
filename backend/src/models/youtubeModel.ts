@@ -4,7 +4,6 @@ export interface RoomYouTubeVideo {
   id: string;
   room_id: string;
   video_id: string;
-  title?: string;
   added_by_user_id: string;
   created_at: string;
   updated_at: string;
@@ -13,14 +12,12 @@ export interface RoomYouTubeVideo {
 export interface CreateRoomYouTubeVideoInput {
   room_id: string;
   video_id: string;
-  title?: string;
   added_by_user_id: string;
 }
 
 export interface UpdateRoomYouTubeVideoInput {
   id: string;
   video_id?: string;
-  title?: string;
 }
 
 /**
@@ -38,7 +35,6 @@ export async function createRoomYouTubeVideo(
       .insert({
         room_id: input.room_id,
         video_id: input.video_id,
-        title: input.title,
         added_by_user_id: input.added_by_user_id,
       })
       .select()
@@ -94,7 +90,6 @@ export async function updateRoomYouTubeVideo(
   try {
     const updateData: any = {};
     if (input.video_id) updateData.video_id = input.video_id;
-    if (input.title !== undefined) updateData.title = input.title;
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -182,7 +177,6 @@ export interface YouTubeVideo {
   id: string;
   user_id: string;
   video_id: string;
-  title?: string;
   created_at: string;
   updated_at: string;
 }
@@ -190,13 +184,11 @@ export interface YouTubeVideo {
 export interface CreateYouTubeVideoInput {
   user_id: string;
   video_id: string;
-  title?: string;
 }
 
 export interface UpdateYouTubeVideoInput {
   id: string;
   video_id?: string;
-  title?: string;
 }
 
 /**
@@ -211,7 +203,6 @@ export async function createYouTubeVideo(
       .insert({
         user_id: input.user_id,
         video_id: input.video_id,
-        title: input.title,
       })
       .select()
       .single();
@@ -266,7 +257,6 @@ export async function updateYouTubeVideo(
   try {
     const updateData: any = {};
     if (input.video_id) updateData.video_id = input.video_id;
-    if (input.title !== undefined) updateData.title = input.title;
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase

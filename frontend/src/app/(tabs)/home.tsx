@@ -1,4 +1,12 @@
-import { View, Text, ImageBackground, TouchableOpacity, Image, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  ImageBackground,
+  TouchableOpacity,
+  Image,
+  Modal,
+  ScrollView,
+} from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
@@ -7,8 +15,12 @@ import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
 import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
+import { SpotifyWidget } from '@/components/music/SpotifyWidget';
+import { SpotifyInput } from '@/components/music/SpotifyInput';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
+import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
+import { createRoomSpotifyTrack, deleteRoomSpotifyTrack } from '@/apis/spotify';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // WidgetCard component
@@ -36,8 +48,15 @@ const Home = () => {
   const [isHost, setIsHost] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
+  const [showSpotifyInput, setShowSpotifyInput] = useState(false);
 
   const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
+  const {
+    roomTrack,
+    hasRoom: hasSpotifyRoom,
+    isLoading: spotifyLoading,
+    refetchRoomTrack,
+  } = useRoomSpotifyTrack();
 
   // Debug logging
   useEffect(() => {
@@ -97,6 +116,39 @@ const Home = () => {
     }
   };
 
+  const handleAddSpotifyTrack = async (trackData: any) => {
+    if (!userId) return;
+
+    try {
+      await createRoomSpotifyTrack({
+        user_id: userId,
+        track_id: trackData.track_id,
+        track_name: trackData.track_name,
+        artist_name: trackData.artist_name,
+        album_name: trackData.album_name,
+        album_art_url: trackData.album_art_url,
+        duration_ms: trackData.duration_ms,
+        track_uri: trackData.track_uri,
+      });
+      setShowSpotifyInput(false);
+      // Refetch the room track to update the UI
+      refetchRoomTrack();
+    } catch (error) {
+      console.error('Failed to add Spotify track:', error);
+    }
+  };
+
+  const handleRemoveSpotifyTrack = async () => {
+    if (!userId) return;
+
+    try {
+      await deleteRoomSpotifyTrack(userId);
+      refetchRoomTrack();
+    } catch (error) {
+      console.error('Failed to remove Spotify track:', error);
+    }
+  };
+
   const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
 
   if (isLoading) {
@@ -118,7 +170,10 @@ const Home = () => {
         />
       </View>
 
-      <View className="flex-1 p-6 pt-40">
+      <ScrollView
+        contentContainerStyle={{ padding: 24, paddingTop: 100, paddingBottom: 120, flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Top Widget Grid */}
         <View className="flex-row flex-wrap gap-4 mb-6">
           {/* Calendar Widget */}
@@ -256,6 +311,47 @@ const Home = () => {
           )}
         </View>
 
+        {/* Spotify Music Widget */}
+        <View className="mb-4">
+          <Text className="text-lg text-white font-pmedium mb-3">
+            {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
+          </Text>
+          {roomTrack ? (
+            <SpotifyWidget
+              track={{
+                id: roomTrack.track_id,
+                name: roomTrack.track_name,
+                artist: roomTrack.artist_name,
+                album: roomTrack.album_name,
+                albumArt: roomTrack.album_art_url,
+                duration: Math.floor(roomTrack.duration_ms / 1000),
+                uri: roomTrack.track_uri,
+              }}
+              onPress={roomTrack.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
+              canControl={true}
+              onPlayPause={() => console.log('Play/Pause clicked')}
+              onNext={() => console.log('Next clicked')}
+              onPrevious={() => console.log('Previous clicked')}
+            />
+          ) : (
+            <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
+              <Text className="text-white/70 font-pregular text-center px-4">
+                {canAddVideo
+                  ? 'No music playing. Tap + Add to start listening together!'
+                  : 'Waiting for your partner to add music...'}
+              </Text>
+              {canAddVideo && (
+                <TouchableOpacity
+                  onPress={() => setShowSpotifyInput(true)}
+                  className="bg-white/20 px-3 py-1 rounded-full mt-2"
+                >
+                  <Text className="text-white font-pregular text-sm">+ Add</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
         {/* Join Room Widget */}
         {!roomId && (
           <TouchableOpacity
@@ -267,7 +363,7 @@ const Home = () => {
             </Text>
           </TouchableOpacity>
         )}
-      </View>
+      </ScrollView>
 
       <View className="absolute bottom-5 right-5">
         <SignOutButton />
@@ -287,6 +383,16 @@ const Home = () => {
           />
         </View>
       </Modal>
+
+      {/* Spotify Input Modal */}
+      <SpotifyInput
+        isVisible={showSpotifyInput}
+        onClose={() => setShowSpotifyInput(false)}
+        onTrackAdded={() => {
+          setShowSpotifyInput(false);
+          refetchRoomTrack();
+        }}
+      />
     </LinearGradient>
   );
 };

@@ -12,12 +12,12 @@ import {
  * Create a new room YouTube video
  */
 export async function createRoomYouTubeVideo(
-  req: Request<{}, {}, { user_id: string; video_id: string; title?: string }>,
+  req: Request<{}, {}, { user_id: string; video_id: string }>,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id, video_id, title } = req.body;
+    const { user_id, video_id } = req.body;
 
     if (!user_id || !video_id) {
       res.status(400).json({ error: 'user_id and video_id are required' });
@@ -27,7 +27,6 @@ export async function createRoomYouTubeVideo(
     const request: CreateRoomVideoRequest = {
       user_id,
       video_id,
-      title,
     };
 
     const video = await createRoomVideo(request);
@@ -84,13 +83,13 @@ export async function getRoomYouTubeVideo(
  * Update the current room YouTube video
  */
 export async function updateRoomYouTubeVideo(
-  req: Request<{ user_id: string }, {}, { video_id: string; title?: string }>,
+  req: Request<{ user_id: string }, {}, { video_id: string }>,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
     const { user_id } = req.params;
-    const { video_id, title } = req.body;
+    const { video_id } = req.body;
 
     if (!user_id || !video_id) {
       res.status(400).json({ error: 'user_id and video_id are required' });
@@ -99,7 +98,6 @@ export async function updateRoomYouTubeVideo(
 
     const request: UpdateRoomVideoRequest = {
       video_id,
-      title,
     };
 
     const video = await updateRoomVideo(user_id, request);
@@ -165,12 +163,12 @@ export async function deleteRoomYouTubeVideo(
 
 // Legacy functions for backward compatibility
 export async function upsertYouTubeVideo(
-  req: Request<{}, {}, { user_id: string; video_id: string; title?: string }>,
+  req: Request<{}, {}, { user_id: string; video_id: string }>,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id, video_id, title } = req.body;
+    const { user_id, video_id } = req.body;
 
     if (!user_id || !video_id) {
       res.status(400).json({ error: 'user_id and video_id are required' });
@@ -182,7 +180,6 @@ export async function upsertYouTubeVideo(
       const request: CreateRoomVideoRequest = {
         user_id,
         video_id,
-        title,
       };
 
       const video = await createRoomVideo(request);
@@ -194,7 +191,7 @@ export async function upsertYouTubeVideo(
       if (error.message === 'User is not in a room') {
         // Fall back to legacy user-based video
         const { createVideo } = await import('../services/youtubeService');
-        const video = await createVideo({ user_id, video_id, title });
+        const video = await createVideo({ user_id, video_id });
         if (video) {
           res.status(201).json(video);
           return;
