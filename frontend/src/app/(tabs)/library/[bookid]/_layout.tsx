@@ -6,9 +6,9 @@ export default function Layout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: 'fade', // Use native fade animation for smoother transitions
-        gestureEnabled: true, // Allow swipe back
-        animationDuration: 250, // Slightly faster
+        animation: 'fade', 
+        gestureEnabled: true, 
+        animationDuration: 250, 
       }}
     />
   );

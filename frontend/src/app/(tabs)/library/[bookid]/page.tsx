@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -132,14 +132,10 @@ export default function BookPage() {
       </TouchableOpacity>
     );
   }
-  // — List of entries + FAB —
-  // Choose background based on state
-  let bgImage = images.entryCardBg;
-  if (entries.length === 0) bgImage = images.createEntryBg;
 
   return (
-    <ImageBackground source={bgImage} resizeMode="cover" style={{ flex: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 10 }}>
+    <ImageBackground source={images.entryCardBg} resizeMode="cover" style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50, marginBottom: 10 }}>
         {/* Back button */}
         <View
           style={{
@@ -152,7 +148,7 @@ export default function BookPage() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.replace('/(tabs)/library/page')}
+            onPress={() => router.back()}
             activeOpacity={0.8}
             style={{
               width: 44,
@@ -192,8 +188,8 @@ export default function BookPage() {
               textAlign: 'left',
             }}
           >
-            {(bookTitle || 'Book Entries').slice(0, 5)}
-            {bookTitle && bookTitle.length > 5 ? '...' : ''}
+            {(bookTitle || 'Book Entries').slice(0, 10)}
+            {bookTitle && bookTitle.length > 10 ? '...' : ''}
           </Text>
         </View>
       </View>

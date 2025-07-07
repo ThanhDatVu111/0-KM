@@ -40,97 +40,13 @@ app.get('/cloudinary-sign', (_req, res) => {
   res.json({ signature, timestamp });
 });
 
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: [LOCAL_URL, PUBLIC_URL].filter((u): u is string => !!u),
-    methods: ['GET', 'POST'],
-  },
-});
-
-// Shared Yjs document for real-time editing
-const docs = new Map<string, Y.Doc>();
-
-// In your backend server.ts, add awareness logic for Socket.IO
-type AwarenessState = {
-  entryId: string;
-  userId: string;
-  name: string;
-  color: string;
-  field: string | null;
-  caret: number | null;
-};
-
-const awarenessStates = new Map<string, AwarenessState[]>();
-
-io.on('connection', (socket) => {
-  socket.on('join-entry', (entryId: string, initialTitle?: string, initialBody?: string) => {
-    console.log('✅ A client joined entry', entryId);
-    socket.join(entryId);
-
-    // If this is a new doc, seed with initial values if provided
-    if (!docs.has(entryId)) {
-      const ydoc = new Y.Doc();
-      if (initialTitle) {
-        ydoc.getText('entry-title').insert(0, initialTitle);
-      }
-      if (initialBody) {
-        ydoc.getText('entry-body').insert(0, initialBody);
-      }
-      docs.set(entryId, ydoc);
-    }
-
-    const ydoc = docs.get(entryId)!;
-
-    // Send current doc to client
-    const state = Y.encodeStateAsUpdate(ydoc);
-    socket.emit('yjs-initial-state', state);
-
-    // Listen for updates
-    socket.on('yjs-update', (update: Uint8Array) => {
-      Y.applyUpdate(ydoc, update);
-      // Only broadcast to others in the same entry
-      socket.to(entryId).emit('yjs-update', update);
-    });
-
-    // Respond to explicit initial state requests
-    socket.on('request-initial-state', (entryId: string) => {
-      const ydoc = docs.get(entryId)!;
-      const state = Y.encodeStateAsUpdate(ydoc);
-      socket.emit('yjs-initial-state', state);
-    });
-
-    // Add awareness state for this user
-    socket.on('awareness-update', (state: AwarenessState) => {
-      let states = awarenessStates.get(entryId) || [];
-      // Remove any previous state for this user
-      states = states.filter((s) => s.userId !== state.userId);
-      states.push(state);
-      awarenessStates.set(entryId, states);
-      // Broadcast to all in room
-      io.to(entryId).emit('awareness-states', states);
-    });
-    
-    socket.on('disconnect', () => {
-      // Remove awareness state for this user
-      let states = awarenessStates.get(entryId) || [];
-      states = states.filter((s) => s.userId !== socket.id);
-      awarenessStates.set(entryId, states);
-      io.to(entryId).emit('awareness-states', states);
-    });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('❌ A client disconnected');
-  });
-});
-
 const startServer = () => {
   try {
     if (!PORT) {
       throw new Error('🚨 PORT is not defined or invalid.');
     }
     httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log('✅ Server with Socket.IO listening on port', PORT);
+      console.log('✅ Server listening on port', PORT);
       console.log('✅ Local endpoint:', LOCAL_URL);
       console.log('✅ Public endpoint:', PUBLIC_URL);
     });

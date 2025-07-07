@@ -15,6 +15,7 @@ import zoomout from '@/assets/icons/zoomout.png';
 import deleteIcon from '@/assets/icons/delete.png';
 import edit from '@/assets/icons/edit.png';
 import zoomin from '@/assets/icons/zoomin.png';
+import video from '@/assets/icons/video.png';
 
 export default {
   books,
@@ -33,5 +34,6 @@ export default {
   zoomin,
   zoomout,
   deleteIcon,
-  edit
+  edit,
+  video
 };

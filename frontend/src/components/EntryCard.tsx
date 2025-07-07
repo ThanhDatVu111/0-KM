@@ -9,9 +9,17 @@ import {
   Platform,
   UIManager,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import icons from '@/constants/icons';
+import VideoPlayer from './VideoPlayer';
+
+interface MediaItem {
+  uri: string;
+  cloudinaryUrl?: string;
+  type: 'image' | 'video';
+}
 
 interface EntryCardProps {
   title: string;
@@ -21,6 +29,17 @@ interface EntryCardProps {
   location?: { address: string } | null;
   onDelete: () => void;
   onEdit: () => void;
+}
+
+// Helper to map string URLs to MediaItem objects
+function mapMediaArray(media: string[]): MediaItem[] {
+  return media.map((url) => {
+    if (url.match(/\.(mp4|mov|webm)$/)) {
+      return { type: 'video', cloudinaryUrl: url, uri: url };
+    } else {
+      return { type: 'image', cloudinaryUrl: url, uri: url };
+    }
+  });
 }
 
 const EntryCard: React.FC<EntryCardProps> = ({
@@ -55,22 +74,27 @@ const EntryCard: React.FC<EntryCardProps> = ({
 
   const extraCount = media.length > 5 ? media.length - 5 : 0;
 
-  // Grab up to 5 URIs
-  const uri0 = media[0];
-  const uri1 = media[1];
-  const uri2 = media[2];
-  const uri3 = media[3];
-  const uri4 = media[4];
+  // Grab up to 5 media items (image or video)
+  const mediaItems: MediaItem[] =
+    typeof media[0] === 'string'
+      ? mapMediaArray(media as string[])
+      : (media as unknown as MediaItem[]);
+  const item0 = mediaItems[0];
+  const item1 = mediaItems[1];
+  const item2 = mediaItems[2];
+  const item3 = mediaItems[3];
+  const item4 = mediaItems[4];
 
   // Carousel image height (easy to update in one place)
   const CAROUSEL_HEIGHT = 256; // 64 * 4 = 256, matches h-64
-
   // Carousel width state for paging
   const [carouselWidth, setCarouselWidth] = useState(0);
+  // Carousel image loading state (for all images in carousel)
+  const [carouselImageLoaded, setCarouselImageLoaded] = useState(media.map(() => false));
 
   // Single-image view for expanded mode
   const renderCarousel = () => {
-    if (!media.length) {
+    if (!mediaItems.length) {
       return (
         <View
           className="w-full bg-gray-200 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center"
@@ -113,28 +137,56 @@ const EntryCard: React.FC<EntryCardProps> = ({
               setCarouselIndex(index);
             }
           }}
-          contentContainerStyle={{ width: carouselWidth * media.length }}
+          contentContainerStyle={{ width: carouselWidth * mediaItems.length }}
           style={{ width: '100%', height: CAROUSEL_HEIGHT }}
           scrollEventThrottle={16}
         >
-          {media.map((uri, idx) => (
-            <View key={idx} style={{ width: carouselWidth, height: CAROUSEL_HEIGHT }}>
-              <Image
-                source={{ uri }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 12,
-                  borderWidth: 2,
-                  borderColor: 'transparent',
-                }}
-                resizeMode="cover"
-              />
+          {mediaItems.map((item, idx) => (
+            <View
+              key={idx}
+              style={{
+                width: carouselWidth,
+                height: CAROUSEL_HEIGHT,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {item.type === 'image' ? (
+                <Image
+                  source={{ uri: item.cloudinaryUrl || item.uri }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor: 'transparent',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                  resizeMode="cover"
+                  onLoadEnd={() => {
+                    setCarouselImageLoaded((prev) => {
+                      const arr = [...prev];
+                      arr[idx] = true;
+                      return arr;
+                    });
+                  }}
+                />
+              ) : (
+                <VideoPlayer
+                  uri={item.cloudinaryUrl || item.uri}
+                  style={{ width: '100%', height: '100%', borderRadius: 12 }}
+                />
+              )}
+              {!carouselImageLoaded[idx] && item.type === 'image' && (
+                <ActivityIndicator size="large" color="#A270E6" style={{ position: 'absolute' }} />
+              )}
             </View>
           ))}
         </ScrollView>
         {/* Indicator */}
-        {media.length > 1 && (
+        {mediaItems.length > 1 && (
           <View
             style={{
               position: 'absolute',
@@ -146,7 +198,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
               justifyContent: 'center',
             }}
           >
-            {media.map((_, idx) => (
+            {mediaItems.map((_, idx) => (
               <View
                 key={idx}
                 style={{
@@ -168,13 +220,35 @@ const EntryCard: React.FC<EntryCardProps> = ({
 
   // Collage image height (easy to update in one place)
   const COLLAGE_HEIGHT = 140; // 36 * 4 = 144, close to 140 for pixel grid
+  // Helper to render a media item (image or video)
+  function renderMediaItem(item: MediaItem | undefined, style: any, key?: number) {
+    if (!item) return null;
+    const baseStyle = {
+      borderWidth: 2,
+      borderColor: 'transparent',
+      borderRadius: 12,
+      ...style,
+    };
+    if (item.type === 'image') {
+      return (
+        <Image
+          key={key}
+          source={{ uri: item.cloudinaryUrl || item.uri }}
+          style={baseStyle}
+          resizeMode="cover"
+        />
+      );
+    }
+    if (item.type === 'video') {
+      return <VideoPlayer key={key} uri={item.cloudinaryUrl || item.uri} style={baseStyle} />;
+    }
+    return null;
+  }
 
   const renderCollage = () => {
-    // Common style for all collage images/containers
     const collageContainerStyle = { height: COLLAGE_HEIGHT };
-    const imageStyle = 'rounded-lg border-2 border-transparent';
-    switch (media.length) {
-      // ─── CASE 0: no images ───
+    const itemStyle = { borderRadius: 12 };
+    switch (mediaItems.length) {
       case 0:
         return (
           <View
@@ -198,142 +272,55 @@ const EntryCard: React.FC<EntryCardProps> = ({
             </Text>
           </View>
         );
-
-      // ─── CASE 1: one image fills entire width ───
       case 1:
         return (
           <View style={collageContainerStyle}>
-            <Image
-              source={{ uri: uri0! }}
-              className={`w-full h-full ${imageStyle}`}
-              resizeMode="cover"
-            />
+            {renderMediaItem(item0, { ...itemStyle, width: '100%', height: '100%' })}
           </View>
         );
-
-      // ─── CASE 2: two images side-by-side (50/50) ───
       case 2:
         return (
-          <View className="flex-row space-x-1" style={collageContainerStyle}>
-            <Image
-              source={{ uri: uri0! }}
-              className={`w-1/2 h-full ${imageStyle}`}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: uri1! }}
-              className={`w-1/2 h-full ${imageStyle}`}
-              resizeMode="cover"
-            />
+          <View style={[collageContainerStyle, { flexDirection: 'row' }]}>
+            {[item0, item1].map((item, idx) =>
+              renderMediaItem(item, { ...itemStyle, width: '50%', height: '100%' }, idx),
+            )}
           </View>
         );
-
-      // ─── CASE 3: one large left + two stacked on right ───
       case 3:
         return (
-          <View className="flex-row space-x-1" style={collageContainerStyle}>
-            {/* Left: 50% width */}
-            <Image
-              source={{ uri: uri0! }}
-              className={`w-1/2 h-full ${imageStyle}`}
-              resizeMode="cover"
-            />
-            {/* Right: two stacked (each h-1/2) */}
-            <View className="w-1/2 flex-col space-y-1 h-full">
-              <Image
-                source={{ uri: uri1! }}
-                className={`w-full h-1/2 ${imageStyle}`}
-                resizeMode="cover"
-              />
-              <Image
-                source={{ uri: uri2! }}
-                className={`w-full h-1/2 ${imageStyle}`}
-                resizeMode="cover"
-              />
+          <View style={[collageContainerStyle, { flexDirection: 'row' }]}>
+            {renderMediaItem(item0, { ...itemStyle, width: '50%', height: '100%' })}
+            <View style={{ width: '50%', height: '100%' }}>
+              {[item1, item2].map((item, idx) =>
+                renderMediaItem(item, { ...itemStyle, width: '100%', height: '50%' }, idx),
+              )}
             </View>
           </View>
         );
-
-      // ─── CASE 4: 2×2 grid, equal squares ───
       case 4:
         return (
-          <View className="flex-row flex-wrap" style={collageContainerStyle}>
-            <Image
-              source={{ uri: uri0! }}
-              className={`w-1/2 h-1/2 ${imageStyle}`}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: uri1! }}
-              className={`w-1/2 h-1/2 ${imageStyle}`}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: uri2! }}
-              className={`w-1/2 h-1/2 ${imageStyle}`}
-              resizeMode="cover"
-            />
-            <Image
-              source={{ uri: uri3! }}
-              className={`w-1/2 h-1/2 ${imageStyle}`}
-              resizeMode="cover"
-            />
+          <View style={[collageContainerStyle, { flexDirection: 'row', flexWrap: 'wrap' }]}>
+            {[item0, item1, item2, item3].map((item, idx) =>
+              renderMediaItem(item, { ...itemStyle, width: '50%', height: '50%' }, idx),
+            )}
           </View>
         );
-
-      // ─── CASE 5+: one large left + 2×2 mini + “+N” overlay ───
       default:
         return (
-          <View className="flex-row space-x-1" style={collageContainerStyle}>
-            {/* Left: 50% width */}
-            <Image
-              source={{ uri: uri0! }}
-              className={`w-1/2 h-full ${imageStyle}`}
-              resizeMode="cover"
-            />
-            {/* Right: a 2×2 grid */}
-            <View className="w-1/2 flex-row flex-wrap relative h-full">
-              {/* Top-left mini (fills quarter of total) */}
-              <Image
-                source={{ uri: uri1! }}
-                className={`w-1/2 h-1/2 ${imageStyle}`}
-                resizeMode="cover"
-              />
-              {/* Top-right mini */}
-              <Image
-                source={{ uri: uri2! }}
-                className={`w-1/2 h-1/2 ${imageStyle}`}
-                resizeMode="cover"
-              />
-              {/* Bottom-left mini */}
-              <Image
-                source={{ uri: uri3! }}
-                className={`w-1/2 h-1/2 ${imageStyle}`}
-                resizeMode="cover"
-              />
-              {/* Bottom-right mini with +N overlay */}
-              <View className="relative w-1/2 h-1/2 rounded-lg overflow-hidden">
-                <Image
-                  source={{ uri: uri4! }}
-                  className="w-full h-full rounded-lg border-2 border-white"
-                  resizeMode="cover"
-                />
-                {extraCount > 0 && (
-                  <>
-                    {/* 1) The blur layer */}
-                    <BlurView
-                      intensity={10}
-                      tint="default"
-                      className="absolute inset-0 rounded-lg"
-                    />
-
-                    {/* 2) The “+N” text on top */}
-                    <View className="absolute inset-0 flex items-center justify-center rounded-lg">
-                      <Text className="text-white font-semibold text-lg">+{extraCount}</Text>
-                    </View>
-                  </>
-                )}
-              </View>
+          <View style={[collageContainerStyle, { flexDirection: 'row' }]}>
+            {renderMediaItem(item0, { ...itemStyle, width: '50%', height: '100%' })}
+            <View
+              style={{
+                width: '50%',
+                height: '100%',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                position: 'relative',
+              }}
+            >
+              {[item1, item2, item3, item4].map((item, idx) =>
+                renderMediaItem(item, { ...itemStyle, width: '50%', height: '50%' }, idx),
+              )}
             </View>
           </View>
         );
@@ -496,7 +483,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
           borderRadius: 10,
           borderColor: '#220E6D',
           borderWidth: 3,
-          position: 'absolute'
+          position: 'absolute',
         }}
       ></View>
 
@@ -508,7 +495,7 @@ const EntryCard: React.FC<EntryCardProps> = ({
           top: layer4Top,
           position: 'absolute',
           backgroundColor: '#F8EAF8',
-          borderRadius: 10
+          borderRadius: 10,
         }}
       >
         <View
