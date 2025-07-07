@@ -4,9 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
   Image,
 } from 'react-native';
 import { useSignUp, useSSO } from '@clerk/clerk-expo';
@@ -65,36 +62,10 @@ export default function SignUpForm() {
     }
   };
 
-<<<<<<< HEAD
-  return (
-    <View>
-      <View className="w-[300px]">
-        <View className="flex-row justify-end mb-4">
-        </View>
-        <FormInput
-          label="Email"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder=""
-          onChangeText={setEmailAddress}
-        />
-        <FormInput
-          label="Password"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={password}
-          placeholder=""
-          secureTextEntry={true}
-          onChangeText={setPassword}
-        />
-      </View>
-=======
   // ✅ Sign in with Google (OAuth)
   // Handle any pending authentication sessions
   WebBrowser.maybeCompleteAuthSession();
   useWarmUpBrowser();
->>>>>>> origin/main
 
   // Use the `useSSO()` hook to access the `startSSOFlow()` method
   const { startSSOFlow } = useSSO();
