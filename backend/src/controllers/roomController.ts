@@ -151,3 +151,55 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
     next(err);
   }
 }
+
+// Update Playback State
+export async function updatePlaybackState(
+  req: Request<{ room_id: string }, {}, { playback_state: any; user_id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { room_id } = req.params;
+    const { playback_state, user_id } = req.body;
+
+    if (!room_id || !playback_state || !user_id) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    // Add the controlling user to the playback state
+    const updatedPlaybackState = {
+      ...playback_state,
+      controlled_by_user_id: user_id,
+    };
+
+    const result = await roomService.updatePlaybackState(room_id, updatedPlaybackState);
+    res.json({ data: result });
+  } catch (err: any) {
+    next(err);
+  }
+}
+
+// Get Playback State
+export async function getPlaybackState(
+  req: Request<{ room_id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { room_id } = req.params;
+    console.log('🎵 Getting playback state for room:', room_id);
+
+    if (!room_id) {
+      res.status(400).json({ error: 'Missing room_id parameter' });
+      return;
+    }
+
+    const playbackState = await roomService.getPlaybackState(room_id);
+    console.log('🎵 Playback state result:', playbackState);
+    res.json({ data: playbackState });
+  } catch (err: any) {
+    console.error('❌ Error getting playback state:', err);
+    next(err);
+  }
+}

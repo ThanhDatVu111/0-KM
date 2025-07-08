@@ -363,6 +363,7 @@ const Home = () => {
               console.log('Spotify signed out');
               // You can add additional cleanup logic here if needed
             }}
+            roomId={roomId}
           />
         </View>
 

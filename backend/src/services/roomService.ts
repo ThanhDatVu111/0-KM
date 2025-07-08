@@ -37,3 +37,11 @@ export async function updateRoom(room_id: string, user_id: string) {
 export async function getRoomById(room_id: string) {
   return roomModel.getRoomById(room_id);
 }
+
+export async function updatePlaybackState(room_id: string, playback_state: any) {
+  return roomModel.updatePlaybackState(room_id, playback_state);
+}
+
+export async function getPlaybackState(room_id: string) {
+  return roomModel.getPlaybackState(room_id);
+}

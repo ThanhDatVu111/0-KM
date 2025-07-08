@@ -58,7 +58,7 @@ class ApiClient {
 
   async get(endpoint: string, userToken?: string | null) {
     const response = await this.request(endpoint, { method: 'GET' }, userToken);
-    return response.json();
+    return response;
   }
 
   async post(endpoint: string, data?: any, userToken?: string | null) {

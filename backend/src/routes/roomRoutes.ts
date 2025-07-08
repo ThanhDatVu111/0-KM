@@ -5,6 +5,8 @@ import {
   joinRoom,
   deleteRoom,
   updateRoom,
+  updatePlaybackState,
+  getPlaybackState,
 } from '../controllers/roomController';
 
 const router = Router();
@@ -13,7 +15,13 @@ const router = Router();
 router.post('/', createRoom);
 router.put('/:room_id', joinRoom);
 router.delete('/:room_id', deleteRoom);
-router.get('/:user_id', fetchRoom);
 router.patch('/:room_id', updateRoom);
+
+// Playback state routes (must come before the generic user_id route)
+router.put('/:room_id/playback', updatePlaybackState);
+router.get('/:room_id/playback', getPlaybackState);
+
+// User-specific routes (must come last to avoid conflicts)
+router.get('/:user_id', fetchRoom);
 
 export default router;

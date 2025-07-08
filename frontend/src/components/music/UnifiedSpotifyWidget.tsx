@@ -7,6 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
 import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
+import { useSharedPlayback } from '../../hooks/useSharedPlayback';
 
 type SpotifyTrack = {
   id: string;
@@ -25,6 +26,7 @@ type Props = {
   canControl?: boolean;
   onAddTrack?: () => void;
   onSignOut?: () => void;
+  roomId?: string | null;
 };
 
 type SpotifyState = 'not-connected' | 'connected-no-track' | 'has-track';
@@ -36,6 +38,7 @@ export function UnifiedSpotifyWidget({
   canControl = false,
   onAddTrack,
   onSignOut,
+  roomId,
 }: Props) {
   const { userId } = useAuth();
   const [currentTime, setCurrentTime] = useState(0);
@@ -55,6 +58,26 @@ export function UnifiedSpotifyWidget({
     setVolume,
     seekToPosition,
   } = useSpotifyPlayback();
+
+  // Shared playback controls (for room sync)
+  const {
+    sharedPlaybackState,
+    isLoading: sharedLoading,
+    error: sharedError,
+    togglePlayPause: sharedTogglePlayPause,
+    playTrack: sharedPlayTrack,
+    skipToNext: sharedSkipToNext,
+    skipToPrevious: sharedSkipToPrevious,
+  } = useSharedPlayback(roomId || null);
+
+  // Use shared playback if in a room, otherwise use local
+  const isInRoom = !!roomId;
+  const currentPlaybackState = isInRoom ? sharedPlaybackState : playbackState;
+  const currentTogglePlayPause = isInRoom ? sharedTogglePlayPause : togglePlayPause;
+  const currentSkipToNext = isInRoom ? sharedSkipToNext : skipToNext;
+  const currentSkipToPrevious = isInRoom ? sharedSkipToPrevious : skipToPrevious;
+  const currentPlayTrack = isInRoom ? sharedPlayTrack : playTrack;
+  const isLoading = isInRoom ? sharedLoading : playbackLoading;
 
   // Determine the current state
   useEffect(() => {
@@ -427,29 +450,34 @@ export function UnifiedSpotifyWidget({
         {canControl && (
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={skipToPrevious}
+              onPress={currentSkipToPrevious}
               style={styles.controlButton}
-              disabled={playbackLoading}
+              disabled={isLoading}
             >
               <Ionicons name="play-skip-back" size={24} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={togglePlayPause}
+              onPress={currentTogglePlayPause}
               style={styles.playButton}
-              disabled={playbackLoading}
+              disabled={isLoading}
             >
               <Ionicons
-                name={playbackState?.isPlaying ? 'pause' : 'play'}
+                name={
+                  (isInRoom && (currentPlaybackState as any)?.is_playing) ||
+                  (!isInRoom && (currentPlaybackState as any)?.isPlaying)
+                    ? 'pause'
+                    : 'play'
+                }
                 size={32}
                 color="white"
               />
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={skipToNext}
+              onPress={currentSkipToNext}
               style={styles.controlButton}
-              disabled={playbackLoading}
+              disabled={isLoading}
             >
               <Ionicons name="play-skip-forward" size={24} color="white" />
             </TouchableOpacity>
