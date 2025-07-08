@@ -8,7 +8,9 @@ import { CreateEntry } from '@/apis/entries';
 
 export default function NewEntryScreen() {
   const router = useRouter();
-  const { bookId: rawBookId } = useLocalSearchParams<{ bookId: string }>();
+  const params = useLocalSearchParams<{ bookId: string; bookTitle?: string }>();
+  const rawBookId = params.bookId;
+  const bookTitle = params.bookTitle || ''; // Extract bookTitle parameter
   const [saving, setSaving] = useState(false);
   const bookId = Array.isArray(rawBookId) ? rawBookId[0]! : rawBookId!;
   const now = new Date();
@@ -34,6 +36,7 @@ export default function NewEntryScreen() {
         pathname: `/library/[bookId]/page`,
         params: { 
           bookId, 
+          title: bookTitle, // Pass back the book title
           refresh: Date.now().toString() // Use timestamp to ensure it's always different
         }
       });

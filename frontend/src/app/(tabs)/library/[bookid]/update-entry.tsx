@@ -18,6 +18,7 @@ export default function UpdateEntryScreen() {
   const initialTitle = params.title || '';
   const initialBody = params.body || '';
   const initialLocation = params.location || '';
+  const bookTitle = params.bookTitle || ''; // Extract bookTitle parameter
   const initialUpdatedAt = new Date().toISOString();
   const initialMedia: MediaItem[] = params.media
     ? params.media
@@ -56,6 +57,7 @@ export default function UpdateEntryScreen() {
         pathname: `/library/[bookId]/page`,
         params: {
           bookId,
+          title: bookTitle, // Pass back the book title
           refresh: Date.now().toString(), // Use timestamp to ensure it's always different
         },
       });

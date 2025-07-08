@@ -81,12 +81,18 @@ export default function BookPage() {
         media: entry.media_paths,
         location: entry.location?.address || '',
         updatedAt: entry.updated_at,
+        bookTitle: bookTitle, // Pass the book title to preserve it
       },
     });
   };
 
   const goCreate = () => {
-    router.push(`/library/${bookId}/create-entry`);
+    router.push({
+      pathname: `/library/${bookId}/create-entry` as any,
+      params: {
+        bookTitle: bookTitle, // Pass the book title to preserve it
+      },
+    });
   };
 
   function renderPlusButton(onPress: () => void) {
@@ -140,7 +146,7 @@ export default function BookPage() {
 
   return (
     <ImageBackground source={bgImage} resizeMode="cover" style={{ flex: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 70, marginBottom: 18 }}>
         {/* Back button */}
         <View
           style={{
@@ -189,12 +195,12 @@ export default function BookPage() {
               textShadowColor: 'black',
               textShadowOffset: { width: 3, height: 3 },
               textShadowRadius: 0,
-              fontSize: 50,
+              fontSize: 28,
               textAlign: 'left',
             }}
           >
-            {(bookTitle || 'Book Entries').slice(0, 5)}
-            {bookTitle && bookTitle.length > 5 ? '...' : ''}
+            {(bookTitle || '').slice(0, 15)}
+            {bookTitle && bookTitle.length > 15 ? '...' : ''}
           </Text>
         </View>
       </View>

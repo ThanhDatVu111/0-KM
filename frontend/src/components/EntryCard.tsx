@@ -318,9 +318,49 @@ const EntryCard: React.FC<EntryCardProps> = ({
                 position: 'relative',
               }}
             >
-              {[item1, item2, item3, item4].map((item, idx) =>
-                renderMediaItem(item, { ...itemStyle, width: '50%', height: '50%' }, idx),
-              )}
+              {[item1, item2, item3, item4].map((item, idx) => (
+                <View
+                  key={idx}
+                  style={{
+                    width: '50%',
+                    height: '50%',
+                    position: 'relative',
+                  }}
+                >
+                  {renderMediaItem(item, { ...itemStyle, width: '100%', height: '100%' })}
+                  {/* Overlay for extra images on the last item */}
+                  {idx === 3 && extraCount > 0 && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        borderRadius: 12,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: 'PixelifySans',
+                          fontSize: 18,
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textAlign: 'center',
+                          textShadowColor: '#000',
+                          textShadowOffset: { width: 1, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        +{extraCount}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
             </View>
           </View>
         );

@@ -20,12 +20,20 @@ import images from '@/constants/images';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { createClient } from '@supabase/supabase-js';
+import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 const Profile = () => {
   const router = useRouter();
   const { isLoaded, isSignedIn, userId, signOut } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [room, setRoom] = useState<any>(null);
+  const [partner, setPartner] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editUsername, setEditUsername] = useState('');
   const [editBirthdate, setEditBirthdate] = useState('');
@@ -33,7 +41,29 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
   const [newPhoto, setNewPhoto] = useState<any>(null);
-  let isLastUser = false;
+
+  // Function to fetch partner data
+  const fetchPartnerData = async (roomData: any) => {
+    if (!roomData || !userId) return;
+
+    const users = [roomData.user_1, roomData.user_2].filter(Boolean);
+    const partnerId = users.find((id) => id !== userId);
+
+    if (partnerId) {
+      try {
+        console.log('🔍 PROFILE: Fetching partner data for:', partnerId);
+        const partnerData = await fetchUser(partnerId);
+        setPartner(partnerData);
+        console.log('✅ PROFILE: Partner data fetched:', partnerData.username);
+      } catch (err) {
+        console.error('❌ PROFILE: Failed to fetch partner data:', err);
+        setPartner(null);
+      }
+    } else {
+      console.log('🔍 PROFILE: No partner found in room');
+      setPartner(null);
+    }
+  };
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -45,9 +75,13 @@ const Profile = () => {
         setEditUsername(userData?.username || '');
         setEditBirthdate(userData?.birthdate || '');
         setPhotoUrl(userData?.photo_url);
+
         // Fetch room info
         const roomData = await fetchRoom({ user_id: userId! });
         setRoom(roomData);
+
+        // Fetch partner data if room has a partner
+        await fetchPartnerData(roomData);
       } catch (err) {
         Alert.alert('Error', 'Failed to fetch user or room info');
       } finally {
@@ -55,6 +89,58 @@ const Profile = () => {
       }
     })();
   }, [isLoaded, isSignedIn, userId]);
+
+  // Supabase Realtime subscription to monitor room changes
+  useEffect(() => {
+    if (!room?.room_id || !userId) return;
+
+    console.log('🔴 PROFILE: Setting up Realtime subscription for room:', room.room_id);
+
+    const channel = supabase
+      .channel(`profile-room-${room.room_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${room.room_id}`,
+        },
+        async (payload: any) => {
+          console.log('🟢 PROFILE: Realtime room update received:', payload);
+
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new;
+            const users = [updated.user_1, updated.user_2].filter(Boolean);
+
+            console.log('🟢 PROFILE: Users in room after update:', users);
+
+            // Update room state
+            setRoom(updated);
+
+            // Check if partner left (room now has only current user)
+            if (users.length === 1 && users[0] === userId) {
+              console.log('🟢 PROFILE: Partner left the room');
+              setPartner(null);
+              Alert.alert('Partner Update', 'Your partner has left the room.');
+            }
+            // Check if partner joined (room now has 2 users)
+            else if (users.length === 2) {
+              console.log('🟢 PROFILE: Partner joined or room is full');
+              await fetchPartnerData(updated);
+            }
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log('🔵 PROFILE SUBSCRIPTION STATUS:', status);
+      });
+
+    return () => {
+      console.log('🔴 PROFILE: Unsubscribing from room:', room.room_id);
+      supabase.removeChannel(channel);
+    };
+  }, [room?.room_id, userId]);
 
   const isValidBirthdate = (date: string) => {
     // Simple regex for YYYY-MM-DD
@@ -74,14 +160,28 @@ const Profile = () => {
         }
         updateData.birthdate = editBirthdate;
       }
+
+      // Upload photo to Cloudinary if a new photo was selected
       if (newPhoto) {
-        updateData.photo_url = newPhoto.uri;
+        try {
+          console.log('🔄 Uploading profile photo to Cloudinary...');
+          const cloudinaryUrl = await uploadToCloudinary(newPhoto.uri, 'image');
+          updateData.photo_url = cloudinaryUrl;
+          console.log('✅ Profile photo uploaded to:', cloudinaryUrl);
+        } catch (uploadErr: any) {
+          console.error('❌ Failed to upload profile photo:', uploadErr);
+          Alert.alert('Upload Error', 'Failed to upload profile photo. Please try again.');
+          setSaving(false);
+          return;
+        }
       }
+
       if (Object.keys(updateData).length === 0) {
         Alert.alert('No changes', 'You have not made any changes to your profile.');
         setSaving(false);
         return;
       }
+
       const result = await updateUserProfileUnified(userId!, updateData);
       setUser({ ...user, ...result });
       if (result.photo_url) setPhotoUrl(result.photo_url);
@@ -137,6 +237,8 @@ const Profile = () => {
             onPress: async () => {
               try {
                 await updateRoom(latestRoom.room_id, user.user_id);
+                // Clear partner state when leaving
+                setPartner(null);
                 router.replace('/(onboard)/join-room');
               } catch (err) {
                 Alert.alert('Error', 'Failed to leave the room.');
@@ -157,6 +259,8 @@ const Profile = () => {
               onPress: async () => {
                 try {
                   await deleteRoom({ room_id: latestRoom.room_id });
+                  // Clear partner state when deleting room
+                  setPartner(null);
                   router.replace('/(onboard)/join-room');
                 } catch (err) {
                   Alert.alert('Error', 'Failed to leave and delete the room.');
@@ -422,6 +526,109 @@ const Profile = () => {
                     <Text style={{ fontSize: 14, color: 'gray', marginTop: 8 }}>
                       Account created: {createdAt}
                     </Text>
+
+                    {/* Partner Profile Section */}
+                    {partner && (
+                      <View
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#F3EEFF',
+                          borderRadius: 12,
+                          borderWidth: 2,
+                          borderColor: '#6536DD',
+                          padding: 16,
+                          marginTop: 16,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 'bold',
+                            color: '#6536DD',
+                            marginBottom: 12,
+                            textAlign: 'center',
+                          }}
+                        >
+                          Your Partner
+                        </Text>
+                        <Image
+                          source={{ uri: partner.photo_url }}
+                          style={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: 30,
+                            marginBottom: 8,
+                            borderWidth: 2,
+                            borderColor: '#6536DD',
+                          }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 'bold',
+                            color: '#6536DD',
+                            marginBottom: 4,
+                          }}
+                        >
+                          {partner.username}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: '#666',
+                            marginBottom: 4,
+                          }}
+                        >
+                          {partner.birthdate}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: '#888',
+                            textAlign: 'center',
+                          }}
+                        >
+                          Paired since {new Date(partner.created_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    )}
+
+                    {!partner && room?.room_id && (
+                      <View
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#FFF3E0',
+                          borderRadius: 12,
+                          borderWidth: 2,
+                          borderColor: '#FF9800',
+                          padding: 16,
+                          marginTop: 16,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            color: '#FF9800',
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          Waiting for Partner
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: '#666',
+                            textAlign: 'center',
+                            marginTop: 4,
+                          }}
+                        >
+                          Share your room code with someone to get paired!
+                        </Text>
+                      </View>
+                    )}
                     {/* Button group for room actions */}
                     <View style={{ width: '100%', alignItems: 'center', marginTop: 16 }}>
                       {room?.room_id && (
@@ -434,15 +641,15 @@ const Profile = () => {
                             );
                           }}
                           style={{
-                            backgroundColor: '#6536DD',
+                            backgroundColor: '#4CAF50',
                             borderRadius: 8,
                             borderWidth: 2,
-                            borderColor: '#F24187',
+                            borderColor: '#2E7D32',
                             paddingVertical: 8,
                             paddingHorizontal: 20,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            shadowColor: '#F24187',
+                            shadowColor: '#2E7D32',
                             shadowOffset: { width: 2, height: 2 },
                             shadowOpacity: 1,
                             shadowRadius: 0,
@@ -464,70 +671,78 @@ const Profile = () => {
                         </Pressable>
                       )}
                       {!editing && (
-                        <Pressable
-                          onPress={leaveRoom}
+                        <View
                           style={{
-                            backgroundColor: '#F24187',
-                            borderRadius: 8,
-                            borderWidth: 2,
-                            borderColor: '#6536DD',
-                            paddingVertical: 8,
-                            paddingHorizontal: 20,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            shadowColor: '#6536DD',
-                            shadowOffset: { width: 2, height: 2 },
-                            shadowOpacity: 1,
-                            shadowRadius: 0,
-                            elevation: 8,
+                            flexDirection: 'row',
+                            gap: 12,
                             marginTop: 16,
+                            justifyContent: 'center',
+                            width: '100%',
                           }}
                         >
-                          <Text
+                          <Pressable
+                            onPress={leaveRoom}
                             style={{
-                              color: '#fff',
-                              fontFamily: 'PressStart2P',
-                              fontSize: 12,
-                              letterSpacing: 2,
-                              textTransform: 'uppercase',
+                              backgroundColor: '#F24187',
+                              borderRadius: 8,
+                              borderWidth: 2,
+                              borderColor: '#6536DD',
+                              paddingVertical: 8,
+                              paddingHorizontal: 16,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              shadowColor: '#6536DD',
+                              shadowOffset: { width: 2, height: 2 },
+                              shadowOpacity: 1,
+                              shadowRadius: 0,
+                              elevation: 8,
+                              flex: 1,
                             }}
                           >
-                            Leave Room
-                          </Text>
-                        </Pressable>
-                      )}
-                      {!editing && (
-                        <Pressable
-                          onPress={handleLogout}
-                          style={{
-                            backgroundColor: '#6536DD',
-                            borderRadius: 8,
-                            borderWidth: 2,
-                            borderColor: '#F24187',
-                            paddingVertical: 8,
-                            paddingHorizontal: 20,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            shadowColor: '#F24187',
-                            shadowOffset: { width: 2, height: 2 },
-                            shadowOpacity: 1,
-                            shadowRadius: 0,
-                            elevation: 8,
-                            marginTop: 16,
-                          }}
-                        >
-                          <Text
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontFamily: 'PressStart2P',
+                                fontSize: 10,
+                                letterSpacing: 1,
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              Leave Room
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={handleLogout}
                             style={{
-                              color: '#fff',
-                              fontFamily: 'PressStart2P',
-                              fontSize: 12,
-                              letterSpacing: 2,
-                              textTransform: 'uppercase',
+                              backgroundColor: '#6536DD',
+                              borderRadius: 8,
+                              borderWidth: 2,
+                              borderColor: '#F24187',
+                              paddingVertical: 8,
+                              paddingHorizontal: 16,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              shadowColor: '#F24187',
+                              shadowOffset: { width: 2, height: 2 },
+                              shadowOpacity: 1,
+                              shadowRadius: 0,
+                              elevation: 8,
+                              flex: 1,
                             }}
                           >
-                            Log Out
-                          </Text>
-                        </Pressable>
+                            <Text
+                              style={{
+                                color: '#fff',
+                                fontFamily: 'PressStart2P',
+                                fontSize: 10,
+                                letterSpacing: 1,
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              Log Out
+                            </Text>
+                          </Pressable>
+                        </View>
                       )}
                     </View>
                   </View>
