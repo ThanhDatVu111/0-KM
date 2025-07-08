@@ -35,7 +35,10 @@ export interface CreateCalendarEventRequest {
     description?: string;
     start: { dateTime: string; timeZone: string };
     end: { dateTime: string; timeZone: string };
-    attendees?: { email: string }[];
+    attendees: {
+      email: string;
+    }[];
+
     conferenceData?: any;
   };
   sendUpdates?: 'all' | 'externalOnly' | 'none' | 'email';
@@ -70,6 +73,7 @@ export async function createCalendarEvent({
 }
 
 export interface CreateEventRequest {
+  id?: string;
   room_id: string;
   user_1: string;
   user_2: string;

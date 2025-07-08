@@ -359,19 +359,18 @@ function GGCalendar() {
       const endDate = new Date(startDate.getTime() + 30 * 60000);
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
-      // Get emails for attendees (current user and partner)
-      const myEmail = user_email; // Replace with real email if available
-      const partnerEmail = partner_email; // Replace with real email if available
-      const attendees = [myEmail, partnerEmail]
-        .filter((email): email is string => Boolean(email))
-        .map((email) => ({ email }));
+      const attendees = [
+        {
+          email: partner_email,
+        },
+      ];
 
       const event = {
         summary: eventTitle,
         description: eventDescription,
         start: { dateTime: startDate.toISOString(), timeZone },
         end: { dateTime: endDate.toISOString(), timeZone },
-        attendees,
+        attendees: attendees,
         conferenceData: {
           createRequest: {
             requestId: `${userId || 'user'}-${Date.now()}`,
@@ -382,18 +381,19 @@ function GGCalendar() {
       // Create event for both users, send email
       await Promise.all([
         createCalendarEvent({ accessToken: access_token, event, sendUpdates: 'all' }),
-        createCalendarEvent({ accessToken: other_access_token, event, sendUpdates: 'all' }),
-        createEvent({
-          room_id: room_id,
-          user_1: userId ?? '',
-          user_2: other_user_id,
-          start_time: event.start.dateTime,
-          start_timezone: event.start.timeZone,
-          end_time: event.end.dateTime,
-          end_timezone: event.end.timeZone,
-          title: eventTitle,
-        }),
       ]);
+
+      await createEvent({
+        room_id: room_id,
+        user_1: userId ?? '',
+        user_2: other_user_id,
+        start_time: event.start.dateTime,
+        start_timezone: event.start.timeZone,
+        end_time: event.end.dateTime,
+        end_timezone: event.end.timeZone,
+        title: eventTitle,
+      });
+
       setModalVisible(false);
       setEventTitle('');
       setEventDescription('');
