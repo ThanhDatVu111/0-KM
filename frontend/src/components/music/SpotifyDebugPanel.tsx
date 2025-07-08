@@ -114,7 +114,7 @@ export function SpotifyDebugPanel() {
       const devices = await spotifyPlayback.getDevices();
       console.log('🎧 Available Spotify devices:', devices);
       Alert.alert('Devices', JSON.stringify(devices, null, 2));
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', 'Failed to get devices: ' + error.message);
     }
   };
@@ -175,7 +175,7 @@ export function SpotifyDebugPanel() {
       });
       Alert.alert('Success', `Playing track on ${device.name}`);
       console.log('▶️ Playing track:', trackUri, 'on device:', device.name);
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', 'Failed to transfer and play: ' + error.message);
       console.error('❌ Transfer & Play error:', error);
     }
