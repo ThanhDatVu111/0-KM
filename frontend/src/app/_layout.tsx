@@ -5,16 +5,30 @@ import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import '@/app/globals.css';
 import { useEntryGuard } from '@/hooks/useEntryGuard';
 import useFont from '@/hooks/useFont';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SocketProvider } from '@/utils/SocketProvider';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+    },
+  },
+});
 
 function AuthenticatedLayout() {
   // Use the custom hook for authentication and redirection
   useEntryGuard();
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false, // Hides the top bar
-      }}
-    ></Stack>
+    <SocketProvider>
+      <QueryClientProvider client={queryClient}>
+        <Stack
+          screenOptions={{
+            headerShown: false, // Hides the top bar
+          }}
+        ></Stack>
+      </QueryClientProvider>
+    </SocketProvider>
   );
 }
 
