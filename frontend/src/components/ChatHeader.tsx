@@ -2,16 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Platform, View, Text, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { router } from 'expo-router';
 import icons from '@/constants/icons';
-import { fetchRoom } from '@/apis/room';
-import { fetchUser } from '@/apis/user';
 import { Feather } from '@expo/vector-icons';
-import { usePagination } from '@/hooks/usePagination';
 
 interface ChatHeaderProps {
-  room_id: string;
   partnerName?: string;
   avatar_url?: string;
-  isOnline?: boolean;
+  isOnline: boolean;
   onBackPress?: () => void;
   onCallPress?: () => void;
   onVideoPress?: () => void;
@@ -27,10 +23,9 @@ const getAvatarSource = (avatar_url?: string): ImageSourcePropType => {
 };
 
 export default function ChatHeader({
-  room_id,
   partnerName,
   avatar_url,
-  isOnline = true,
+  isOnline,
   onBackPress,
   onCallPress,
   onVideoPress,

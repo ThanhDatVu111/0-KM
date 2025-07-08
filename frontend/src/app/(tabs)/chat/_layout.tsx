@@ -6,14 +6,12 @@ import { QueryProvider } from 'utils/QueryProvider';
 
 export default function ChatLayout() {
   return (
-      <MenuProvider>
-        <SocketProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          />
-        </SocketProvider>
-      </MenuProvider>
+    <MenuProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+    </MenuProvider>
   );
 }

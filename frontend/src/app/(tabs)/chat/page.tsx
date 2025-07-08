@@ -17,6 +17,8 @@ export default function Chat() {
   const { userId, isLoaded, isSignedIn } = useAuth();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
+  const [partnerId, setPartnerId] = useState<string>('');
+  const [partnerOnline, setPartnerOnline] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -26,7 +28,8 @@ export default function Chat() {
       try {
         const room = await fetchRoom({ user_id: userId });
         setRoomId(room.room_id);
-        const partner_id = room.user_2;
+        const partner_id = room.user_1 === userId ? room.user_2 : room.user_1;
+        setPartnerId(partner_id);
         const partner = await fetchUser(partner_id);
         if (partner) {
           setPartnerName(partner.username || 'Your Partner');
@@ -47,9 +50,30 @@ export default function Chat() {
 
       // Join chat
       socket.emit('join-chat', roomId);
+      socket.emit('user-online', { room_id: roomId, user_id: userId });
       console.log('Frontend: emitting join-chat');
+
+      const handleOnline = ({ userId }: { userId: string }) => {
+        if (userId === partnerId) {
+          setPartnerOnline(true);
+        }
+      };
+
+      const handleOffline = ({ userId }: { userId: string }) => {
+        if (userId === partnerId) {
+          setPartnerOnline(false);
+        }
+      };
+
+      socket.on('partner-online', handleOnline);
+      socket.on('partner-offline', handleOffline);
+
+      return () => {
+        socket.off('partner-online', handleOnline);
+        socket.off('partner-offline', handleOffline);
+      };
     }
-  }, [socket, roomId]);
+  }, [socket, roomId, userId, partnerId]);
 
   const { messages: socketMessage } = useChatSocket({ room_id: roomId!, user_id: userId! });
   const { prevChat, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -75,7 +99,7 @@ export default function Chat() {
     <ImageBackground source={images.chatBg} className="flex-1" resizeMode="cover">
       <SafeAreaView className="flex-1 p-5">
         {/* Chat Header */}
-        <ChatHeader room_id={roomId!} partnerName={partnerName} />
+        <ChatHeader isOnline={partnerOnline} partnerName={partnerName} />
 
         {/* Chat Main View */}
         <KeyboardAvoidingView

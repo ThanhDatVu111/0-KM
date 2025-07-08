@@ -24,6 +24,16 @@ export default function socketHandler(io: Server) {
       console.warn(`⚠️ Socket ${socket.id} connected without user authentication`);
     }
 
+    // Online
+    socket.on('user-online', ({ room_id, user_id }) => {
+      if (!room_id || !user_id) return;
+
+      console.log(`✅ User ${user_id} is online in room ${room_id}`);
+
+      // Tell the *other* user in the room that this user is online
+      socket.to(room_id).emit('partner-online', { userId: user_id });
+    });
+
     // Join chat room
     socket.on('join-chat', (room_id: string) => {
       if (!room_id) {
@@ -236,6 +246,12 @@ export default function socketHandler(io: Server) {
     // Clean up on disconnect
     socket.on('disconnect', (reason) => {
       console.log(`👋 User ${user_socket_id || 'unknown'} disconnected: ${socket.id} (${reason})`);
+      const rooms = Array.from(socket.rooms).filter((r) => r !== socket.id);
+
+      for (const room_id of rooms) {
+        socket.to(room_id).emit('partner-offline', user_socket_id);
+        console.log(`Partner ${user_socket_id} offline in room ${room_id}`);
+      }
     });
 
     // Handle any other errors

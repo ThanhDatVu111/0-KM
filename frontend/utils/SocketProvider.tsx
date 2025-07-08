@@ -20,7 +20,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initSocket = async () => {
       if (!userId || !isSignedIn) return;
-    //   const roomId = (await fetchRoom({ user_id: userId })).room_id;
+      //   const roomId = (await fetchRoom({ user_id: userId })).room_id;
 
       const socket = io(PUBLIC_URL || `http://${HOST}:${PORT}`, {
         transports: ['websocket'], // polling doesn't always work in React Native

@@ -36,7 +36,6 @@ export async function fetchMessages({
     });
 
     const result = await response.json();
-    console.log('Fetched messages response:', result); // 🔍 Check the full shape
 
     if (!response.ok) {
       throw new Error(result.error);
