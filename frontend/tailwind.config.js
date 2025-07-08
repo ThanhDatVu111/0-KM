@@ -12,6 +12,7 @@ module.exports = {
         primary: '#F5CDDE',
         accent: '#F5829B',
         custom: '#F7BAD4',
+        calendarButton: '#D05079',
       },
       fontFamily: {
         poppins: ['Poppins-Regular'],

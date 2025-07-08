@@ -5,6 +5,8 @@ import {
   DeleteRoomRequest,
   FetchRoomRequest,
   FetchRoomResponse,
+  FetchRoomByUserIdRequest,
+  FetchRoomByUserIdResponse,
 } from '@/types/rooms';
 import { BASE_URL } from './apiClient';
 
@@ -101,6 +103,26 @@ export async function fetchRoom(request: FetchRoomRequest): Promise<FetchRoomRes
   }
 }
 
+export async function fetchRoomByUserId(
+  request: FetchRoomByUserIdRequest,
+): Promise<FetchRoomByUserIdResponse> {
+  try {
+    const response = await fetch(`${BASE_URL}/rooms?user_id=${request.user_id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'Application/json' },
+    });
+    const result = await response.json();
+    const room_id = result.data.room_id;
+    const other_user_id = result.data.user_1
+      ? result.data.user_1 !== request.user_id
+        ? result.data.user_1
+        : result.data.user_2
+      : result.data.user_2;
+    return { room_id: room_id, other_user_id: other_user_id } as FetchRoomByUserIdResponse;
+  } catch (error: any) {
+    throw new Error(error?.message || 'An unknown error occurred in fetchRoomByUserId');
+  }
+}
 export async function updateRoom(room_id: string, user_id: string): Promise<void> {
   try {
     const response = await fetch(`${BASE_URL}/rooms/${room_id}`, {

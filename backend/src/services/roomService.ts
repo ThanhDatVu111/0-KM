@@ -30,6 +30,9 @@ export async function fetchRoom(user_id: string) {
   return roomModel.fetchRoom(user_id);
 }
 
+export async function fetchRoomByUserId(input: any) {
+  return roomModel.fetchRoomByUserId(input);
+}
 export async function updateRoom(room_id: string, user_id: string) {
   return roomModel.updateRoomForLeaving(room_id, user_id);
 }

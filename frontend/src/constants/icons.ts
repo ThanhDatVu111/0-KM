@@ -7,7 +7,7 @@ import user_icon_female from '@/assets/icons/userIconFemale.png';
 import google from '@/assets/icons/google.png';
 import google_pixel from '@/assets/icons/google_pixel.png';
 import person from '@/assets/icons/person.png';
-
+import googleCalendar from '@/assets/icons/google-calendar.png';
 export default {
   books,
   calendar,
@@ -16,6 +16,7 @@ export default {
   topic,
   user_icon_female,
   google,
-  google_pixel,
   person,
+  googleCalendar,
+  google_pixel,
 };

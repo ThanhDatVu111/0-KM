@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import supabase from '../supabase/db';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import CalendarRouter from './routes/calendarRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 // import other routers like TripRouter, NotificationRouter if needed
 
@@ -21,6 +22,7 @@ app.use(cors());
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
+app.use('/calendar', CalendarRouter);
 app.use('/library', LibraryRouter);
 
 const startServer = async () => {

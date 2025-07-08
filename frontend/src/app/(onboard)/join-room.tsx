@@ -215,6 +215,14 @@ const JoinRoom = () => {
     createRoomFunction();
   }, [userId]);
 
+  useEffect(() => {
+    const getRoom = async () => {
+      const room = await fetchRoom({ user_id: userId ?? '' });
+      setRoomId(room.room_id);
+    };
+    getRoom();
+  }, [userId]);
+
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
@@ -240,7 +248,7 @@ const JoinRoom = () => {
 
       console.log('Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
-      router.push('/(tabs)/home');
+      router.push({ pathname: '/(tabs)/home', params: { userId } });
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
