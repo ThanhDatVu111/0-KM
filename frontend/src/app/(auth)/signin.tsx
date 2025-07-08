@@ -1,11 +1,24 @@
-import { useSignIn } from '@clerk/clerk-expo';
+import { useSignIn, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text, View, TouchableOpacity, Image, Button } from 'react-native';
 import FormInput from '@/components/FormInput';
-import React from 'react';
-import Button from '@/components/Button';
+import React, { useCallback, useEffect } from 'react';
 import { useState } from 'react';
 import { SimpleSignOutButton } from '@/components/SignOutButton';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import icons from '@/constants/icons';
+
+const useWarmUpBrowser = () => {
+  useEffect(() => {
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInForm() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -13,6 +26,8 @@ export default function SignInForm() {
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useWarmUpBrowser();
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
@@ -40,66 +55,119 @@ export default function SignInForm() {
     }
   };
 
-  // ✅ Sign up with Google (OAuth)
-  const onGoogleSignInPress = async () => {
-    //need help here
-  };
+  // ✅ Sign in with Google (OAuth)
+  // Handle any pending authentication sessions
+  WebBrowser.maybeCompleteAuthSession();
+  useWarmUpBrowser();
+
+  // Use the `useSSO()` hook to access the `startSSOFlow()` method
+  const { startSSOFlow } = useSSO();
+
+  const onGoogleSignInPress = useCallback(async () => {
+    try {
+      // Start the authentication process by calling `startSSOFlow()`
+      const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
+        strategy: 'oauth_google',
+        redirectUrl: AuthSession.makeRedirectUri(),
+      });
+
+      // If sign in was successful, set the active session
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId });
+        router.replace('/(tabs)/home');
+      } else {
+        // If there is no `createdSessionId`,
+        // there are missing requirements, such as MFA
+        // Use the `signIn` or `signUp` returned from `startSSOFlow`
+        // to handle next steps
+      }
+    } catch (err) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      console.error(JSON.stringify(err, null, 2));
+    }
+  }, []);
 
   return (
-    <View>
-      <View className="w-[300px]">
-        {/* Input Fields */}
-        <FormInput
-          label="Email"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={emailAddress}
-          placeholder=""
-          onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-        />
-
-        <FormInput
-          label="Password"
-          borderColor="#F5829B"
-          autoCapitalize="none"
-          value={password}
-          placeholder=""
-          secureTextEntry={true}
-          onChangeText={(password) => setPassword(password)}
-        />
-      </View>
-
-      {/* Login Button */}
-      <Button
-        label="Login"
-        onPress={onSignInPress}
-        size="py-3 px-4"
-        color="bg-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-white text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
+    <View className="w-full">
+      {/* Input Fields */}
+      <FormInput
+        label="Email Address"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={emailAddress}
+        placeholder=""
+        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
       />
 
-      {/* Display the error message using error state */}
+      <FormInput
+        label="Password"
+        borderColor="#6536DD"
+        autoCapitalize="none"
+        value={password}
+        placeholder=""
+        secureTextEntry={true}
+        onChangeText={(password) => setPassword(password)}
+      />
       {error ? (
-        <Text
-          className="text-red-600 text-center mb-2 w-[300px]"
-          style={{ fontFamily: 'Poppins-Regular' }}
-        >
+        <Text className="text-red-600 text-center mb-4" style={{ fontFamily: 'Poppins-Regular' }}>
           {error}
         </Text>
       ) : null}
 
+      {/* Login Button */}
+      <TouchableOpacity
+        onPress={onSignInPress}
+        className="w-full mb-4 bg-[#6536DD] border-4 border-black"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-[#6536DD] px-4 py-3">
+          <Text
+            className="text-white text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            LOGIN
+          </Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Sign in with Google Button */}
-      <Button
-        label="Sign in with Google"
+      <TouchableOpacity
         onPress={onGoogleSignInPress}
-        size="py-3 px-4"
-        color="border border-accent"
-        className="w-[300px] mb-3"
-        textClassName="text-accent text-[16px]"
-        textStyle={{ fontFamily: 'Poppins-Regular' }}
-      />
+        className="w-full mb-4 bg-white border-4 border-[#6536DD]"
+        style={{
+          shadowColor: '#6536DD',
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+        }}
+      >
+        <View className="bg-white px-4 py-3 flex-row justify-center">
+          <Image
+            source={icons.google_pixel}
+            style={{
+              width: 24,
+              height: 24,
+              marginRight: 8,
+            }}
+            resizeMode="contain"
+          />
+
+          <Text
+            className="text-[#6536DD] text-center text-[16px] font-bold"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            SIGN IN WITH GOOGLE
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Forgot Password Link */}
       <Button

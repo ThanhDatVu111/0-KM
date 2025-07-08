@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import supabase from '../utils/supabase';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import CalendarRouter from './routes/calendarRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
 import { v2 as cloudinary } from 'cloudinary';
@@ -17,15 +18,12 @@ const PUBLIC_URL = process.env.PUBLIC_URL;
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
-app.use(
-  cors({
-    origin: [LOCAL_URL, PUBLIC_URL].filter((u): u is string => !!u),
-  }),
-);
+app.use(cors());
 
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
+app.use('/calendar', CalendarRouter);
 app.use('/library', LibraryRouter);
 app.use('/entries', EntriesRouter);
 app.get('/cloudinary-sign', (_req, res) => {

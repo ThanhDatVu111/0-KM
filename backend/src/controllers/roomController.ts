@@ -2,6 +2,7 @@ import * as roomService from '../services/roomService';
 import { Request, Response, NextFunction } from 'express';
 import { PostgresErrorCodes } from '../constants/postgresErrorCodes';
 import { CreateRoomBody, CheckRoomBody, JoinRoomBody, DeleteRoomParams } from '../types/rooms';
+import { error } from 'console';
 
 // Create Room
 export async function createRoom(
@@ -56,9 +57,10 @@ export async function joinRoom(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { room_id, user_2 } = req.body;
+    const { room_id, user_id } = req.body;
+    console.log('joinRoom in controller called with:', { room_id, user_id });
 
-    if (!room_id || !user_2) {
+    if (!room_id || !user_id) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -69,7 +71,7 @@ export async function joinRoom(
       return;
     }
 
-    await roomService.joinRoom({ room_id, user_2 });
+    await roomService.joinRoom({ room_id, user_id });
     res.status(204).send();
   } catch (err: any) {
     next(err);
@@ -132,6 +134,34 @@ export async function fetchRoom(
       },
     });
   } catch (err: any) {
+    next(err);
+  }
+}
+
+export async function fetchRoomByUserId(req: any, res: any) {
+  try {
+    const user_id = req.query.user_id;
+    if (!user_id) {
+      return res.status(400).json({ error: 'missing required fields' });
+    }
+    const response = await roomService.fetchRoomByUserId({ user_id });
+    res.status(200).json({ data: response });
+  } catch (error) {
+    return res.status(400).json({ error: error });
+  }
+}
+
+export async function updateRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { room_id } = req.params;
+    const { user_id } = req.body;
+    if (!room_id || !user_id) {
+      res.status(400).json({ error: 'Missing room_id or user_id' });
+      return;
+    }
+    const updatedRoom = await roomService.updateRoom(room_id, user_id);
+    res.json({ data: updatedRoom });
+  } catch (err) {
     next(err);
   }
 }

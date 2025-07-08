@@ -24,18 +24,57 @@ export async function checkRoom(attrs: { room_id: string }) {
   return !!data;
 }
 
-export async function joinRoom(attrs: { room_id: string; user_2: string }) {
+export async function joinRoom(attrs: { room_id: string; user_id: string }) {
+  // Fetch the room first
+  const room = await getRoomById(attrs.room_id);
+  if (!room) throw new Error('Room not found');
+
+  // Prevent joining if user is already in the room
+  if (room.user_1 === attrs.user_id || room.user_2 === attrs.user_id) {
+    throw new Error('User already in this room');
+  }
+
+  let updates: any = {};
+  if (!room.user_1) {
+    updates.user_1 = attrs.user_id;
+    updates.filled = !!room.user_2;
+  } else if (!room.user_2) {
+    updates.user_2 = attrs.user_id;
+    updates.filled = !!room.user_1;
+  } else {
+    throw new Error('Room is already full');
+  }
+
   const { data, error } = await supabase
     .from('room')
-    .update({
-      user_2: attrs.user_2,
-      filled: true,
-    })
-    .eq('room_id', attrs.room_id) // Match the room by room_id
-    .is('user_2', null) // Only update if user_2 is null
+    .update(updates)
+    .eq('room_id', attrs.room_id)
     .select()
     .single();
 
+  if (error) throw error;
+  return data;
+}
+
+export async function updateRoomForLeaving(room_id: string, user_id: string) {
+  // Fetch the room to determine which user slot to clear
+  const room = await getRoomById(room_id);
+  if (!room) throw new Error('Room not found');
+  let updates: any = {};
+  // Determine which user slot to clear based on user_id
+  if (room.user_1 === user_id) {
+    updates = { user_1: null, filled: true };
+  } else if (room.user_2 === user_id) {
+    updates = { user_2: null, filled: true };
+  } else {
+    throw new Error('User not in this room');
+  }
+  const { data, error } = await supabase
+    .from('room')
+    .update(updates)
+    .eq('room_id', room_id)
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
@@ -77,5 +116,23 @@ export async function fetchRoom(user_id: string) {
   }
 
   console.log('✅ Room data found:', data);
+  return data;
+}
+
+
+export async function fetchRoomByUserId(attrs: {
+  user_id: string,
+}) {
+  const { data, error } = await supabase
+    .from('room')
+    .select()
+    .or(`user_1.eq.${attrs.user_id}, user_2.eq.${attrs.user_id}`)
+    .single()
+  if (error) throw error;
+  return data;
+}
+export async function getRoomById(room_id: string) {
+  const { data, error } = await supabase.from('room').select().eq('room_id', room_id).single();
+  if (error) throw error;
   return data;
 }
