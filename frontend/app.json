@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/logo.png",
-    "scheme": "myapp",
+    "scheme": "com.googleusercontent.apps.152482242112-2c1othbu00qpt0725oki6u782hoppagj",
     "assets": ["./assets/fonts"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

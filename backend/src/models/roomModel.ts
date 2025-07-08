@@ -115,6 +115,18 @@ export async function fetchRoom(user_id: string) {
   return data;
 }
 
+
+export async function fetchRoomByUserId(attrs: {
+  user_id: string,
+}) {
+  const { data, error } = await supabase
+    .from('room')
+    .select()
+    .or(`user_1.eq.${attrs.user_id}, user_2.eq.${attrs.user_id}`)
+    .single()
+  if (error) throw error;
+  return data;
+}
 export async function getRoomById(room_id: string) {
   const { data, error } = await supabase.from('room').select().eq('room_id', room_id).single();
   if (error) throw error;

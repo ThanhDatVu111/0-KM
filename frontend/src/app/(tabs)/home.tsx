@@ -1,9 +1,12 @@
+import { SignOutButton } from '@/components/SignOutButton';
+import { useLocalSearchParams } from 'expo-router';
 import { View, Text, Pressable, Modal } from 'react-native';
 import React, { useState } from 'react';
 import Profile from '@/screens/Profile';
 import { FontAwesome } from '@expo/vector-icons';
 
 const Home = () => {
+  const { userId } = useLocalSearchParams();
   const [showProfile, setShowProfile] = useState(false);
   return (
     <View className="tab-screen" style={{ flex: 1 }}>

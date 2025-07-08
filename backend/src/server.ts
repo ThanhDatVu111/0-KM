@@ -3,12 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import CalendarRouter from './routes/calendarRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import * as Y from 'yjs';
 
 dotenv.config();
 
@@ -29,6 +29,7 @@ app.use(
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
+app.use('/calendar', CalendarRouter);
 app.use('/library', LibraryRouter);
 app.use('/entries', EntriesRouter);
 app.get('/cloudinary-sign', (_req, res) => {

@@ -17,7 +17,7 @@ import deleteIcon from '@/assets/icons/delete.png';
 import edit from '@/assets/icons/edit.png';
 import zoomin from '@/assets/icons/zoomin.png';
 import video from '@/assets/icons/video.png';
-
+import googleCalendar from '@/assets/icons/google-calendar.png';
 export default {
   books,
   calendar,
@@ -26,8 +26,9 @@ export default {
   topic,
   user_icon_female,
   google,
-  google_pixel,
   person,
+  googleCalendar,
+  google_pixel,
   photo,
   location,
   camera,
