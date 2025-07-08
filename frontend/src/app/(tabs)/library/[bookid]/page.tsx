@@ -27,35 +27,53 @@ export default function BookPage() {
   const [loading, setLoading] = useState(true);
   const lastRefresh = useRef<string | undefined>(undefined);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!bookId) return;
-      if (refresh && refresh !== lastRefresh.current) {
-        lastRefresh.current = refresh;
-      } else if (!lastRefresh.current) {
-        lastRefresh.current = 'init';
-      } else {
-        return;
-      }
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const data = await fetchEntries(bookId);
-          // Sort entries by created_at descending (newest first)
-          const sortedData = data.sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-          );
-          setEntries(sortedData);
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      const timeoutId = setTimeout(fetchData, 300); // Debounce manually
-      return () => clearTimeout(timeoutId); // Cleanup timeout
-    }, [bookId, refresh]),
-  );
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     if (!bookId) return;
+  //     if (refresh && refresh !== lastRefresh.current) {
+  //       lastRefresh.current = refresh;
+  //     } else if (!lastRefresh.current) {
+  //       lastRefresh.current = 'init';
+  //     } else {
+  //       return;
+  //     }
+  //     const fetchData = async () => {
+  //       setLoading(true);
+  //       try {
+  //         const data = await fetchEntries(bookId);
+  //         // Sort entries by created_at descending (newest first)
+  //         const sortedData = data.sort(
+  //           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  //         );
+  //         setEntries(sortedData);
+  //       } catch (error) {
+  //         console.error(error);
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     };
+  //     const timeoutId = setTimeout(fetchData, 300); // Debounce manually
+  //     return () => clearTimeout(timeoutId); // Cleanup timeout
+  //   }, [bookId, refresh]),
+  // );
+
+  useEffect(() => {
+    if (!bookId) return;
+    setLoading(true);
+    fetchEntries(bookId)
+      .then((data) => {
+        const sortedData = data.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+        setEntries(sortedData);
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [bookId]);
 
   const deleteEntry = async (bookId: string, entryId: string) => {
     try {
@@ -132,10 +150,14 @@ export default function BookPage() {
       </TouchableOpacity>
     );
   }
+  // — List of entries + FAB —
+  // Choose background based on state
+  let bgImage = images.entryCardBg;
+  if (entries.length === 0) bgImage = images.createEntryBg;
 
   return (
-    <ImageBackground source={images.entryCardBg} resizeMode="cover" style={{ flex: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 50, marginBottom: 10 }}>
+    <ImageBackground source={bgImage} resizeMode="cover" style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 10 }}>
         {/* Back button */}
         <View
           style={{
@@ -148,7 +170,7 @@ export default function BookPage() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.replace('/(tabs)/library/page')}
             activeOpacity={0.8}
             style={{
               width: 44,
@@ -188,8 +210,8 @@ export default function BookPage() {
               textAlign: 'left',
             }}
           >
-            {(bookTitle || 'Book Entries').slice(0, 10)}
-            {bookTitle && bookTitle.length > 10 ? '...' : ''}
+            {(bookTitle || 'Book Entries').slice(0, 5)}
+            {bookTitle && bookTitle.length > 5 ? '...' : ''}
           </Text>
         </View>
       </View>
