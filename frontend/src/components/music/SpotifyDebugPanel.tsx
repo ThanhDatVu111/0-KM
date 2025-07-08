@@ -77,6 +77,78 @@ export function SpotifyDebugPanel() {
     }
   };
 
+  const listDevices = async () => {
+    try {
+      const devices = await spotifyPlayback.getDevices();
+      console.log('🎧 Available Spotify devices:', devices);
+      Alert.alert('Devices', JSON.stringify(devices, null, 2));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get devices: ' + error.message);
+    }
+  };
+
+  // Helper to transfer playback and play a specific track
+  const transferAndPlayTrack = async () => {
+    try {
+      // 1. Get devices
+      const devices = await spotifyPlayback.getDevices();
+      if (!devices.length) {
+        Alert.alert('No devices found', 'Open Spotify on your phone and try again.');
+        return;
+      }
+      // For demo: pick the first active device, or the first device
+      const device = devices.find((d) => d.is_active) || devices[0];
+      const deviceId = device.id;
+      Alert.alert('Using Device', `${device.name} (${deviceId})`);
+      console.log('🎧 Using device:', device);
+
+      // 2. Transfer playback (play: false)
+      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
+      await fetch('https://api.spotify.com/v1/me/player/transfer', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ device_ids: [deviceId], play: false }),
+      });
+      console.log('🔄 Transferred playback to device (not playing)');
+
+      // 3. (Optional) Pause playback to clear any old song
+      await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('⏸️ Paused playback on device');
+
+      // 4. Get the current room track URI (for demo, prompt user)
+      // In a real app, fetch from your state/store
+      const trackUri = prompt('Enter Spotify track URI to play (e.g. spotify:track:xxxx):');
+      if (!trackUri) {
+        Alert.alert('No track URI', 'Please provide a track URI.');
+        return;
+      }
+
+      // 5. Play the track on the device
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uris: [trackUri] }),
+      });
+      Alert.alert('Success', `Playing track on ${device.name}`);
+      console.log('▶️ Playing track:', trackUri, 'on device:', device.name);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to transfer and play: ' + error.message);
+      console.error('❌ Transfer & Play error:', error);
+    }
+  };
+
   useEffect(() => {
     checkSpotifyStatus();
   }, []);
@@ -161,6 +233,20 @@ export function SpotifyDebugPanel() {
                 className="bg-green-500 rounded px-3 py-2 flex-1"
               >
                 <Text className="text-white text-center font-pmedium">Test Refresh</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={listDevices}
+                className="bg-purple-500 rounded px-3 py-2 flex-1"
+              >
+                <Text className="text-white text-center font-pmedium">List Devices</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={transferAndPlayTrack}
+                className="bg-yellow-500 rounded px-3 py-2 flex-1"
+              >
+                <Text className="text-white text-center font-pmedium">Transfer & Play Track</Text>
               </TouchableOpacity>
             </View>
 
