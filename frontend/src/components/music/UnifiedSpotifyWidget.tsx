@@ -397,6 +397,19 @@ export function UnifiedSpotifyWidget({
       <View style={styles.spotifyLogo}>
         <Ionicons name="musical-notes" size={20} color="white" />
         <Text style={styles.spotifyText}>Spotify</Text>
+        {isInRoom && sharedPlaybackState?.controlled_by_user_id && (
+          <View style={styles.controllerIndicator}>
+            <Ionicons name="radio" size={12} color="white" />
+            <Text style={styles.controllerText}>
+              {sharedPlaybackState.controlled_by_user_id === userId
+                ? 'You control'
+                : 'Partner controls'}
+            </Text>
+            {sharedPlaybackState.controlled_by_user_id !== userId && (
+              <Text style={styles.autoPlayText}>(Auto-play enabled)</Text>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.container}>
@@ -622,5 +635,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  controllerIndicator: {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  controllerText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  autoPlayText: {
+    color: '#1DB954',
+    fontSize: 8,
+    fontWeight: '400',
+    marginLeft: 4,
+    fontStyle: 'italic',
   },
 });

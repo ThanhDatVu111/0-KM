@@ -18,6 +18,7 @@ import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
 import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
 import { SpotifySearch } from '@/components/music/SpotifySearch';
+import { SpotifyDebugPanel } from '@/components/music/SpotifyDebugPanel';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
 import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
@@ -366,6 +367,9 @@ const Home = () => {
             roomId={roomId}
           />
         </View>
+
+        {/* Spotify Debug Panel */}
+        <SpotifyDebugPanel />
 
         {/* Join Room Widget */}
         {!roomId && (

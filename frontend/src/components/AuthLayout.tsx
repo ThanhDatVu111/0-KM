@@ -1,5 +1,5 @@
 import React from 'react';
-import { ImageBackground, View, Text, TouchableOpacity} from 'react-native';
+import { ImageBackground, View, Text, TouchableOpacity } from 'react-native';
 import images from '@/constants/images';
 
 interface Props {

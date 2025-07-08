@@ -26,7 +26,63 @@ class SpotifyPlaybackService {
     if (!this.accessToken) {
       await this.initialize();
     }
+
+    // Check if token is expired and refresh if needed
+    const tokenExpiry = await SecureStore.getItemAsync('spotify_token_expiry');
+    if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {
+      console.log('🔄 Spotify token expired, refreshing...');
+      await this.refreshToken();
+    }
+
     return this.accessToken;
+  }
+
+  private async refreshToken(): Promise<void> {
+    try {
+      const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization:
+            'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(`Token refresh failed: ${data.error}`);
+      }
+
+      // Store new tokens
+      await SecureStore.setItemAsync('spotify_access_token', data.access_token);
+      if (data.refresh_token) {
+        await SecureStore.setItemAsync('spotify_refresh_token', data.refresh_token);
+      }
+      await SecureStore.setItemAsync(
+        'spotify_token_expiry',
+        (Date.now() + (data.expires_in || 3600) * 1000).toString(),
+      );
+
+      this.accessToken = data.access_token;
+      console.log('✅ Spotify token refreshed successfully');
+    } catch (error) {
+      console.error('❌ Failed to refresh Spotify token:', error);
+      // Clear invalid tokens
+      await SecureStore.deleteItemAsync('spotify_access_token');
+      await SecureStore.deleteItemAsync('spotify_refresh_token');
+      await SecureStore.deleteItemAsync('spotify_token_expiry');
+      this.accessToken = null;
+      throw error;
+    }
   }
 
   private async makeRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' = 'GET', body?: any) {

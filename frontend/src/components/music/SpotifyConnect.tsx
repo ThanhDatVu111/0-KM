@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import * as SecureStore from 'expo-secure-store';
 
 interface Props {
   onConnected?: () => void;
@@ -59,7 +60,8 @@ export function SpotifyConnect({ onConnected }: Props) {
               headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 Authorization:
-                  'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:YOUR_CLIENT_SECRET'),
+                  'Basic ' +
+                  btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
               },
               body: new URLSearchParams({
                 grant_type: 'authorization_code',
@@ -71,9 +73,13 @@ export function SpotifyConnect({ onConnected }: Props) {
             const tokenData = await tokenResponse.json();
             console.log('🎵 Spotify tokens:', tokenData);
 
-            // Store tokens securely (you might want to use expo-secure-store)
-            // await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token);
-            // await SecureStore.setItemAsync('spotify_refresh_token', tokenData.refresh_token);
+            // Store tokens securely
+            await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token);
+            await SecureStore.setItemAsync('spotify_refresh_token', tokenData.refresh_token);
+            await SecureStore.setItemAsync(
+              'spotify_token_expiry',
+              (Date.now() + (tokenData.expires_in || 3600) * 1000).toString(),
+            );
 
             Alert.alert(
               'Success!',

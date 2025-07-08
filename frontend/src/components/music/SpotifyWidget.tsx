@@ -23,6 +23,8 @@ type Props = {
   onNext?: () => void;
   onPrevious?: () => void;
   canControl?: boolean;
+  isController?: boolean;
+  controllerName?: string;
 };
 
 export function SpotifyWidget({
@@ -34,6 +36,8 @@ export function SpotifyWidget({
   onNext,
   onPrevious,
   canControl = false,
+  isController = false,
+  controllerName,
 }: Props) {
   const { userId } = useAuth();
   const [currentTime, setCurrentTime] = useState(0);
@@ -104,6 +108,14 @@ export function SpotifyWidget({
       <View style={styles.spotifyLogo}>
         <Ionicons name="musical-notes" size={20} color="white" />
         <Text style={styles.spotifyText}>Spotify</Text>
+        {controllerName && (
+          <View style={styles.controllerIndicator}>
+            <Ionicons name="radio" size={12} color="white" />
+            <Text style={styles.controllerText}>
+              {isController ? 'You control' : `${controllerName} controls`}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.container}>
@@ -282,6 +294,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+    marginLeft: 4,
+  },
+  controllerIndicator: {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  controllerText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '500',
     marginLeft: 4,
   },
 });

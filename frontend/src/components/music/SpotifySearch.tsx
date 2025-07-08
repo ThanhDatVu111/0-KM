@@ -46,7 +46,10 @@ export function SpotifySearch({ onTrackSelect, onCancel }: Props) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to search tracks');
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('TOKEN_EXPIRED');
+        }
+        throw new Error(`Failed to search tracks: ${response.status}`);
       }
 
       const data = await response.json();
@@ -62,9 +65,30 @@ export function SpotifySearch({ onTrackSelect, onCancel }: Props) {
       }));
 
       setTracks(searchResults);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error searching tracks:', error);
-      Alert.alert('Error', 'Failed to search tracks. Please try again.');
+
+      if (error.message === 'TOKEN_EXPIRED') {
+        Alert.alert(
+          'Spotify Connection Expired',
+          'Your Spotify connection has expired. Please reconnect to Spotify.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Reconnect',
+              onPress: async () => {
+                // Clear tokens and force reconnection
+                await SecureStore.deleteItemAsync('spotify_access_token');
+                await SecureStore.deleteItemAsync('spotify_refresh_token');
+                await SecureStore.deleteItemAsync('spotify_token_expiry');
+                onCancel(); // Close search modal
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Error', 'Failed to search tracks. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
