@@ -22,8 +22,8 @@ const Home = () => {
             onPress={() => setShowProfile(false)}
             style={{
               position: 'absolute',
-              top: 80,
-              right: 25,
+              top: 70,
+              right: 30,
               width: 48,
               height: 48,
               backgroundColor: '#F24187',

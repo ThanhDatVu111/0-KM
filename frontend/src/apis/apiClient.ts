@@ -16,3 +16,4 @@ const LOCAL_URL = `http://${HOST}:${PORT}`;
 // web → LOCAL_URL
 // On a real device or stimulator → PUBLIC_URL
 export const BASE_URL = Platform.OS === 'web' ? LOCAL_URL : PUBLIC_URL;
+//export const BASE_URL = LOCAL_URL;

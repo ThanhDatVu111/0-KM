@@ -4,9 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
   Image,
 } from 'react-native';
 import { useSignUp, useSSO } from '@clerk/clerk-expo';

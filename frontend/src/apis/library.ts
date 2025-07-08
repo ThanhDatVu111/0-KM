@@ -1,7 +1,7 @@
 import { Book, CreateBookDTO, UpdateBookDTO } from '../types/library';
 import { BASE_URL } from './apiClient';
 
-console.log('BASE_URL:', BASE_URL);
+console.log('BASE_URL in api library:', BASE_URL);
 
 export const libraryApi = {
   createBook: async (book: CreateBookDTO): Promise<Book> => {

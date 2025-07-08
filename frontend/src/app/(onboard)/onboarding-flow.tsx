@@ -9,6 +9,8 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +18,7 @@ import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useLocalSearchParams } from 'expo-router';
 import { onboardUser } from '@/apis/user';
+import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
 
 function RetroHeader({ title }: { title: string }) {
   return (
@@ -241,11 +244,13 @@ function PhotoStep({
   setPhoto,
   onFinish,
   onPrevious,
+  uploading,
 }: {
   photo: string | null;
   setPhoto: (uri: string) => void;
   onFinish: () => void;
   onPrevious?: () => void;
+  uploading: boolean;
 }) {
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
@@ -262,6 +267,7 @@ function PhotoStep({
             />
             <TouchableOpacity
               onPress={() => pickImage(setPhoto)}
+              disabled={uploading}
               className="mt-4 bg-white border-4 border-[#6536DD]"
               style={{
                 shadowColor: '#6536DD',
@@ -269,6 +275,7 @@ function PhotoStep({
                 shadowOpacity: 1,
                 shadowRadius: 0,
                 elevation: 8,
+                opacity: uploading ? 0.5 : 1,
               }}
             >
               <View className="bg-white px-4 py-2">
@@ -284,6 +291,7 @@ function PhotoStep({
         ) : (
           <TouchableOpacity
             onPress={() => pickImage(setPhoto)}
+            disabled={uploading}
             className="w-full mb-6 bg-[#6536DD] border-4 border-black"
             style={{
               shadowColor: '#000',
@@ -291,6 +299,7 @@ function PhotoStep({
               shadowOpacity: 1,
               shadowRadius: 0,
               elevation: 8,
+              opacity: uploading ? 0.5 : 1,
             }}
           >
             <View className="bg-[#6536DD] px-4 py-3">
@@ -307,6 +316,7 @@ function PhotoStep({
         {onPrevious && (
           <TouchableOpacity
             onPress={onPrevious}
+            disabled={uploading}
             className="w-full mb-4 bg-gray-400 border-4 border-black"
             style={{
               shadowColor: '#000',
@@ -314,6 +324,7 @@ function PhotoStep({
               shadowOpacity: 1,
               shadowRadius: 0,
               elevation: 8,
+              opacity: uploading ? 0.5 : 1,
             }}
           >
             <View className="bg-gray-400 px-4 py-3">
@@ -329,6 +340,7 @@ function PhotoStep({
 
         <TouchableOpacity
           onPress={onFinish}
+          disabled={uploading}
           className="w-full bg-[#6536DD] border-4 border-black"
           style={{
             shadowColor: '#000',
@@ -336,15 +348,28 @@ function PhotoStep({
             shadowOpacity: 1,
             shadowRadius: 0,
             elevation: 8,
+            opacity: uploading ? 0.5 : 1,
           }}
         >
           <View className="bg-[#6536DD] px-4 py-3">
-            <Text
-              className="text-white text-center text-[16px] font-bold"
-              style={{ fontFamily: 'Poppins-Bold' }}
-            >
-              FINISH ONBOARDING
-            </Text>
+            {uploading ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                <Text
+                  className="text-white text-center text-[14px] font-bold"
+                  style={{ fontFamily: 'Poppins-Bold' }}
+                >
+                  UPLOADING...
+                </Text>
+              </View>
+            ) : (
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                FINISH ONBOARDING
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -359,21 +384,42 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { user_id } = useLocalSearchParams();
   const router = useRouter();
 
   const handleFinish = async () => {
+    setUploading(true);
     try {
+      let photoUrl = '';
+
+      // Upload photo to Cloudinary if one was selected
+      if (photo) {
+        try {
+          console.log('🔄 Uploading onboarding photo to Cloudinary...');
+          photoUrl = await uploadToCloudinary(photo, 'image');
+          console.log('✅ Onboarding photo uploaded to:', photoUrl);
+        } catch (uploadErr: any) {
+          console.error('❌ Failed to upload onboarding photo:', uploadErr);
+          Alert.alert('Upload Error', 'Failed to upload profile photo. Please try again.');
+          setUploading(false);
+          return;
+        }
+      }
+
       const user = await onboardUser({
         user_id: user_id as string,
         name: name,
         birthdate: birthdate.toISOString(),
-        photo_url: photo || '',
+        photo_url: photoUrl,
       });
       console.log('✅ User updated (onboard) in database:', user);
       router.push('/(onboard)/join-room');
     } catch (err) {
       console.error('❌ Error onboarding user or creating room:', err);
+      Alert.alert('Error', 'Failed to complete onboarding. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -394,6 +440,7 @@ const OnboardingFlow = () => {
       setPhoto={setPhoto}
       onPrevious={() => setStep(1)}
       onFinish={() => handleFinish()}
+      uploading={uploading}
     />,
   ];
 

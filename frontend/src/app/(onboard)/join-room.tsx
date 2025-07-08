@@ -19,6 +19,12 @@ import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import { createRoom } from '@/apis/room';
 import uuid from 'react-native-uuid';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 function PairingStep({
   myCode,
@@ -190,38 +196,90 @@ const JoinRoom = () => {
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [roomId, setRoomId] = useState<string>(uuid.v4() as string);
+  const [roomId, setRoomId] = useState<string>('');
   const { userId } = useAuth();
 
+  // Single useEffect to handle room creation/fetching
   useEffect(() => {
-    const createRoomFunction = async () => {
+    if (!userId) return;
+
+    const initializeRoom = async () => {
       try {
-        const existingRoom = await fetchRoom({ user_id: userId ?? '' });
-        if (existingRoom) {
-          setRoomId(existingRoom.room_id);
-          return;
-        }
+        console.log('🔍 Checking for existing room for user:', userId);
+        const existingRoom = await fetchRoom({ user_id: userId });
+        console.log('🔍 Found existing room:', existingRoom.room_id);
+        setRoomId(existingRoom.room_id);
       } catch (err: any) {
         if (err.message && err.message.includes('Room not found')) {
+          console.log('🔍 No existing room found, creating new room');
+          const newRoomId = uuid.v4() as string;
           const room = await createRoom({
-            room_id: roomId,
-            user_1: userId ?? '',
+            room_id: newRoomId,
+            user_1: userId,
           });
+          console.log('✅ Room created:', room.room_id);
           setRoomId(room.room_id);
-          console.log('✅ Room created:', room);
+        } else {
+          console.error('❌ Error checking for room:', err);
         }
       }
     };
-    createRoomFunction();
-  }, [userId]);
 
+    initializeRoom();
+  }, [userId]); // Only depend on userId
+
+  // Realtime subscription to detect when someone joins this user's room
   useEffect(() => {
-    const getRoom = async () => {
-      const room = await fetchRoom({ user_id: userId ?? '' });
-      setRoomId(room.room_id);
+    if (!roomId || !userId) return;
+
+    console.log('🔴 SETTING UP JOIN-ROOM SUBSCRIPTION for room:', roomId);
+    console.log('🔴 User:', userId);
+
+    const channel = supabase
+      .channel(`join-room-${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload: any) => {
+          console.log('🟢 JOIN-ROOM: Realtime event received:', payload);
+
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new;
+            const users = [updated.user_1, updated.user_2].filter(Boolean);
+
+            console.log('🟢 JOIN-ROOM: Users in room after update:', users);
+            console.log('🟢 JOIN-ROOM: Room is now filled?', users.length === 2);
+
+            // If room now has 2 users and current user is one of them, navigate to home
+            if (users.length === 2 && users.includes(userId)) {
+              console.log('🟢 JOIN-ROOM: Room is full! Navigating to home...');
+              Alert.alert('Success', 'You have been paired with your partner!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    router.push({ pathname: '/(tabs)/home', params: { userId } });
+                  },
+                },
+              ]);
+            }
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log('🔵 JOIN-ROOM SUBSCRIPTION STATUS:', status);
+        console.log('🔵 JOIN-ROOM: User:', userId, 'subscribed to room:', roomId);
+      });
+
+    return () => {
+      console.log('🔴 JOIN-ROOM: Unsubscribing from room:', roomId);
+      supabase.removeChannel(channel);
     };
-    getRoom();
-  }, [userId]);
+  }, [roomId, userId]);
 
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
   const connectRoom = async () => {
@@ -247,8 +305,17 @@ const JoinRoom = () => {
       });
 
       console.log('Paired with partner successfully!');
-      Alert.alert('Success', 'You have been paired with your partner!');
-      router.push({ pathname: '/(tabs)/home', params: { userId } });
+      
+      // Show alert for the person who joined
+      Alert.alert('Success', 'You have been paired with your partner!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            router.push({ pathname: '/(tabs)/home', params: { userId } });
+          },
+        },
+      ]);
+      
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
