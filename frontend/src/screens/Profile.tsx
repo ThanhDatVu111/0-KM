@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Image,
   Alert,
-  Button,
   Pressable,
   ImageBackground,
   KeyboardAvoidingView,
