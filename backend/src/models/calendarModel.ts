@@ -1,5 +1,5 @@
 import { start } from 'repl';
-import supabase from '../../supabase/db';
+import supabase from '../../utils/supabase';
 
 export async function checkRefreshToken(attrs: { user_id: string }) {
   const { data, error } = await supabase

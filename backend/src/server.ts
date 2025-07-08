@@ -8,7 +8,6 @@ import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
 import { v2 as cloudinary } from 'cloudinary';
 import http from 'http';
-import { Server as SocketIOServer } from 'socket.io';
 
 dotenv.config();
 
