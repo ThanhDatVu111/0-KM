@@ -51,7 +51,8 @@ export interface UpdateRoomSpotifyTrackRequest {
 // OAuth and Token Management
 export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
   const response = await apiClient.get('/spotify/auth/url');
-  return response;
+  const data = await response.json();
+  return data;
 }
 
 export async function exchangeSpotifyCode(code: string): Promise<{
@@ -75,7 +76,8 @@ export async function refreshSpotifyToken(refreshToken: string): Promise<{
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
     const response = await apiClient.get(`/spotify/search?q=${encodeURIComponent(query)}`);
-    return response;
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error searching Spotify tracks:', error);
     throw error;
@@ -97,7 +99,8 @@ export async function getRoomSpotifyTrack(
 ): Promise<RoomSpotifyTrack | null> {
   try {
     const response = await apiClientInstance.get(`/spotify/room/${user_id}`);
-    return response;
+    const data = await response.json();
+    return data;
   } catch (error: any) {
     if (error.status === 404) {
       return null;
@@ -161,7 +164,8 @@ export async function getSpotifyProfile(): Promise<{
   images: Array<{ url: string; height: number; width: number }>;
 }> {
   const response = await apiClient.get('/spotify/profile');
-  return response;
+  const data = await response.json();
+  return data;
 }
 
 // Spotify user playlists
@@ -175,17 +179,20 @@ export async function getUserPlaylists(): Promise<
   }>
 > {
   const response = await apiClient.get('/spotify/playlists');
-  return response;
+  const data = await response.json();
+  return data;
 }
 
 // Spotify user top tracks
 export async function getUserTopTracks(): Promise<SpotifyTrack[]> {
   const response = await apiClient.get('/spotify/top-tracks');
-  return response;
+  const data = await response.json();
+  return data;
 }
 
 // Spotify user recently played
 export async function getRecentlyPlayed(): Promise<SpotifyTrack[]> {
   const response = await apiClient.get('/spotify/recently-played');
-  return response;
+  const data = await response.json();
+  return data;
 }

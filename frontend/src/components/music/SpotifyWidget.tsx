@@ -161,7 +161,19 @@ export function SpotifyWidget({
               <Ionicons name="play-skip-back" size={24} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={onPlayPause} style={styles.playButton}>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('🎵 Play button pressed', {
+                  track,
+                  isPlaying,
+                  canControl,
+                  isController,
+                  controllerName,
+                });
+                if (onPlayPause) onPlayPause();
+              }}
+              style={styles.playButton}
+            >
               <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="white" />
             </TouchableOpacity>
 

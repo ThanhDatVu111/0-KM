@@ -275,12 +275,15 @@ export async function playSpotifyTrack(
   try {
     const { user_id, track_uri } = req.body;
 
+    console.log('🎵 [Controller] /spotify/play called', { user_id, track_uri });
+
     if (!user_id || !track_uri) {
       res.status(400).json({ error: 'user_id and track_uri are required' });
       return;
     }
 
     await playSpotifyTrackService(user_id, track_uri);
+    console.log('🎵 [Controller] Playback started successfully');
     res.status(200).json({ message: 'Playback started' });
   } catch (error: any) {
     console.error('Error in playSpotifyTrack controller:', error);

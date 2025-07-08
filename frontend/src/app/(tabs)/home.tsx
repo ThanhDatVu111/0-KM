@@ -130,6 +130,8 @@ const Home = () => {
   const handleAddSpotifyTrack = async (trackData: any) => {
     if (!userId) return;
 
+    console.log('🎵 Adding Spotify track:', trackData);
+
     try {
       await createRoomSpotifyTrack(
         {
@@ -144,9 +146,12 @@ const Home = () => {
         },
         apiClient,
       );
+      console.log('✅ Track added to room successfully');
       setShowSpotifyInput(false);
       // Refetch the room track to update the UI
-      refetchRoomTrack();
+      console.log('🔄 Refetching room track...');
+      await refetchRoomTrack();
+      console.log('✅ Room track refetched');
 
       // Automatically play the track when added
       try {
@@ -162,6 +167,7 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Failed to add Spotify track:', error);
+      Alert.alert('Error', 'Failed to add track to room. Please try again.');
     }
   };
 
@@ -343,9 +349,29 @@ const Home = () => {
           <Text className="text-lg text-white font-pmedium mb-3">
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
+
+          {/* Debug logging */}
+          {roomTrack && (
+            <View
+              style={{
+                backgroundColor: 'rgba(255,0,0,0.1)',
+                padding: 8,
+                marginBottom: 8,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 12 }}>
+                DEBUG - roomTrack: {JSON.stringify(roomTrack, null, 2)}
+              </Text>
+              <Text style={{ color: 'white', fontSize: 12 }}>
+                DEBUG - track_id exists: {roomTrack.track_id ? 'YES' : 'NO'}
+              </Text>
+            </View>
+          )}
+
           <UnifiedSpotifyWidget
             track={
-              roomTrack
+              roomTrack && roomTrack.track_id
                 ? {
                     id: roomTrack.track_id,
                     name: roomTrack.track_name,
@@ -425,7 +451,6 @@ const Home = () => {
               };
 
               handleAddSpotifyTrack(trackData);
-              setShowSpotifyInput(false);
             }}
             onCancel={() => setShowSpotifyInput(false)}
           />

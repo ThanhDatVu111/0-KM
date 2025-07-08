@@ -13,11 +13,28 @@ export function useRoomSpotifyTrack(refetchInterval: number = 15000) {
   const fetchRoomTrack = async () => {
     if (!userId) return;
 
+    console.log('🔄 Fetching room track for user:', userId);
     setIsLoading(true);
     try {
       const trackData = await getRoomSpotifyTrack(userId, apiClient);
+      console.log('📡 Room track API response:', trackData);
+
+      if (trackData) {
+        console.log('📊 Track data details:', {
+          track_id: trackData.track_id,
+          track_name: trackData.track_name,
+          artist_name: trackData.artist_name,
+          album_name: trackData.album_name,
+          album_art_url: trackData.album_art_url,
+          duration_ms: trackData.duration_ms,
+          track_uri: trackData.track_uri,
+          added_by_user_id: trackData.added_by_user_id,
+        });
+      }
+
       setRoomTrack(trackData);
       setHasRoom(true); // If we can fetch room track, user is in a room
+      console.log('✅ Room track state updated:', trackData);
     } catch (error: any) {
       console.error('Failed to fetch room track:', error);
       if (error.status === 400 && error.data?.error === 'User must be in a room to add tracks') {
