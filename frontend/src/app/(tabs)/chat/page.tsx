@@ -107,6 +107,7 @@ export default function Chat() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ChatPaginatedList
+            room_id={roomId!}
             messages={combinedMessages}
             refreshing={isFetchingNextPage}
             refresh={isFetching}

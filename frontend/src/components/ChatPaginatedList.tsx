@@ -5,6 +5,7 @@ import { Message } from '@/types/chat';
 import { useAuth } from '@clerk/clerk-expo';
 
 interface ChatPaginatedListProps {
+  room_id: string;
   messages: Message[];
   refreshing: boolean;
   refresh: boolean;
@@ -13,6 +14,7 @@ interface ChatPaginatedListProps {
 }
 
 export default function ChatPaginatedList({
+  room_id,
   messages,
   refreshing,
   refresh,
@@ -26,6 +28,8 @@ export default function ChatPaginatedList({
 
     return (
       <ChatBubble
+        room_id={room_id}
+        user_id={userId!}
         message_id={item.message_id}
         content={item.content ?? ''}
         isSender={isSender}

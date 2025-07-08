@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
-import Popover from 'react-native-popover-view';
-import ChatContextMenu from './ChatContextMenu';
-import ImageView from 'react-native-image-viewing';
+import Popover, { PopoverPlacement } from 'react-native-popover-view';
+import { AntDesign, Entypo, Feather, Ionicons, Octicons } from '@expo/vector-icons';
+import { useChatSocket } from '@/hooks/useSocketChat';
+import icons from '@/constants/icons';
 
 interface ChatBubbleProps {
+  room_id: string;
+  user_id: string;
   message_id: string;
   content?: string;
   isSender: boolean;
@@ -19,7 +22,26 @@ interface ChatBubbleProps {
   isSelected: boolean;
 }
 
+const Divider = () => <View className="h-[0.75px] my-1 bg-[#F24187]" />;
+
+const MenuItem = ({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+}) => (
+  <Pressable onPress={onPress} className="flex-row justify-between items-center px-4 py-2">
+    <Text>{label}</Text>
+    {icon}
+  </Pressable>
+);
+
 export default function ChatBubble({
+  room_id,
+  user_id,
   message_id,
   content,
   isSender,
@@ -33,7 +55,7 @@ export default function ChatBubble({
   createdAt,
   isSelected,
 }: ChatBubbleProps) {
-  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const formattedTimestamp = new Date(createdAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -51,14 +73,19 @@ export default function ChatBubble({
 
   const isMedia = Array.isArray(parsedMediaPaths) && parsedMediaPaths.length > 0;
 
+  const { handleEditMessage, handleDeleteMessage } = useChatSocket({ room_id, user_id });
+
   return (
     <View className={`flex-row mb-3 px-2 ${isSender ? 'justify-end' : 'justify-start'}`}>
       {/* Avatar */}
       {!isSender && (
-        <Image source={{ uri: sender_avatar_url }} className="w-8 h-8 rounded-full mr-2 mt-1" />
+        <Image
+          source={sender_avatar_url ? { uri: sender_avatar_url } : icons.user_icon_female}
+          className="w-8 h-8 rounded-full mr-2 mt-1"
+        />
       )}
 
-      <View className="flex max-w-[80%]">
+      <View className="flex max-w-[80%] relative">
         {/* === MEDIA CONTAINER === */}
         {isMedia && (
           <View className={`flex-col ${isSender ? 'items-end' : 'items-start'}`}>
@@ -67,7 +94,7 @@ export default function ChatBubble({
                 key={index}
                 className="p-1"
                 onPress={() => {
-                  //   setImageViewVisible(true);
+                  // Your image viewer open logic here
                 }}
               >
                 <Image
@@ -80,21 +107,17 @@ export default function ChatBubble({
           </View>
         )}
 
-        {/* === CHAT CONTAINER === */}
+        {/* === CHAT BUBBLE + CONTEXT MENU === */}
         {!isMedia && (
-          <Popover
-            isVisible={showContextMenu}
-            onRequestClose={() => setShowContextMenu(false)}
-            from={
-              <Pressable
-                className={`rounded-2xl px-4 py-2.5 ${
-                  isSender ? 'bg-[#F5829B] self-end' : 'bg-white self-start'
-                }`}
-                onLongPress={() => {
-                  setShowContextMenu(true);
-                }}
-              >
-                {content && (
+          <>
+            <Popover
+              isVisible={showMenu}
+              onRequestClose={() => setShowMenu(false)}
+              from={
+                <Pressable
+                  className={`rounded-2xl px-4 py-2.5 ${isSender ? 'bg-[#F5829B]' : 'bg-white'}`}
+                  onLongPress={() => setShowMenu(true)}
+                >
                   <Text
                     className={`font-poppins-medium text-base ${
                       isSender ? 'text-white' : 'text-[#F5829B]'
@@ -102,18 +125,73 @@ export default function ChatBubble({
                   >
                     {content}
                   </Text>
-                )}
-              </Pressable>
-            }
-          >
-            <ChatContextMenu />
-          </Popover>
+                </Pressable>
+              }
+              placement={isSender ? PopoverPlacement.LEFT : PopoverPlacement.RIGHT}
+              popoverStyle={{
+                borderRadius: 10,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 5,
+                backgroundColor: 'white',
+              }}
+            >
+              <MenuItem
+                label="Reply"
+                icon={<Octicons name="reply" size={24} color="#F24187" />}
+                onPress={() => {
+                  setShowMenu(false);
+                  console.log('User replying');
+                }}
+              />
+              <Divider />
+              <MenuItem
+                label="Copy"
+                icon={<Feather name="copy" size={24} color="#F24187" />}
+                onPress={() => {
+                  setShowMenu(false);
+                  console.log('User copied text');
+                }}
+              />
+              <Divider />
+              <MenuItem
+                label="Edit"
+                icon={<Feather name="edit-2" size={24} color="#F24187" />}
+                onPress={() => {
+                  setShowMenu(false);
+                  handleEditMessage(message_id, content ?? '');
+                }}
+              />
+              <Divider />
+              {isSender ? (
+                <MenuItem
+                  label="Unsend"
+                  icon={<Ionicons name="arrow-undo-circle-outline" size={24} color="#F24187" />}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleDeleteMessage(message_id);
+                  }}
+                />
+              ) : (
+                <MenuItem
+                  label="Delete for you"
+                  icon={<Ionicons name="arrow-undo-circle-outline" size={24} color="#F24187" />}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleDeleteMessage(message_id);
+                  }}
+                />
+              )}
+            </Popover>
+          </>
         )}
 
         {/* === TIMESTAMP === */}
         <Text
-          className={`font-poppins-light text-xs mt-1 ${
-            isSender ? 'text-right text-white' : 'text-left text-[#F5829B]'
+          className={`font-poppins-light text-xs mt-1 text-white ${
+            isSender ? 'text-right' : 'text-left'
           }`}
         >
           {formattedTimestamp} {isEdited && '(edited)'}
@@ -122,7 +200,10 @@ export default function ChatBubble({
 
       {/* Sender Avatar on the Right */}
       {isSender && (
-        <Image source={{ uri: sender_avatar_url }} className="w-8 h-8 rounded-full ml-2 mt-1" />
+        <Image
+          source={sender_avatar_url ? { uri: sender_avatar_url } : icons.user_icon_female}
+          className="w-8 h-8 rounded-full ml-2 mt-1"
+        />
       )}
     </View>
   );

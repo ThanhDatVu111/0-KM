@@ -4,12 +4,10 @@ import { MenuProvider } from 'react-native-popup-menu';
 
 export default function ChatLayout() {
   return (
-    <MenuProvider>
       <Stack
         screenOptions={{
           headerShown: false,
         }}
       />
-    </MenuProvider>
   );
 }
