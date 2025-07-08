@@ -42,14 +42,6 @@ export function SpotifyWidget({
   const { userId } = useAuth();
   const [currentTime, setCurrentTime] = useState(0);
 
-  // Debug logging
-  console.log('🎵 SpotifyWidget Debug:', {
-    track: track?.name,
-    isPlaying,
-    canControl,
-    className,
-  });
-
   if (!track) {
     console.log('🎵 SpotifyWidget: No track provided, showing empty state');
     return (

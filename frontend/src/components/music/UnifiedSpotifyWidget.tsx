@@ -45,6 +45,7 @@ export function UnifiedSpotifyWidget({
   const [isConnecting, setIsConnecting] = useState(false);
   const [spotifyState, setSpotifyState] = useState<SpotifyState>('not-connected');
   const [hasConnectedBefore, setHasConnectedBefore] = useState(false);
+  const [lastStateLog, setLastStateLog] = useState<string>('');
 
   // Real Spotify playback controls
   const {
@@ -79,8 +80,31 @@ export function UnifiedSpotifyWidget({
   const currentPlayTrack = isInRoom ? sharedPlayTrack : playTrack;
   const isLoading = isInRoom ? sharedLoading : playbackLoading;
 
+  // Check if user has connected to Spotify before
+  useEffect(() => {
+    const checkSpotifyConnection = async () => {
+      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
+      const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
+      if (accessToken && refreshToken) {
+        setHasConnectedBefore(true);
+      }
+    };
+    checkSpotifyConnection();
+  }, []);
+
   // Determine the current state
   useEffect(() => {
+    // Throttle debug logging to reduce spam
+    const debugKey = `${!!track}-${hasConnectedBefore}-${track?.name}`;
+    if (lastStateLog !== debugKey) {
+      console.log('🎵 UnifiedSpotifyWidget state check:', {
+        hasTrack: !!track,
+        hasConnectedBefore,
+        trackName: track?.name,
+      });
+      setLastStateLog(debugKey);
+    }
+
     if (track) {
       setSpotifyState('has-track');
     } else if (hasConnectedBefore) {
@@ -88,7 +112,7 @@ export function UnifiedSpotifyWidget({
     } else {
       setSpotifyState('not-connected');
     }
-  }, [track, hasConnectedBefore]);
+  }, [track, hasConnectedBefore, lastStateLog]);
 
   const refreshSpotifyToken = async (refreshToken: string) => {
     try {
@@ -472,15 +496,17 @@ export function UnifiedSpotifyWidget({
 
             <TouchableOpacity
               onPress={currentTogglePlayPause}
-              style={styles.playButton}
+              style={[styles.playButton, isLoading && { opacity: 0.5 }]}
               disabled={isLoading}
             >
               <Ionicons
                 name={
-                  (isInRoom && (currentPlaybackState as any)?.is_playing) ||
-                  (!isInRoom && (currentPlaybackState as any)?.isPlaying)
-                    ? 'pause'
-                    : 'play'
+                  isLoading
+                    ? 'hourglass'
+                    : (isInRoom && (currentPlaybackState as any)?.is_playing) ||
+                        (!isInRoom && (currentPlaybackState as any)?.isPlaying)
+                      ? 'pause'
+                      : 'play'
                 }
                 size={32}
                 color="white"
@@ -500,7 +526,10 @@ export function UnifiedSpotifyWidget({
         {/* Remove button overlay - only show if onPress is provided */}
         {onPress && (
           <TouchableOpacity
-            onPress={onPress}
+            onPress={() => {
+              console.log('🎵 Remove button pressed for track:', track.name);
+              onPress();
+            }}
             style={styles.removeButton}
             className="bg-red-500/80 rounded-full p-2"
           >

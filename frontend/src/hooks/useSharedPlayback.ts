@@ -1,80 +1,65 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
-import { useApiClient } from './useApiClient';
-import { updateRoomPlaybackState, getRoomPlaybackState, PlaybackState } from '../apis/playback';
-import { spotifyPlayback } from '../services/SpotifyPlaybackService';
+import { useApiClient } from '@/hooks/useApiClient';
+import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
+import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
+import supabase from '@/utils/supabase';
+
+interface PlaybackState {
+  is_playing: boolean;
+  current_track_uri?: string;
+  progress_ms: number;
+  controlled_by_user_id?: string;
+}
 
 export function useSharedPlayback(roomId: string | null) {
   const { userId } = useAuth();
   const apiClient = useApiClient();
   const [sharedPlaybackState, setSharedPlaybackState] = useState<PlaybackState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [lastAutoPlayedTrack, setLastAutoPlayedTrack] = useState<string | null>(null);
+  const lastLogTime = useRef<number>(0);
 
-  // Fetch shared playback state
+  // Throttle logging to every 5 seconds
+  const throttledLog = (message: string, data?: any) => {
+    const now = Date.now();
+    if (now - lastLogTime.current > 5000) {
+      console.log(message, data);
+      lastLogTime.current = now;
+    }
+  };
+
+  // Fetch initial playback state
   const fetchSharedPlaybackState = useCallback(async () => {
-    if (!roomId) return;
+    if (!roomId || !userId) return;
 
     try {
-      setError(null);
-      const state = await getRoomPlaybackState(roomId, apiClient);
-      setSharedPlaybackState(state);
-    } catch (err) {
-      console.error('Error fetching shared playback state:', err);
-      setError('Failed to get shared playback state');
+      const data = await getRoomPlaybackState(roomId, apiClient);
+      if (data) {
+        setSharedPlaybackState(data);
+        throttledLog('🎵 [Real-time] Initial playback state loaded:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching shared playback state:', error);
     }
-  }, [roomId, apiClient]);
+  }, [roomId, userId, apiClient]);
 
   // Update shared playback state
   const updateSharedPlaybackState = useCallback(
-    async (newState: Partial<PlaybackState>) => {
+    async (updates: Partial<PlaybackState>) => {
       if (!roomId || !userId) return;
 
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        setError(null);
-
-        // Keep the current controller, don't change it unless we're adding a new track
-        const currentController = sharedPlaybackState?.controlled_by_user_id;
-        const isAddingNewTrack =
-          newState.current_track_uri && !sharedPlaybackState?.current_track_uri;
-
-        // Check if this user has Spotify connected
-        let hasSpotifyConnected = false;
-        try {
-          await spotifyPlayback.getPlaybackState();
-          hasSpotifyConnected = true;
-        } catch (error) {
-          hasSpotifyConnected = false;
-        }
-
-        // Only change controller if we're adding a new track, there's no current controller, AND this user has Spotify
-        const shouldChangeController =
-          isAddingNewTrack && !currentController && hasSpotifyConnected;
-
-        const updatedState: PlaybackState = {
-          is_playing: newState.is_playing ?? sharedPlaybackState?.is_playing ?? false,
-          current_track_uri: newState.current_track_uri ?? sharedPlaybackState?.current_track_uri,
-          progress_ms: newState.progress_ms ?? sharedPlaybackState?.progress_ms ?? 0,
-          controlled_by_user_id: shouldChangeController ? userId : currentController || userId,
+        const newState = {
+          ...sharedPlaybackState,
+          ...updates,
         };
 
-        console.log('🎵 Updating shared state:', {
-          userId,
-          isController: currentController === userId,
-          shouldChangeController,
-          currentController,
-          hasSpotifyConnected,
-          isAddingNewTrack,
-          newState: updatedState,
-        });
-
-        const result = await updateRoomPlaybackState(roomId, updatedState, userId, apiClient);
-        setSharedPlaybackState(result);
-      } catch (err) {
-        console.error('Error updating shared playback state:', err);
-        setError('Failed to update shared playback state');
+        await updateRoomPlaybackState(roomId, newState, apiClient);
+        throttledLog('🎵 [Real-time] Playback state updated:', newState);
+      } catch (error) {
+        console.error('Error updating shared playback state:', error);
       } finally {
         setIsLoading(false);
       }
@@ -82,17 +67,41 @@ export function useSharedPlayback(roomId: string | null) {
     [roomId, userId, apiClient, sharedPlaybackState],
   );
 
-  // Poll for shared playback state updates
+  // Set up real-time subscription to room playback_state changes
   useEffect(() => {
     if (!roomId) return;
 
+    throttledLog('🎵 [Real-time] Setting up playback state listener for room:', roomId);
+
+    // Initial fetch
     fetchSharedPlaybackState();
 
-    // Poll every 2 seconds for updates
-    const interval = setInterval(fetchSharedPlaybackState, 2000);
+    // Subscribe to real-time updates on the room table's playback_state column
+    const channel = supabase
+      .channel('room_playback_state')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newPlaybackState = payload.new?.playback_state;
+          if (newPlaybackState) {
+            throttledLog('🎵 [Real-time] Playback state changed:', newPlaybackState);
+            setSharedPlaybackState(newPlaybackState);
+          }
+        },
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
-  }, [fetchSharedPlaybackState, roomId]);
+    return () => {
+      throttledLog('🎵 [Real-time] Cleaning up playback state listener');
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, fetchSharedPlaybackState]);
 
   // Auto-play on non-controller devices when controller starts playing
   useEffect(() => {
@@ -164,6 +173,12 @@ export function useSharedPlayback(roomId: string | null) {
   const togglePlayPause = useCallback(async () => {
     if (!roomId || !userId) return;
 
+    // Debounce rapid button presses
+    if (isLoading) {
+      console.log('🎵 Ignoring rapid button press - request in progress');
+      return;
+    }
+
     try {
       const newIsPlaying = !sharedPlaybackState?.is_playing;
       console.log('🎵 Toggle Play/Pause:', {
@@ -182,7 +197,11 @@ export function useSharedPlayback(roomId: string | null) {
           await spotifyPlayback.togglePlayPause();
           console.log('🎵 Controller executed local Spotify control');
         } catch (spotifyError) {
-          console.log('Local Spotify control failed, but shared state updated');
+          if (spotifyError.message?.includes('429')) {
+            console.log('🎵 Rate limited - Spotify is processing too many requests. Please wait a moment.');
+          } else {
+            console.log('Local Spotify control failed, but shared state updated');
+          }
         }
       } else {
         console.log('🎵 Requesting playback change - waiting for controller to respond');
@@ -190,7 +209,7 @@ export function useSharedPlayback(roomId: string | null) {
     } catch (err) {
       console.error('Error toggling play/pause:', err);
     }
-  }, [roomId, userId, sharedPlaybackState, updateSharedPlaybackState]);
+  }, [roomId, userId, sharedPlaybackState, updateSharedPlaybackState, isLoading]);
 
   const playTrack = useCallback(
     async (trackUri: string) => {
@@ -268,13 +287,10 @@ export function useSharedPlayback(roomId: string | null) {
   return {
     sharedPlaybackState,
     isLoading,
-    error,
     togglePlayPause,
     playTrack,
     skipToNext,
     skipToPrevious,
-    updateSharedPlaybackState,
     syncWithSpotify,
-    refresh: fetchSharedPlaybackState,
   };
 }

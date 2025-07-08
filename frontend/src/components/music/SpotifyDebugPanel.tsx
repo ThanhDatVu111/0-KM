@@ -32,7 +32,7 @@ export function SpotifyDebugPanel() {
         try {
           currentPlaybackState = await spotifyPlayback.getPlaybackState();
           spotifyConnectionStatus = 'Connected and working';
-        } catch (error) {
+        } catch (error: any) {
           spotifyConnectionStatus = `Error: ${error.message}`;
         }
       } else if (isTokenExpired) {
@@ -66,13 +66,45 @@ export function SpotifyDebugPanel() {
     }
   };
 
+  const reconnectSpotify = async () => {
+    try {
+      // Clear existing tokens first
+      await SecureStore.deleteItemAsync('spotify_access_token');
+      await SecureStore.deleteItemAsync('spotify_refresh_token');
+      await SecureStore.deleteItemAsync('spotify_token_expiry');
+
+      Alert.alert(
+        'Reconnect Spotify',
+        'Your Spotify connection has expired. Please reconnect to continue controlling music.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Reconnect Now',
+            onPress: () => {
+              // This will trigger the Spotify connect flow in the main widget
+              // The user will need to go back to the main screen and use the connect button
+              Alert.alert(
+                'Instructions',
+                'Go back to the main screen and tap "Connect Spotify" to reconnect your account.',
+                [{ text: 'OK' }],
+              );
+            },
+          },
+        ],
+      );
+      checkSpotifyStatus();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to clear tokens for reconnection');
+    }
+  };
+
   const testTokenRefresh = async () => {
     try {
       await spotifyPlayback.initialize();
       const state = await spotifyPlayback.getPlaybackState();
       Alert.alert('Success', 'Token refresh successful!');
       checkSpotifyStatus();
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', `Token refresh failed: ${error.message}`);
     }
   };
@@ -173,6 +205,19 @@ export function SpotifyDebugPanel() {
 
       {isExpanded && (
         <ScrollView className="mt-4">
+          {/* Current Issue Notice */}
+          {debugInfo && !debugInfo.hasAccessToken && (
+            <View className="bg-red-500/20 border border-red-500/50 rounded p-3 mb-3">
+              <Text className="text-red-200 font-pmedium mb-2">⚠️ Spotify Connection Issue</Text>
+              <Text className="text-red-200/80 text-sm">
+                Your Spotify connection has expired. You need to reconnect to control music.
+              </Text>
+              <Text className="text-red-200/80 text-sm mt-1">
+                Both users should reconnect their Spotify accounts.
+              </Text>
+            </View>
+          )}
+
           <View className="space-y-3">
             {/* Token Status */}
             <View className="bg-gray-700/50 rounded p-3">
@@ -250,8 +295,15 @@ export function SpotifyDebugPanel() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity onPress={clearTokens} className="bg-red-500 rounded px-3 py-2">
+            <TouchableOpacity onPress={clearTokens} className="bg-red-500 rounded px-3 py-2 mb-2">
               <Text className="text-white text-center font-pmedium">Clear All Tokens</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={reconnectSpotify}
+              className="bg-orange-500 rounded px-3 py-2"
+            >
+              <Text className="text-white text-center font-pmedium">🔗 Reconnect Spotify</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

@@ -17,6 +17,9 @@ interface SpotifyPlaybackState {
 
 class SpotifyPlaybackService {
   private accessToken: string | null = null;
+  private lastRequestTime: number = 0;
+  private requestQueue: Array<() => Promise<any>> = [];
+  private isProcessingQueue: boolean = false;
 
   async initialize() {
     this.accessToken = await SecureStore.getItemAsync('spotify_access_token');
@@ -85,48 +88,132 @@ class SpotifyPlaybackService {
     }
   }
 
-  private async makeRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' = 'GET', body?: any) {
-    const token = await this.getValidToken();
-    if (!token) {
-      throw new Error('No valid Spotify access token');
-    }
+  private async makeRequest(
+    endpoint: string,
+    method: 'GET' | 'POST' | 'PUT' = 'GET',
+    body?: any,
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const request = async () => {
+        try {
+          const token = await this.getValidToken();
+          if (!token) {
+            throw new Error('No valid Spotify access token');
+          }
 
-    const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
+          // Rate limiting: minimum 100ms between requests
+          const now = Date.now();
+          const timeSinceLastRequest = now - this.lastRequestTime;
+          if (timeSinceLastRequest < 100) {
+            await new Promise((resolve) => setTimeout(resolve, 100 - timeSinceLastRequest));
+          }
+          this.lastRequestTime = Date.now();
+
+          const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+            method,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: body ? JSON.stringify(body) : undefined,
+          });
+
+          if (response.status === 429) {
+            // Rate limited - wait and retry
+            const retryAfter = response.headers.get('Retry-After');
+            const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+            console.log(`🔄 Rate limited, waiting ${waitTime}ms before retry`);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+
+            // Retry the request
+            const retryResponse = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+              method,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: body ? JSON.stringify(body) : undefined,
+            });
+
+            if (!retryResponse.ok) {
+              throw new Error(`Spotify API error: ${retryResponse.status}`);
+            }
+
+            const contentType = retryResponse.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+              resolve(null);
+              return;
+            }
+
+            const text = await retryResponse.text();
+            if (!text) {
+              resolve(null);
+              return;
+            }
+
+            resolve(JSON.parse(text));
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error(`Spotify API error: ${response.status}`);
+          }
+
+          // Handle empty responses (like for PUT/POST requests)
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            resolve(null);
+            return;
+          }
+
+          const text = await response.text();
+          if (!text) {
+            resolve(null);
+            return;
+          }
+
+          try {
+            resolve(JSON.parse(text));
+          } catch (error) {
+            console.error('JSON parse error:', error, 'Response text:', text);
+            reject(new Error(`Invalid JSON response: ${text}`));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      // Add to queue and process
+      this.requestQueue.push(request);
+      this.processQueue();
     });
+  }
 
-    if (!response.ok) {
-      throw new Error(`Spotify API error: ${response.status}`);
+  private async processQueue() {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
     }
 
-    // Handle empty responses (like for PUT/POST requests)
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      return null; // No JSON to parse
+    this.isProcessingQueue = true;
+
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue.shift();
+      if (request) {
+        try {
+          await request();
+        } catch (error) {
+          console.error('Request failed:', error);
+        }
+      }
     }
 
-    const text = await response.text();
-    if (!text) {
-      return null; // Empty response
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      console.error('JSON parse error:', error, 'Response text:', text);
-      throw new Error(`Invalid JSON response: ${text}`);
-    }
+    this.isProcessingQueue = false;
   }
 
   // Get current playback state
   async getPlaybackState(): Promise<SpotifyPlaybackState | null> {
     try {
-      const data = await this.makeRequest('/me/player');
+      const data: any = await this.makeRequest('/me/player');
 
       if (!data || !data.is_playing) {
         return {

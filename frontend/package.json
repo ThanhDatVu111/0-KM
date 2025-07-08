@@ -22,7 +22,7 @@
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@rn-primitives/slot": "^1.2.0",
-    "@supabase/supabase-js": "^2.49.4",
+    "@supabase/supabase-js": "^2.50.3",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.6.1",
     "expo": "^53.0.9",

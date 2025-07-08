@@ -273,9 +273,7 @@ export async function playSpotifyTrack(
   next: NextFunction,
 ): Promise<void> {
   try {
-    console.log('🎵 [DEBUG] /spotify/play called with body:', req.body);
     const { user_id, track_uri } = req.body;
-
     console.log('🎵 [Controller] /spotify/play called', { user_id, track_uri });
 
     if (!user_id || !track_uri) {
@@ -284,10 +282,9 @@ export async function playSpotifyTrack(
     }
 
     await playSpotifyTrackService(user_id, track_uri);
-    console.log('🎵 [Controller] Playback started successfully');
     res.status(200).json({ message: 'Playback started' });
   } catch (error: any) {
-    console.error('❌ [DEBUG] Error in playSpotifyTrack controller:', error);
+    console.error('❌ Error in playSpotifyTrack controller:', error);
     next(error);
   }
 }

@@ -71,19 +71,11 @@ export async function createRoomTrack(
       throw new Error('User not authenticated');
     }
 
-    console.log('🎵 Creating room track for user:', userId, 'with track:', request.track_uri);
-
-    console.log('🎵 Creating room track for user:', userId, 'with track:', request.track_uri);
-
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(userId);
     if (!roomId) {
       throw new Error('User is not in a room');
     }
-
-    console.log('🎵 Found room ID:', roomId);
-
-    console.log('🎵 Found room ID:', roomId);
 
     const input: CreateRoomSpotifyTrackInput = {
       room_id: roomId,
@@ -100,12 +92,8 @@ export async function createRoomTrack(
     // Create the track
     const track = await createRoomSpotifyTrack(input, req.supabase);
 
-    console.log('🎵 Track created in database:', track ? 'SUCCESS' : 'FAILED');
-
     if (track) {
       // Update the playback state to include the new track
-      console.log('🎵 Updating playback state for room:', roomId);
-
       const playbackState = {
         is_playing: false,
         current_track_uri: request.track_uri,
@@ -113,20 +101,11 @@ export async function createRoomTrack(
         controlled_by_user_id: userId,
       };
 
-      console.log('🎵 New playback state:', playbackState);
-
       await roomService.updatePlaybackState(roomId, playbackState);
-
-      console.log('✅ Track created and playback state updated:', {
-        track_id: track.track_id,
-        track_uri: request.track_uri,
-        controlled_by_user_id: userId,
-      });
     }
 
     return track;
   } catch (error) {
-    console.error('❌ Error in createRoomTrack service:', error);
     console.error('❌ Error in createRoomTrack service:', error);
     throw error;
   }
@@ -372,7 +351,6 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 export async function playSpotifyTrack(user_id: string, track_uri: string): Promise<void> {
   try {
     const accessToken = spotifyApi.getAccessToken();
-    console.log('🎵 [Service] playSpotifyTrack called', { user_id, track_uri, accessToken });
     if (!accessToken) {
       console.log('No Spotify access token available');
       return;
@@ -382,13 +360,12 @@ export async function playSpotifyTrack(user_id: string, track_uri: string): Prom
       await spotifyApi.play({
         uris: [track_uri],
       });
-      console.log('🎵 [DEBUG] Spotify playback started:', { user_id, track_uri });
     } catch (spotifyError) {
       console.error('❌ [DEBUG] Spotify API play error:', spotifyError);
       throw spotifyError;
     }
   } catch (error) {
-    console.error('❌ [DEBUG] Error in playSpotifyTrack service:', error);
+    console.error('❌ Error in playSpotifyTrack service:', error);
     throw error;
   }
 }

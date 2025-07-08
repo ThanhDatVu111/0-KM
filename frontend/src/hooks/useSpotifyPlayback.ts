@@ -37,8 +37,8 @@ export function useSpotifyPlayback() {
   useEffect(() => {
     fetchPlaybackState();
 
-    // Poll for playback state updates every 2 seconds
-    const interval = setInterval(fetchPlaybackState, 2000);
+    // Poll for playback state updates every 10 seconds (reduced to avoid rate limits)
+    const interval = setInterval(fetchPlaybackState, 10000);
 
     return () => clearInterval(interval);
   }, [fetchPlaybackState]);

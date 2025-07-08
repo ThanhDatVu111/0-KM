@@ -8,7 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
@@ -16,7 +16,6 @@ import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
 import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
-import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
 import { SpotifySearch } from '@/components/music/SpotifySearch';
 import { SpotifyDebugPanel } from '@/components/music/SpotifyDebugPanel';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
@@ -26,6 +25,7 @@ import { createRoomSpotifyTrack, deleteRoomSpotifyTrack } from '@/apis/spotify';
 import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
+import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -65,15 +65,20 @@ const Home = () => {
 
   // Real Spotify playback controls
   const { playTrack } = useSpotifyPlayback();
+  const lastYouTubeDebugRef = useRef<string>('');
 
-  // Debug logging
+  // Debug logging (throttled)
   useEffect(() => {
-    console.log('🎬 Room YouTube Debug:', {
-      roomVideo,
-      hasRoom,
-      videoLoading,
-      userId,
-    });
+    const debugKey = `${!!roomVideo}-${hasRoom}-${videoLoading}-${userId}`;
+    if (lastYouTubeDebugRef.current !== debugKey) {
+      console.log('🎬 Room YouTube Debug:', {
+        roomVideo,
+        hasRoom,
+        videoLoading,
+        userId,
+      });
+      lastYouTubeDebugRef.current = debugKey;
+    }
   }, [roomVideo, hasRoom, videoLoading, userId]);
 
   useEffect(() => {
@@ -350,25 +355,6 @@ const Home = () => {
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
 
-          {/* Debug logging */}
-          {roomTrack && (
-            <View
-              style={{
-                backgroundColor: 'rgba(255,0,0,0.1)',
-                padding: 8,
-                marginBottom: 8,
-                borderRadius: 8,
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 12 }}>
-                DEBUG - roomTrack: {JSON.stringify(roomTrack, null, 2)}
-              </Text>
-              <Text style={{ color: 'white', fontSize: 12 }}>
-                DEBUG - track_id exists: {roomTrack.track_id ? 'YES' : 'NO'}
-              </Text>
-            </View>
-          )}
-
           <UnifiedSpotifyWidget
             track={
               roomTrack && roomTrack.track_id
@@ -383,14 +369,10 @@ const Home = () => {
                   }
                 : undefined
             }
-            onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
+            roomId={roomId || null}
             canControl={true}
+            onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
             onAddTrack={() => setShowSpotifyInput(true)}
-            onSignOut={() => {
-              console.log('Spotify signed out');
-              // You can add additional cleanup logic here if needed
-            }}
-            roomId={roomId}
           />
         </View>
 
@@ -410,7 +392,8 @@ const Home = () => {
         )}
       </ScrollView>
 
-      <View className="absolute bottom-5 right-5">
+      {/* Sign Out Button - Top Right */}
+      <View className="absolute top-16 right-5 z-50">
         <SignOutButton />
       </View>
 
