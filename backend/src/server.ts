@@ -53,6 +53,11 @@ app.use(
   }),
 );
 
+// 404 handler for unmatched routes
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.originalUrl} not found` });
+});
+
 // Route mounting
 app.use('/users', UserRouter);
 app.use('/rooms', RoomRouter);
@@ -78,11 +83,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     error: isDevelopment ? err.message : 'Internal server error',
     ...(isDevelopment && { stack: err.stack }),
   });
-});
-
-// 404 handler for unmatched routes
-app.use('*', (req, res) => {
-  res.status(404).json({ error: `Route ${req.originalUrl} not found` });
 });
 
 const startServer = async () => {

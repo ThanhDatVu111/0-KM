@@ -5,8 +5,6 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import io, { Socket } from 'socket.io-client';
 
 const SocketContext = createContext<typeof Socket | null>(null);
-const HOST = process.env.EXPO_PUBLIC_API_HOST!;
-const PORT = process.env.EXPO_PUBLIC_API_PORT!;
 const PUBLIC_URL = process.env.EXPO_PUBLIC_API_PUBLIC_URL!;
 
 // Create a SINGLETON Socket Instance per app session
@@ -22,8 +20,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       if (!userId || !isSignedIn) return;
       //   const roomId = (await fetchRoom({ user_id: userId })).room_id;
 
-      const socket = io(PUBLIC_URL || `http://${HOST}:${PORT}`, {
-        transports: ['websocket'], // polling doesn't always work in React Native
+      const socket = io(PUBLIC_URL, {
+        transports: ['websocket', 'polling'],
         auth: { userId },
         query: { userId },
       });
