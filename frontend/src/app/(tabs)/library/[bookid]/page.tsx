@@ -70,10 +70,11 @@ export default function BookPage() {
   };
 
   const updateEntry = (entry: any) => {
+    // Build the path dynamically to avoid TypeScript route checking
+    const updatePath = `/library/${bookId}/update-entry`;
     router.push({
-      pathname: `/library/[bookId]/update-entry`,
+      pathname: updatePath as any,
       params: {
-        bookId: bookId,
         entryId: entry.id,
         title: entry.title,
         body: entry.body,

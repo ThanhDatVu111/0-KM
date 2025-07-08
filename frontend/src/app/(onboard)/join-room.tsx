@@ -305,8 +305,17 @@ const JoinRoom = () => {
       });
 
       console.log('Paired with partner successfully!');
-      // Don't show alert here - let the realtime subscription handle navigation
-      router.push({ pathname: '/(tabs)/home', params: { userId } });
+      
+      // Show alert for the person who joined
+      Alert.alert('Success', 'You have been paired with your partner!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            router.push({ pathname: '/(tabs)/home', params: { userId } });
+          },
+        },
+      ]);
+      
     } catch (err) {
       console.error('Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
