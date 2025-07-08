@@ -79,3 +79,20 @@ export async function createEvent(attrs: {
   if (error) throw error;
   return data;
 }
+
+export async function fetchUpcomingEvents(attrs: { room_id: string }) {
+  const nowISO = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('room_id', attrs.room_id)
+    .gte('end_time', nowISO) // exclude events that have ended
+    .order('start_time', { ascending: true })
+    .limit(3);
+  if (error) {
+    console.error('Supabase query failed:', error);
+    return [];
+  }
+
+  return data ?? [];
+}

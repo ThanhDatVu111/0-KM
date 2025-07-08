@@ -6,6 +6,7 @@ import { fetchRoom } from '@/apis/room';
 import images from '@/constants/images';
 import { SignOutButton } from '@/components/SignOutButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchUpcomingEvents } from '@/apis/calendar';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -31,12 +32,30 @@ const Home = () => {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
   useEffect(() => {
     if (userId) {
       loadUserRoom();
     }
   }, [userId]);
+
+  useEffect(() => {
+    const loadUpcomingEvents = async () => {
+      try {
+        if (roomId) {
+          const events = await fetchUpcomingEvents({ room_id: roomId });
+          setUpcomingEvents(Array.isArray(events.data) ? events.data : []);
+        }
+      } catch (error) {
+        console.error('Failed to load upcoming events:', error);
+        // Set empty array on error
+        setUpcomingEvents([]);
+      }
+    };
+
+    loadUpcomingEvents();
+  }, [roomId]);
 
   const loadUserRoom = async () => {
     try {
@@ -87,7 +106,12 @@ const Home = () => {
                 borderTopRightRadius: 16,
               }}
             >
-              <Text className="font-psemibold text-lg text-white px-3">Friday 14</Text>
+              <Text className="font-psemibold text-lg text-white px-3">
+                {new Date().toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </Text>{' '}
             </View>
             <View
               style={{
@@ -95,13 +119,32 @@ const Home = () => {
                 backgroundColor: 'white',
                 borderBottomLeftRadius: 16,
                 borderBottomRightRadius: 16,
-                justifyContent: 'center',
-                alignItems: 'center',
+                padding: 8,
+                justifyContent: upcomingEvents.length ? 'flex-start' : 'center',
               }}
             >
-              <Text className="text-center font-pregular text-sm text-black px-3">
-                Movie night in 3 days!
-              </Text>
+              {upcomingEvents.length === 0 ? (
+                <Text className="text-center font-plight text-xs text-gray-600">
+                  No upcoming events
+                </Text>
+              ) : (
+                // Safe array operation with additional checks
+                (Array.isArray(upcomingEvents) ? upcomingEvents : []).slice(0, 3).map((ev) => (
+                  <View key={ev.id} style={{ marginBottom: 6 }}>
+                    <Text className="font-psemibold text-sm text-black">
+                      {ev.title || '(No title)'}
+                    </Text>
+                    <Text className="font-plight text-xs text-gray-600">
+                      {new Date(ev.start_time).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </View>
+                ))
+              )}
             </View>
           </WidgetCard>
 

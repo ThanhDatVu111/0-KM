@@ -67,3 +67,16 @@ export async function createEvent(req: any, res: any) {
     return res.status(400).json({ error: 'error creating event' });
   }
 }
+
+export async function fetchUpcomingEvents(req: any, res: any) {
+  try {
+    const room_id = req.query.room_id;
+    if (!room_id) {
+      return res.status(400).json({ error: 'missing required fields' });
+    }
+    const response = await calendarService.fetchUpcomingEvents({ room_id });
+    res.status(200).json({ data: response });
+  } catch (error) {
+    return res.status(400).json({ error: error });
+  }
+}

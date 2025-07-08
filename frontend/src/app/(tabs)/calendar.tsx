@@ -112,9 +112,12 @@ function GGCalendar() {
         const user = await fetchUser(userId);
         setUserEmail(user.email);
 
-        const partner = await fetchUser(other_user_id);
+        // Use the value directly from the room object, not the state
+        const partner = await fetchUser(room.other_user_id);
         setPartnerEmail(partner.email);
-      } catch (err) {}
+      } catch (err) {
+        console.error('Error fetching room and user data:', err);
+      }
     })();
   }, [userId]);
 
@@ -358,7 +361,7 @@ function GGCalendar() {
       );
       const endDate = new Date(startDate.getTime() + 30 * 60000);
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-
+      console.log('partner:', partner_email);
       const attendees = [
         {
           email: partner_email,

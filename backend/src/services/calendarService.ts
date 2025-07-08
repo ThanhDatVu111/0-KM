@@ -29,3 +29,9 @@ export async function createEvent(input: any) {
     title: input.title,
   });
 }
+
+export async function fetchUpcomingEvents(input: any) {
+  return calendarModel.fetchUpcomingEvents({
+    room_id: input.room_id,
+  });
+}

@@ -100,3 +100,22 @@ export async function createEvent(request: CreateEventRequest): Promise<any> {
     console.error('error when creating event to supabase:', error);
   }
 }
+
+interface FetchUpcomingEventsRequest {
+  room_id: string;
+}
+export async function fetchUpcomingEvents(request: FetchUpcomingEventsRequest): Promise<any> {
+  try {
+    const response = await fetch(`${BASE_URL}/calendar/events?room_id=${request.room_id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'Application/json' },
+    });
+    if (!response) {
+      throw new Error('error fetching upcoming events');
+    }
+    const result = response.json();
+    return result;
+  } catch (error) {
+    console.error('error fetching upcoming events', error);
+  }
+}
