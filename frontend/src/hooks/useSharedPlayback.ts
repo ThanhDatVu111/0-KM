@@ -56,8 +56,11 @@ export function useSharedPlayback(roomId: string | null) {
           is_playing: updates.is_playing ?? sharedPlaybackState?.is_playing ?? false,
           current_track_uri: updates.current_track_uri ?? sharedPlaybackState?.current_track_uri,
           progress_ms: updates.progress_ms ?? sharedPlaybackState?.progress_ms ?? 0,
-          controlled_by_user_id:
-            updates.controlled_by_user_id ?? sharedPlaybackState?.controlled_by_user_id,
+          // Only include controlled_by_user_id if it's explicitly provided (for track changes)
+          // Don't include it for play/pause updates to avoid controller flipping
+          ...(updates.controlled_by_user_id && {
+            controlled_by_user_id: updates.controlled_by_user_id,
+          }),
         };
 
         await updateRoomPlaybackState(roomId, newState, userId, apiClient);
@@ -117,9 +120,11 @@ export function useSharedPlayback(roomId: string | null) {
 
     // Auto-play should trigger when:
     // 1. Non-controller user and controller starts playing (original logic)
-    // 2. Any user when the shared state changes to playing (fix for User 2 after pause)
     const shouldAutoPlay =
-      hasTrackUri && isPlaying && lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri;
+      !isController &&
+      hasTrackUri &&
+      isPlaying &&
+      lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri;
 
     // Only log auto-play checks when something changes
     if (
@@ -133,7 +138,7 @@ export function useSharedPlayback(roomId: string | null) {
         currentTrackUri: hasTrackUri,
         lastAutoPlayedTrack,
         shouldAutoPlay,
-        reason: 'any-user-playing',
+        reason: !isController ? 'non-controller' : 'controller-playing',
       });
     }
 
@@ -204,7 +209,9 @@ export function useSharedPlayback(roomId: string | null) {
       });
 
       // Always send play/pause command, not play track command
-      await sendPlaybackCommand(roomId, newIsPlaying ? 'play' : 'pause');
+      // Include current track URI for play commands so controller knows what to play
+      const trackUri = newIsPlaying ? sharedPlaybackState?.current_track_uri : undefined;
+      await sendPlaybackCommand(roomId, newIsPlaying ? 'play' : 'pause', trackUri);
       console.log('🎵 Command sent:', {
         action: newIsPlaying ? 'play' : 'pause',
         currentTrackUri: sharedPlaybackState?.current_track_uri,

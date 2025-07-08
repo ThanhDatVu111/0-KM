@@ -25,7 +25,6 @@ export async function updateRoomPlaybackState(
         console.log('Playback state endpoint not ready yet, using local state');
         return {
           ...playbackState,
-          controlled_by_user_id: userId,
         };
       }
       throw new Error(`Failed to update playback state: ${response.status}`);
@@ -36,9 +35,9 @@ export async function updateRoomPlaybackState(
   } catch (error) {
     console.log('Error updating playback state, using local state:', error);
     // Return the state we tried to set if there's any error
+    // Don't override controlled_by_user_id on error fallback
     return {
       ...playbackState,
-      controlled_by_user_id: userId,
     };
   }
 }
@@ -80,4 +79,3 @@ export async function getRoomPlaybackState(
     };
   }
 }
- 

@@ -167,10 +167,19 @@ export async function updatePlaybackState(
       return;
     }
 
-    // Add the controlling user to the playback state
+    // Get the current playback state to compare
+    const currentPlaybackState = await roomService.getPlaybackState(room_id);
+
+    // Only change the controller when a new track is added, not on play/pause
+    const isTrackChange =
+      playback_state.current_track_uri &&
+      (!currentPlaybackState?.current_track_uri ||
+        playback_state.current_track_uri !== currentPlaybackState.current_track_uri);
+
     const updatedPlaybackState = {
       ...playback_state,
-      controlled_by_user_id: user_id,
+      // Only set controller if this is a track change, otherwise keep existing controller
+      controlled_by_user_id: isTrackChange ? user_id : currentPlaybackState?.controlled_by_user_id,
     };
 
     const result = await roomService.updatePlaybackState(room_id, updatedPlaybackState);

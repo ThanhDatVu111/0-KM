@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import supabase from '@/utils/supabase';
 import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
-import { updatePlaybackState } from '@/services/playbackState';
-import { getRoomPlaybackState } from '@/apis/playback';
+import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
 import { useApiClient } from '@/hooks/useApiClient';
 
 export function usePlaybackCommandListener(roomId: string, isController: boolean = false) {
   const lastLogTime = useRef<number>(0);
   const hasTransferredPlayback = useRef<boolean>(false);
+  const apiClient = useApiClient();
 
   // Throttle logging to every 5 seconds
   const throttledLog = (message: string, data?: any) => {
@@ -80,12 +80,30 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
                 // We have a track, just resume playback
                 console.log('🎵 [Remote Control] Resuming playback');
                 await spotifyPlayback.togglePlayPause();
-                await updatePlaybackState(roomId, true, currentState.currentTrack.uri);
+                await updateRoomPlaybackState(
+                  roomId,
+                  {
+                    is_playing: true,
+                    current_track_uri: currentState.currentTrack.uri,
+                    progress_ms: currentState.progress || 0,
+                  },
+                  '',
+                  apiClient,
+                );
               } else if (track_uri) {
                 // No current track but we have a track_uri, start playing that track
                 console.log('🎵 [Remote Control] Starting playback of track:', track_uri);
                 await spotifyPlayback.playTrack(track_uri);
-                await updatePlaybackState(roomId, true, track_uri);
+                await updateRoomPlaybackState(
+                  roomId,
+                  {
+                    is_playing: true,
+                    current_track_uri: track_uri,
+                    progress_ms: 0,
+                  },
+                  '',
+                  apiClient,
+                );
               } else {
                 console.log('🎵 [Remote Control] No track available to play');
               }
@@ -102,18 +120,45 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
                   .getPlaybackState()
                   .then((state) => state?.currentTrack?.uri));
               if (trackUri) {
-                await updatePlaybackState(roomId, false, trackUri);
+                await updateRoomPlaybackState(
+                  roomId,
+                  {
+                    is_playing: false,
+                    current_track_uri: trackUri,
+                    progress_ms: 0,
+                  },
+                  '',
+                  apiClient,
+                );
               }
             }
             if (action === 'play_track' && track_uri) {
               console.log('🎵 [Remote Control] Playing specific track:', track_uri);
               await spotifyPlayback.playTrack(track_uri);
-              await updatePlaybackState(roomId, true, track_uri);
+              await updateRoomPlaybackState(
+                roomId,
+                {
+                  is_playing: true,
+                  current_track_uri: track_uri,
+                  progress_ms: 0,
+                },
+                '',
+                apiClient,
+              );
             } else if (action === 'play' && track_uri) {
               // Handle play command with track_uri (fallback for play_track)
               console.log('🎵 [Remote Control] Playing track from play command:', track_uri);
               await spotifyPlayback.playTrack(track_uri);
-              await updatePlaybackState(roomId, true, track_uri);
+              await updateRoomPlaybackState(
+                roomId,
+                {
+                  is_playing: true,
+                  current_track_uri: track_uri,
+                  progress_ms: 0,
+                },
+                '',
+                apiClient,
+              );
             }
             if (action === 'next') {
               console.log('🎵 [Remote Control] Skipping to next track');
@@ -121,10 +166,15 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               // Update state after skipping
               const currentState = await spotifyPlayback.getPlaybackState();
               if (currentState?.currentTrack?.uri) {
-                await updatePlaybackState(
+                await updateRoomPlaybackState(
                   roomId,
-                  currentState.isPlaying,
-                  currentState.currentTrack.uri,
+                  {
+                    is_playing: currentState.isPlaying,
+                    current_track_uri: currentState.currentTrack.uri,
+                    progress_ms: currentState.progress || 0,
+                  },
+                  '',
+                  apiClient,
                 );
               }
             }
@@ -134,10 +184,15 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               // Update state after skipping
               const currentState = await spotifyPlayback.getPlaybackState();
               if (currentState?.currentTrack?.uri) {
-                await updatePlaybackState(
+                await updateRoomPlaybackState(
                   roomId,
-                  currentState.isPlaying,
-                  currentState.currentTrack.uri,
+                  {
+                    is_playing: currentState.isPlaying,
+                    current_track_uri: currentState.currentTrack.uri,
+                    progress_ms: currentState.progress || 0,
+                  },
+                  '',
+                  apiClient,
                 );
               }
             }
