@@ -21,7 +21,6 @@ export default {
   logo,
   polaroid_frame,
   polaroid_picture,
-  highlight,
   navBarBackground,
   entry,
   startButton,

@@ -25,7 +25,16 @@ export default function UpdateEntryScreen() {
         .filter((url) => url.trim() !== '')
         // For each image URL, set both `uri` and `cloudinaryUrl` to the Cloudinary URL.
         // This tells EntryForm that the image is already uploaded and should not be re-uploaded.
-        .map((url) => ({ uri: url.trim(), cloudinaryUrl: url.trim(), type: 'image' }))
+        // Also determine if it's a video based on the file extension.
+        .map((url) => {
+          const trimmed = url.trim();
+          const isVideo = /\.(mp4|mov|webm)$/i.test(trimmed);
+          return {
+            uri: trimmed,
+            cloudinaryUrl: trimmed,
+            type: isVideo ? 'video' : 'image',
+          };
+        })
     : [];
   const [saving, setSaving] = useState(false);
 

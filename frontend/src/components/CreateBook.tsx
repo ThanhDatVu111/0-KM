@@ -12,6 +12,10 @@ interface CreateBookProps {
 const BOOK_IMAGE_OPTIONS: { color: BookColor; label: string; image: any }[] = [
   { color: 'pink', label: 'Pink', image: BOOK_IMAGES.pink },
   { color: 'purple', label: 'Purple', image: BOOK_IMAGES.purple },
+  { color: 'blue', label: 'Blue', image: BOOK_IMAGES.blue },
+  { color: 'darkblue', label: 'Dark Blue', image: BOOK_IMAGES.darkblue },
+  { color: 'green', label: 'Green', image: BOOK_IMAGES.green },
+  { color: 'white', label: 'White', image: BOOK_IMAGES.white },
 ];
 
 export const CreateBook: React.FC<CreateBookProps> = ({ coupleId, onSuccess, onError }) => {

@@ -18,6 +18,7 @@ import images from '@/constants/images';
 import icons from '@/constants/icons';
 import { router } from 'expo-router';
 import MapPickerWebView from './MapPickerWebView';
+import { Video, ResizeMode } from 'expo-av';
 
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
@@ -92,7 +93,7 @@ export default function EntryForm({
     }
   }, [bgLoaded]);
 
-  const MAX_MEDIA = 16; // Maximum number of media items allowed
+  const MAX_MEDIA = 32; // Maximum number of media items allowed
   const MAX_WORDS = 500;
 
   // ─── Pick Image ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -346,7 +347,7 @@ export default function EntryForm({
     <View className="flex-1">
       <ImageBackground
         source={images.entryFormBg}
-        resizeMode="cover"
+        resizeMode={ResizeMode.COVER}
         className="flex-1"
         onLoadEnd={() => setBgLoaded(true)}
       >
@@ -561,13 +562,26 @@ export default function EntryForm({
                               overflow: 'hidden',
                               position: 'relative',
                               backgroundColor: '#fff',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
                           >
-                            <Image
-                              source={{ uri: item.uri }}
-                              style={{ width: '100%', height: '100%' }}
-                              resizeMode="cover"
-                            />
+                            {item.type === 'image' ? (
+                              <Image
+                                source={{ uri: item.uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <Video
+                                source={{ uri: item.uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode={ResizeMode.COVER}
+                                isMuted
+                                shouldPlay={false}
+                                useNativeControls={false}
+                              />
+                            )}
                             <Pressable
                               onPress={() =>
                                 setSelectedMedia((prev) => prev.filter((_, i) => i !== index))

@@ -11,18 +11,22 @@ interface EditBookProps {
   onCancel?: () => void;
 }
 
-const BOOK_COLOR_OPTIONS: { color: BookColor; label: string; image: any }[] = [
+const BOOK_IMAGE_OPTIONS: { color: BookColor; label: string; image: any }[] = [
   { color: 'pink', label: 'Pink', image: BOOK_IMAGES.pink },
   { color: 'purple', label: 'Purple', image: BOOK_IMAGES.purple },
+  { color: 'blue', label: 'Blue', image: BOOK_IMAGES.blue },
+  { color: 'darkblue', label: 'Dark Blue', image: BOOK_IMAGES.darkblue },
+  { color: 'green', label: 'Green', image: BOOK_IMAGES.green },
+  { color: 'white', label: 'White', image: BOOK_IMAGES.white },
 ];
 
 export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, onCancel }) => {
   const [title, setTitle] = useState(book.title);
   const [selectedColor, setSelectedColor] = useState<BookColor>(book.color as BookColor);
   const screenWidth = Dimensions.get('window').width;
-    const modalWidth = screenWidth * 0.7;
-    const itemWidth = (modalWidth - 32) / 3;
-    const imageSize = itemWidth - 16;
+  const modalWidth = screenWidth * 0.7;
+  const itemWidth = (modalWidth - 32) / 3;
+  const imageSize = itemWidth - 16;
 
   const handleEditBook = async () => {
     try {
@@ -41,6 +45,16 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
       onError?.(error.message || 'Failed to update book');
     }
   };
+
+  const rows = BOOK_IMAGE_OPTIONS.reduce(
+    (acc, curr, i) => {
+      const rowIndex = Math.floor(i / 3);
+      if (!acc[rowIndex]) acc[rowIndex] = [];
+      acc[rowIndex].push(curr);
+      return acc;
+    },
+    [] as (typeof BOOK_IMAGE_OPTIONS)[],
+  );
 
   return (
     <View style={{ padding: 16 }}>
@@ -63,42 +77,47 @@ export const EditBook: React.FC<EditBookProps> = ({ book, onSuccess, onError, on
       />
 
       {/* Book Color Picker */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
-        {BOOK_COLOR_OPTIONS.map((option) => (
-          <View key={option.color} style={{ alignItems: 'center' }}>
-            <Image
-              source={option.image}
-              style={{
-                width: imageSize,
-                height: imageSize * 1.33,
-              }}
-              resizeMode="contain"
-            />
-            <TouchableOpacity
-              onPress={() => setSelectedColor(option.color)}
-              activeOpacity={0.8}
-              style={{
-                backgroundColor: selectedColor === option.color ? '#FCD6E7' : '#FFF',
-                borderColor: '#000',
-                borderWidth: 2,
-                paddingVertical: 4,
-                paddingHorizontal: 10,
-              }}
-            >
-              <Text
+      {rows.map((row, rowIndex) => (
+        <View
+          key={rowIndex}
+          style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 12 }}
+        >
+          {row.map((option) => (
+            <View key={option.color} style={{ alignItems: 'center' }}>
+              <Image
+                source={option.image}
                 style={{
-                  fontFamily: 'PixelifySans',
-                  fontSize: 10,
-                  color: '#000',
-                  textAlign: 'center',
+                  width: imageSize,
+                  height: imageSize * 1.33,
+                }}
+                resizeMode="contain"
+              />
+              <TouchableOpacity
+                onPress={() => setSelectedColor(option.color)}
+                activeOpacity={0.8}
+                style={{
+                  backgroundColor: selectedColor === option.color ? '#FCD6E7' : '#FFF',
+                  borderColor: '#000',
+                  borderWidth: 2,
+                  paddingVertical: 4,
+                  paddingHorizontal: 10,
                 }}
               >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 10,
+                    color: '#000',
+                    textAlign: 'center',
+                  }}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      ))}
 
       {/* Retro Action Buttons */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
