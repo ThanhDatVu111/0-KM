@@ -8,6 +8,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
 import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
 import { useSharedPlayback } from '../../hooks/useSharedPlayback';
+import { usePlaybackCommandListener } from '../../hooks/usePlaybackCommandListener';
 
 type SpotifyTrack = {
   id: string;
@@ -64,7 +65,6 @@ export function UnifiedSpotifyWidget({
   const {
     sharedPlaybackState,
     isLoading: sharedLoading,
-    error: sharedError,
     togglePlayPause: sharedTogglePlayPause,
     playTrack: sharedPlayTrack,
     skipToNext: sharedSkipToNext,
@@ -79,6 +79,22 @@ export function UnifiedSpotifyWidget({
   const currentSkipToPrevious = isInRoom ? sharedSkipToPrevious : skipToPrevious;
   const currentPlayTrack = isInRoom ? sharedPlayTrack : playTrack;
   const isLoading = isInRoom ? sharedLoading : playbackLoading;
+
+  // Set up command listener for controller (User 1)
+  const isController = sharedPlaybackState?.controlled_by_user_id === userId;
+  usePlaybackCommandListener(roomId || '', isController);
+
+  // Debug logging for controller status
+  useEffect(() => {
+    if (roomId && sharedPlaybackState) {
+      console.log('🎵 [Controller Status]', {
+        userId,
+        isController,
+        controlledBy: sharedPlaybackState.controlled_by_user_id,
+        roomId,
+      });
+    }
+  }, [roomId, userId, isController, sharedPlaybackState?.controlled_by_user_id]);
 
   // Check if user has connected to Spotify before
   useEffect(() => {

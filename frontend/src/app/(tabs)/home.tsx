@@ -374,6 +374,19 @@ const Home = () => {
             onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
             onAddTrack={() => setShowSpotifyInput(true)}
           />
+
+          {/* Debug info */}
+          {__DEV__ && (
+            <View className="mt-2 p-2 bg-black/20 rounded">
+              <Text className="text-white/60 text-xs">
+                Track Debug:{' '}
+                {roomTrack ? `"${roomTrack.track_name}" by ${roomTrack.artist_name}` : 'No track'}
+              </Text>
+              <Text className="text-white/60 text-xs">
+                Room ID: {roomId || 'None'} | Has Room: {hasSpotifyRoom ? 'Yes' : 'No'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Spotify Debug Panel */}

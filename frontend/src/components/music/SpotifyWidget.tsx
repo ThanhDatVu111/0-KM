@@ -25,6 +25,7 @@ type Props = {
   canControl?: boolean;
   isController?: boolean;
   controllerName?: string;
+  isLoading?: boolean;
 };
 
 export function SpotifyWidget({
@@ -38,6 +39,7 @@ export function SpotifyWidget({
   canControl = false,
   isController = false,
   controllerName,
+  isLoading = false,
 }: Props) {
   const { userId } = useAuth();
   const [currentTime, setCurrentTime] = useState(0);
@@ -147,10 +149,10 @@ export function SpotifyWidget({
           <View style={styles.controls}>
             <TouchableOpacity
               onPress={onPrevious}
-              style={styles.controlButton}
+              style={[styles.controlButton, !onPrevious && styles.disabledButton]}
               disabled={!onPrevious}
             >
-              <Ionicons name="play-skip-back" size={24} color="white" />
+              <Ionicons name="play-skip-back" size={24} color={!onPrevious ? '#666' : 'white'} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -164,13 +166,24 @@ export function SpotifyWidget({
                 });
                 if (onPlayPause) onPlayPause();
               }}
-              style={styles.playButton}
+              style={[styles.playButton, isLoading && styles.loadingButton]}
+              disabled={isLoading}
             >
-              <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="white" />
+              {isLoading ? (
+                <View style={styles.loadingSpinner}>
+                  <Ionicons name="refresh" size={24} color="white" style={styles.spinning} />
+                </View>
+              ) : (
+                <Ionicons name={isPlaying ? 'pause' : 'play'} size={32} color="white" />
+              )}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={onNext} style={styles.controlButton} disabled={!onNext}>
-              <Ionicons name="play-skip-forward" size={24} color="white" />
+            <TouchableOpacity
+              onPress={onNext}
+              style={[styles.controlButton, !onNext && styles.disabledButton]}
+              disabled={!onNext}
+            >
+              <Ionicons name="play-skip-forward" size={24} color={!onNext ? '#666' : 'white'} />
             </TouchableOpacity>
           </View>
         )}
@@ -316,5 +329,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     marginLeft: 4,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  loadingButton: {
+    backgroundColor: '#666',
+  },
+  loadingSpinner: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  spinning: {
+    transform: [{ rotate: '360deg' }],
   },
 });

@@ -130,3 +130,11 @@ CREATE POLICY "Users can update their own spotify tokens" ON spotify_user_tokens
 
 CREATE POLICY "Users can delete their own spotify tokens" ON spotify_user_tokens
     FOR DELETE USING (auth.uid()::text = user_id); 
+
+-- Enable real-time for room_spotify_tracks table
+ALTER PUBLICATION supabase_realtime ADD TABLE room_spotify_tracks;
+
+-- NOTE: Since this app uses Clerk for authentication instead of Supabase Auth,
+-- the RLS policies above may block real-time subscriptions. For testing,
+-- you can temporarily disable RLS on the room_spotify_tracks table:
+-- ALTER TABLE room_spotify_tracks DISABLE ROW LEVEL SECURITY; 

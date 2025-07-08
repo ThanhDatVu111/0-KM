@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useApiClient } from '@/hooks/useApiClient';
 import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
 import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
+import { sendPlaybackCommand, sendPlayTrackCommand } from '@/services/playbackCommands';
 import supabase from '@/utils/supabase';
 
 interface PlaybackState {
@@ -51,12 +52,15 @@ export function useSharedPlayback(roomId: string | null) {
 
       setIsLoading(true);
       try {
-        const newState = {
-          ...sharedPlaybackState,
-          ...updates,
+        const newState: PlaybackState = {
+          is_playing: updates.is_playing ?? sharedPlaybackState?.is_playing ?? false,
+          current_track_uri: updates.current_track_uri ?? sharedPlaybackState?.current_track_uri,
+          progress_ms: updates.progress_ms ?? sharedPlaybackState?.progress_ms ?? 0,
+          controlled_by_user_id:
+            updates.controlled_by_user_id ?? sharedPlaybackState?.controlled_by_user_id,
         };
 
-        await updateRoomPlaybackState(roomId, newState, apiClient);
+        await updateRoomPlaybackState(roomId, newState, userId, apiClient);
         throttledLog('🎵 [Real-time] Playback state updated:', newState);
       } catch (error) {
         console.error('Error updating shared playback state:', error);
@@ -103,50 +107,60 @@ export function useSharedPlayback(roomId: string | null) {
     };
   }, [roomId, fetchSharedPlaybackState]);
 
-  // Auto-play on non-controller devices when controller starts playing
+  // Auto-play logic: Handle both controller and non-controller play commands
   useEffect(() => {
     if (!roomId || !userId || !sharedPlaybackState) return;
 
     const isController = sharedPlaybackState.controlled_by_user_id === userId;
+    const hasTrackUri = sharedPlaybackState.current_track_uri;
+    const isPlaying = sharedPlaybackState.is_playing;
+
+    // Auto-play should trigger when:
+    // 1. Non-controller user and controller starts playing (original logic)
+    // 2. Any user when the shared state changes to playing (fix for User 2 after pause)
     const shouldAutoPlay =
-      !isController &&
-      sharedPlaybackState.is_playing &&
-      sharedPlaybackState.current_track_uri &&
-      lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri;
+      hasTrackUri && isPlaying && lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri;
 
-    console.log('🎵 Auto-play check:', {
-      userId,
-      isController,
-      isPlaying: sharedPlaybackState.is_playing,
-      currentTrackUri: sharedPlaybackState.current_track_uri,
-      lastAutoPlayedTrack,
-      shouldAutoPlay,
-    });
-
-    if (shouldAutoPlay) {
-      console.log(
-        '🎵 Auto-playing track on non-controller device:',
-        sharedPlaybackState.current_track_uri,
-      );
-
-      // Mark this track as auto-played
-      setLastAutoPlayedTrack(sharedPlaybackState.current_track_uri);
-
-      // Try to auto-play, but don't fail if Spotify isn't connected
-      spotifyPlayback.playTrack(sharedPlaybackState.current_track_uri).catch((err) => {
-        if (err.message?.includes('No valid Spotify access token')) {
-          console.log('🎵 Auto-play skipped - User not connected to Spotify (this is normal)');
-        } else {
-          console.log('🎵 Auto-play failed:', err.message);
-        }
+    // Only log auto-play checks when something changes
+    if (
+      shouldAutoPlay ||
+      (hasTrackUri && lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri)
+    ) {
+      throttledLog('🎵 Auto-play check:', {
+        userId,
+        isController,
+        isPlaying,
+        currentTrackUri: hasTrackUri,
+        lastAutoPlayedTrack,
+        shouldAutoPlay,
+        reason: 'any-user-playing',
       });
     }
 
+    if (shouldAutoPlay) {
+      console.log(
+        '🎵 Auto-playing track:',
+        sharedPlaybackState.current_track_uri,
+        isController ? '(controller user)' : '(non-controller user)',
+      );
+
+      // Mark this track as auto-played
+      setLastAutoPlayedTrack(sharedPlaybackState.current_track_uri || null);
+
+      // Try to auto-play, but don't fail if Spotify isn't connected
+      if (sharedPlaybackState.current_track_uri) {
+        spotifyPlayback.playTrack(sharedPlaybackState.current_track_uri).catch((err) => {
+          if (err.message?.includes('No valid Spotify access token')) {
+            console.log('🎵 Auto-play skipped - User not connected to Spotify (this is normal)');
+          } else {
+            console.log('🎵 Auto-play failed:', err.message);
+          }
+        });
+      }
+    }
+
     // Reset auto-played track when track changes
-    if (
-      sharedPlaybackState.current_track_uri &&
-      lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri
-    ) {
+    if (hasTrackUri && lastAutoPlayedTrack !== sharedPlaybackState.current_track_uri) {
       setLastAutoPlayedTrack(null);
     }
   }, [roomId, userId, sharedPlaybackState, lastAutoPlayedTrack]);
@@ -169,7 +183,7 @@ export function useSharedPlayback(roomId: string | null) {
     }
   }, [roomId, userId, updateSharedPlaybackState]);
 
-  // Control playback through shared state
+  // Control playback through command relay system
   const togglePlayPause = useCallback(async () => {
     if (!roomId || !userId) return;
 
@@ -180,6 +194,7 @@ export function useSharedPlayback(roomId: string | null) {
     }
 
     try {
+      setIsLoading(true);
       const newIsPlaying = !sharedPlaybackState?.is_playing;
       console.log('🎵 Toggle Play/Pause:', {
         userId,
@@ -188,101 +203,58 @@ export function useSharedPlayback(roomId: string | null) {
         newState: newIsPlaying,
       });
 
-      await updateSharedPlaybackState({ is_playing: newIsPlaying });
+      // Always send play/pause command, not play track command
+      await sendPlaybackCommand(roomId, newIsPlaying ? 'play' : 'pause');
+      console.log('🎵 Command sent:', {
+        action: newIsPlaying ? 'play' : 'pause',
+        currentTrackUri: sharedPlaybackState?.current_track_uri,
+        isController: sharedPlaybackState?.controlled_by_user_id === userId,
+      });
 
-      // Only try to control local Spotify if this user is the controller
-      const isController = sharedPlaybackState?.controlled_by_user_id === userId;
-      if (isController) {
-        try {
-          await spotifyPlayback.togglePlayPause();
-          console.log('🎵 Controller executed local Spotify control');
-        } catch (spotifyError) {
-          if (spotifyError.message?.includes('429')) {
-            console.log('🎵 Rate limited - Spotify is processing too many requests. Please wait a moment.');
-          } else {
-            console.log('Local Spotify control failed, but shared state updated');
-          }
-        }
-      } else {
-        console.log('🎵 Requesting playback change - waiting for controller to respond');
-      }
+      // Add a small delay to prevent rapid commands
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (err) {
-      console.error('Error toggling play/pause:', err);
+      console.error('Error sending play/pause command:', err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [roomId, userId, sharedPlaybackState, updateSharedPlaybackState, isLoading]);
+  }, [roomId, userId, sharedPlaybackState, isLoading]);
 
   const playTrack = useCallback(
     async (trackUri: string) => {
       if (!roomId || !userId) return;
 
       try {
-        await updateSharedPlaybackState({
-          is_playing: true,
-          current_track_uri: trackUri,
-          progress_ms: 0,
-        });
-
-        // Only try to play on local Spotify if this user is the controller
-        const isController = sharedPlaybackState?.controlled_by_user_id === userId;
-        if (isController) {
-          try {
-            await spotifyPlayback.playTrack(trackUri);
-          } catch (spotifyError) {
-            console.log('Local Spotify play failed, but shared state updated');
-          }
-        } else {
-          console.log('🎵 Requesting track play - waiting for controller to respond');
-        }
+        console.log('🎵 Sending play track command:', trackUri);
+        await sendPlayTrackCommand(roomId, trackUri);
       } catch (err) {
-        console.error('Error playing track:', err);
+        console.error('Error sending play track command:', err);
       }
     },
-    [roomId, userId, sharedPlaybackState, updateSharedPlaybackState],
+    [roomId, userId],
   );
 
   const skipToNext = useCallback(async () => {
     if (!roomId || !userId) return;
 
     try {
-      // Only try to skip on local Spotify if this user is the controller
-      const isController = sharedPlaybackState?.controlled_by_user_id === userId;
-      if (isController) {
-        try {
-          await spotifyPlayback.skipToNext();
-          // Sync the new state after a brief delay
-          setTimeout(syncWithSpotify, 1000);
-        } catch (spotifyError) {
-          console.log('Local Spotify skip failed');
-        }
-      } else {
-        console.log('🎵 Requesting skip to next - waiting for controller to respond');
-      }
+      console.log('🎵 Sending skip to next command');
+      await sendPlaybackCommand(roomId, 'next');
     } catch (err) {
-      console.error('Error skipping to next:', err);
+      console.error('Error sending skip to next command:', err);
     }
-  }, [roomId, userId, sharedPlaybackState, syncWithSpotify]);
+  }, [roomId, userId]);
 
   const skipToPrevious = useCallback(async () => {
     if (!roomId || !userId) return;
 
     try {
-      // Only try to skip on local Spotify if this user is the controller
-      const isController = sharedPlaybackState?.controlled_by_user_id === userId;
-      if (isController) {
-        try {
-          await spotifyPlayback.skipToPrevious();
-          // Sync the new state after a brief delay
-          setTimeout(syncWithSpotify, 1000);
-        } catch (spotifyError) {
-          console.log('Local Spotify skip failed');
-        }
-      } else {
-        console.log('🎵 Requesting skip to previous - waiting for controller to respond');
-      }
+      console.log('🎵 Sending skip to previous command');
+      await sendPlaybackCommand(roomId, 'previous');
     } catch (err) {
-      console.error('Error skipping to previous:', err);
+      console.error('Error sending skip to previous command:', err);
     }
-  }, [roomId, userId, sharedPlaybackState, syncWithSpotify]);
+  }, [roomId, userId]);
 
   return {
     sharedPlaybackState,
