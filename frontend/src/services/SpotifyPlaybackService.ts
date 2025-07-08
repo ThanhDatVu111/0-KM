@@ -161,12 +161,13 @@ class SpotifyPlaybackService {
   // Play a specific track
   async playTrack(trackUri: string): Promise<void> {
     try {
+      console.log('🎵 [DEBUG] playTrack called with:', trackUri);
       await this.makeRequest('/me/player/play', 'PUT', {
         uris: [trackUri],
       });
       console.log('🎵 Started playing track:', trackUri);
     } catch (error) {
-      console.error('Error playing track:', error);
+      console.error('❌ [DEBUG] Error playing track:', error);
       throw error;
     }
   }

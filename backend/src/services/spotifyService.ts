@@ -11,6 +11,7 @@ import {
 import { AuthenticatedRequest } from '../middleware/auth';
 import SpotifyWebApi from 'spotify-web-api-node';
 import * as roomService from './roomService';
+import * as roomService from './roomService';
 
 // Initialize Spotify API
 const spotifyApi = new SpotifyWebApi({
@@ -73,11 +74,15 @@ export async function createRoomTrack(
 
     console.log('🎵 Creating room track for user:', userId, 'with track:', request.track_uri);
 
+    console.log('🎵 Creating room track for user:', userId, 'with track:', request.track_uri);
+
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(userId);
     if (!roomId) {
       throw new Error('User is not in a room');
     }
+
+    console.log('🎵 Found room ID:', roomId);
 
     console.log('🎵 Found room ID:', roomId);
 
@@ -121,7 +126,36 @@ export async function createRoomTrack(
     }
 
     return track;
+    // Create the track
+    const track = await createRoomSpotifyTrack(input, req.supabase);
+
+    console.log('🎵 Track created in database:', track ? 'SUCCESS' : 'FAILED');
+
+    if (track) {
+      // Update the playback state to include the new track
+      console.log('🎵 Updating playback state for room:', roomId);
+
+      const playbackState = {
+        is_playing: false,
+        current_track_uri: request.track_uri,
+        progress_ms: 0,
+        controlled_by_user_id: userId,
+      };
+
+      console.log('🎵 New playback state:', playbackState);
+
+      await roomService.updatePlaybackState(roomId, playbackState);
+
+      console.log('✅ Track created and playback state updated:', {
+        track_id: track.track_id,
+        track_uri: request.track_uri,
+        controlled_by_user_id: userId,
+      });
+    }
+
+    return track;
   } catch (error) {
+    console.error('❌ Error in createRoomTrack service:', error);
     console.error('❌ Error in createRoomTrack service:', error);
     throw error;
   }
@@ -194,6 +228,21 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
       throw new Error('No track found in room');
     }
 
+    const success = await deleteRoomSpotifyTrack(currentTrack.id);
+
+    if (success) {
+      // Clear the playback state when track is removed
+      await roomService.updatePlaybackState(roomId, {
+        is_playing: false,
+        current_track_uri: null,
+        progress_ms: 0,
+        controlled_by_user_id: null,
+      });
+
+      console.log('✅ Track deleted and playback state cleared');
+    }
+
+    return success;
     const success = await deleteRoomSpotifyTrack(currentTrack.id);
 
     if (success) {
@@ -377,13 +426,22 @@ export async function playSpotifyTrack(user_id: string, track_uri: string): Prom
       await spotifyApi.play({
         uris: [track_uri],
       });
+      console.log('🎵 [DEBUG] Spotify playback started:', { user_id, track_uri });
+    } catch (spotifyError) {
+      console.error('❌ [DEBUG] Spotify API play error:', spotifyError);
+      throw spotifyError;
+    }
+    try {
+      await spotifyApi.play({
+        uris: [track_uri],
+      });
       console.log('🎵 [Service] Spotify playback started:', { user_id, track_uri });
     } catch (spotifyError) {
       console.error('❌ [Service] Spotify API play error:', spotifyError);
       throw spotifyError;
     }
   } catch (error) {
-    console.error('Error in playSpotifyTrack service:', error);
+    console.error('❌ [DEBUG] Error in playSpotifyTrack service:', error);
     throw error;
   }
 }
