@@ -17,6 +17,7 @@ import {
   UpdateRoomSpotifyTrackRequest,
 } from '../services/spotifyService';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../utils/logger';
 
 /**
  * Get Spotify authorization URL
@@ -26,7 +27,7 @@ export async function getAuthUrl(req: Request, res: Response, next: NextFunction
     const authUrl = getSpotifyAuthUrl();
     res.json({ auth_url: authUrl });
   } catch (error: any) {
-    console.error('Error in getAuthUrl controller:', error);
+    logger.spotify.error('Error in getAuthUrl controller:', error);
     next(error);
   }
 }
@@ -50,7 +51,7 @@ export async function handleAuthCallback(
     const tokenData = await exchangeCodeForToken(code);
     res.json(tokenData);
   } catch (error: any) {
-    console.error('Error in handleAuthCallback controller:', error);
+    logger.spotify.error('Error in handleAuthCallback controller:', error);
     next(error);
   }
 }
@@ -70,7 +71,7 @@ export async function refreshToken(req: Request, res: Response, next: NextFuncti
     const tokenData = await refreshAccessToken(refresh_token);
     res.json(tokenData);
   } catch (error: any) {
-    console.error('Error in refreshToken controller:', error);
+    logger.spotify.error('Error in refreshToken controller:', error);
     next(error);
   }
 }
@@ -128,7 +129,7 @@ export async function createRoomSpotifyTrack(
 
     res.status(201).json(track);
   } catch (error: any) {
-    console.error('Error in createRoomSpotifyTrack controller:', error);
+    logger.spotify.error('Error in createRoomSpotifyTrack controller:', error);
 
     if (error.message === 'User is not in a room') {
       res.status(400).json({ error: 'User must be in a room to add tracks' });
@@ -169,7 +170,7 @@ export async function getRoomSpotifyTrack(
 
     res.status(200).json(track);
   } catch (error: any) {
-    console.error('Error in getRoomSpotifyTrack controller:', error);
+    logger.spotify.error('Error in getRoomSpotifyTrack controller:', error);
     next(error);
   }
 }

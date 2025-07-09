@@ -11,6 +11,7 @@ import {
 import { AuthenticatedRequest } from '../middleware/auth';
 import SpotifyWebApi from 'spotify-web-api-node';
 import * as roomService from './roomService';
+import { logger } from '../utils/logger';
 
 // Initialize Spotify API
 const spotifyApi = new SpotifyWebApi({
@@ -20,9 +21,9 @@ const spotifyApi = new SpotifyWebApi({
 });
 
 // Debug: Log the redirect URI being used
-console.log('🔍 Spotify Redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
-console.log('🔍 Spotify Client ID:', process.env.SPOTIFY_CLIENT_ID ? 'Set' : 'Not set');
-console.log('🔍 Spotify Client Secret:', process.env.SPOTIFY_CLIENT_SECRET ? 'Set' : 'Not set');
+logger.debug('Spotify Redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
+logger.debug('Spotify Client ID:', process.env.SPOTIFY_CLIENT_ID ? 'Set' : 'Not set');
+logger.debug('Spotify Client Secret:', process.env.SPOTIFY_CLIENT_SECRET ? 'Set' : 'Not set');
 
 export interface CreateRoomSpotifyTrackRequest {
   user_id: string;
@@ -106,7 +107,7 @@ export async function createRoomTrack(
 
     return track;
   } catch (error) {
-    console.error('❌ Error in createRoomTrack service:', error);
+    logger.spotify.error('Error in createRoomTrack service:', error);
     throw error;
   }
 }
@@ -124,7 +125,7 @@ export async function getRoomTrack(user_id: string): Promise<RoomSpotifyTrack | 
 
     return await getRoomSpotifyTrack(roomId);
   } catch (error) {
-    console.error('Error in getRoomTrack service:', error);
+    logger.spotify.error('Error in getRoomTrack service:', error);
     throw error;
   }
 }
@@ -156,7 +157,7 @@ export async function updateRoomTrack(
 
     return await updateRoomSpotifyTrack(input);
   } catch (error) {
-    console.error('Error in updateRoomTrack service:', error);
+    logger.spotify.error('Error in updateRoomTrack service:', error);
     throw error;
   }
 }
@@ -189,12 +190,12 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
         controlled_by_user_id: null,
       });
 
-      console.log('✅ Track deleted and playback state cleared');
+      logger.spotify.info('Track deleted and playback state cleared');
     }
 
     return success;
   } catch (error) {
-    console.error('Error in deleteRoomTrack service:', error);
+    logger.spotify.error('Error in deleteRoomTrack service:', error);
     throw error;
   }
 }

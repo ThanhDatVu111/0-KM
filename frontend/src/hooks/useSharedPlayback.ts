@@ -5,6 +5,7 @@ import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
 import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
 import { sendPlaybackCommand, sendPlayTrackCommand } from '@/services/playbackCommands';
 import supabase from '@/utils/supabase';
+import { logger } from '@/utils/logger';
 
 interface PlaybackState {
   is_playing: boolean;
@@ -25,7 +26,7 @@ export function useSharedPlayback(roomId: string | null) {
   const throttledLog = (message: string, data?: any) => {
     const now = Date.now();
     if (now - lastLogTime.current > 5000) {
-      console.log(message, data);
+      logger.spotify.debug(message, data);
       lastLogTime.current = now;
     }
   };
@@ -143,8 +144,8 @@ export function useSharedPlayback(roomId: string | null) {
     }
 
     if (shouldAutoPlay) {
-      console.log(
-        '🎵 Auto-playing track:',
+      logger.spotify.info(
+        'Auto-playing track:',
         sharedPlaybackState.current_track_uri,
         isController ? '(controller user)' : '(non-controller user)',
       );
@@ -156,9 +157,11 @@ export function useSharedPlayback(roomId: string | null) {
       if (sharedPlaybackState.current_track_uri) {
         spotifyPlayback.playTrack(sharedPlaybackState.current_track_uri).catch((err) => {
           if (err.message?.includes('No valid Spotify access token')) {
-            console.log('🎵 Auto-play skipped - User not connected to Spotify (this is normal)');
+            logger.spotify.debug(
+              'Auto-play skipped - User not connected to Spotify (this is normal)',
+            );
           } else {
-            console.log('🎵 Auto-play failed:', err.message);
+            logger.spotify.error('Auto-play failed:', err.message);
           }
         });
       }
@@ -194,14 +197,14 @@ export function useSharedPlayback(roomId: string | null) {
 
     // Debounce rapid button presses
     if (isLoading) {
-      console.log('🎵 Ignoring rapid button press - request in progress');
+      logger.spotify.debug('Ignoring rapid button press - request in progress');
       return;
     }
 
     try {
       setIsLoading(true);
       const newIsPlaying = !sharedPlaybackState?.is_playing;
-      console.log('🎵 Toggle Play/Pause:', {
+      logger.spotify.debug('Toggle Play/Pause:', {
         userId,
         isController: sharedPlaybackState?.controlled_by_user_id === userId,
         currentState: sharedPlaybackState?.is_playing,
@@ -212,7 +215,7 @@ export function useSharedPlayback(roomId: string | null) {
       // Include current track URI for play commands so controller knows what to play
       const trackUri = newIsPlaying ? sharedPlaybackState?.current_track_uri : undefined;
       await sendPlaybackCommand(roomId, newIsPlaying ? 'play' : 'pause', trackUri);
-      console.log('🎵 Command sent:', {
+      logger.spotify.debug('Command sent:', {
         action: newIsPlaying ? 'play' : 'pause',
         currentTrackUri: sharedPlaybackState?.current_track_uri,
         isController: sharedPlaybackState?.controlled_by_user_id === userId,
@@ -232,10 +235,10 @@ export function useSharedPlayback(roomId: string | null) {
       if (!roomId || !userId) return;
 
       try {
-        console.log('🎵 Sending play track command:', trackUri);
+        logger.spotify.debug('Sending play track command:', trackUri);
         await sendPlayTrackCommand(roomId, trackUri);
       } catch (err) {
-        console.error('Error sending play track command:', err);
+        logger.spotify.error('Error sending play track command:', err);
       }
     },
     [roomId, userId],
@@ -245,10 +248,10 @@ export function useSharedPlayback(roomId: string | null) {
     if (!roomId || !userId) return;
 
     try {
-      console.log('🎵 Sending skip to next command');
+      logger.spotify.debug('Sending skip to next command');
       await sendPlaybackCommand(roomId, 'next');
     } catch (err) {
-      console.error('Error sending skip to next command:', err);
+      logger.spotify.error('Error sending skip to next command:', err);
     }
   }, [roomId, userId]);
 
@@ -256,10 +259,10 @@ export function useSharedPlayback(roomId: string | null) {
     if (!roomId || !userId) return;
 
     try {
-      console.log('🎵 Sending skip to previous command');
+      logger.spotify.debug('Sending skip to previous command');
       await sendPlaybackCommand(roomId, 'previous');
     } catch (err) {
-      console.error('Error sending skip to previous command:', err);
+      logger.spotify.error('Error sending skip to previous command:', err);
     }
   }, [roomId, userId]);
 

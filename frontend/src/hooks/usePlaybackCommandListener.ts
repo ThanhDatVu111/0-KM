@@ -3,6 +3,7 @@ import supabase from '@/utils/supabase';
 import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
 import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
 import { useApiClient } from '@/hooks/useApiClient';
+import { logger } from '@/utils/logger';
 
 export function usePlaybackCommandListener(roomId: string, isController: boolean = false) {
   const lastLogTime = useRef<number>(0);
@@ -14,7 +15,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
     const now = Date.now();
     if (now - lastLogTime.current > 5000) {
       // 5 seconds
-      console.log(message, data);
+      logger.spotify.debug(message, data);
       lastLogTime.current = now;
     }
   };
@@ -24,11 +25,11 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
     if (!isController || hasTransferredPlayback.current) return;
 
     try {
-      console.log('🎵 [Controller] Ensuring active device for playback...');
+      logger.spotify.debug('Ensuring active device for playback...');
       const devices = await spotifyPlayback.getDevices();
 
       if (devices.length === 0) {
-        console.log('🎵 [Controller] No devices found - user needs to open Spotify');
+        logger.spotify.debug('No devices found - user needs to open Spotify');
         return;
       }
 
@@ -36,13 +37,13 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
       const activeDevice = devices.find((d) => d.is_active) || devices[0];
 
       if (activeDevice) {
-        console.log('🎵 [Controller] Transferring playback to device:', activeDevice.name);
+        logger.spotify.debug('Transferring playback to device:', activeDevice.name);
         await spotifyPlayback.transferPlayback(activeDevice.id);
         hasTransferredPlayback.current = true;
-        console.log('🎵 [Controller] Playback transferred successfully');
+        logger.spotify.debug('Playback transferred successfully');
       }
     } catch (error) {
-      console.error('🎵 [Controller] Failed to transfer playback:', error);
+      logger.spotify.error('Failed to transfer playback:', error);
     }
   };
 
@@ -66,7 +67,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
         },
         async (payload) => {
           const { action, track_uri } = payload.new;
-          console.log('🎵 [Remote Control] Received command:', action, track_uri); // Keep this one immediate for debugging
+          logger.spotify.info('Received command:', action, track_uri); // Keep this one immediate for debugging
 
           try {
             // Add delay to prevent rapid command execution
@@ -78,7 +79,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
 
               if (currentState?.currentTrack?.uri) {
                 // We have a track, just resume playback (don't restart from beginning)
-                console.log('🎵 [Remote Control] Resuming playback');
+                logger.spotify.debug('Resuming playback');
                 await spotifyPlayback.togglePlayPause();
                 await updateRoomPlaybackState(
                   roomId,
@@ -92,7 +93,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
                 );
               } else if (track_uri) {
                 // No current track but we have a track_uri, start playing that track
-                console.log('🎵 [Remote Control] Starting playback of track:', track_uri);
+                logger.spotify.debug('Starting playback of track:', track_uri);
                 await spotifyPlayback.playTrack(track_uri);
                 await updateRoomPlaybackState(
                   roomId,
@@ -105,12 +106,12 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
                   apiClient,
                 );
               } else {
-                console.log('🎵 [Remote Control] No track available to play');
+                logger.spotify.debug('No track available to play');
               }
             }
             if (action === 'pause') {
               // For pause, we can just toggle regardless of current state
-              console.log('🎵 [Remote Control] Pausing playback');
+              logger.spotify.debug('Pausing playback');
               await spotifyPlayback.togglePlayPause();
 
               // Get the current track URI from the command or try to get from state
@@ -133,7 +134,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               }
             }
             if (action === 'play_track' && track_uri) {
-              console.log('🎵 [Remote Control] Playing specific track:', track_uri);
+              logger.spotify.debug('Playing specific track:', track_uri);
               await spotifyPlayback.playTrack(track_uri);
               await updateRoomPlaybackState(
                 roomId,
@@ -147,7 +148,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               );
             }
             if (action === 'next') {
-              console.log('🎵 [Remote Control] Skipping to next track');
+              logger.spotify.debug('Skipping to next track');
               await spotifyPlayback.skipToNext();
               // Update state after skipping
               const currentState = await spotifyPlayback.getPlaybackState();
@@ -165,7 +166,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               }
             }
             if (action === 'previous') {
-              console.log('🎵 [Remote Control] Skipping to previous track');
+              logger.spotify.debug('Skipping to previous track');
               await spotifyPlayback.skipToPrevious();
               // Update state after skipping
               const currentState = await spotifyPlayback.getPlaybackState();
@@ -183,11 +184,11 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               }
             }
           } catch (error) {
-            console.error('❌ [Remote Control] Error executing command:', error);
+            logger.spotify.error('Error executing command:', error);
 
             // Log more details about the error
             if (error instanceof Error) {
-              console.error('❌ [Remote Control] Error details:', {
+              logger.spotify.error('Error details:', {
                 message: error.message,
                 action,
                 track_uri,
@@ -197,9 +198,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
 
               // If we get a 404 error, it might mean we need to transfer playback
               if (error.message.includes('404') || error.message.includes('No active device')) {
-                console.log(
-                  '🎵 [Controller] 404 error detected - attempting to transfer playback...',
-                );
+                logger.spotify.debug('404 error detected - attempting to transfer playback...');
                 hasTransferredPlayback.current = false; // Reset flag to try again
                 await ensureActiveDevice();
               }
