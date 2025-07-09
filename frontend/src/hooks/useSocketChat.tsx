@@ -20,7 +20,7 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
 
     setIsConnected(socket.connected);
     socket.emit('join-room', { roomId: room_id });
-    socket.emit('user-online', { room_id, user_id });
+    // socket.emit('user-online', { room_id, user_id });
 
     socket.on('receive-message', (message: Message) => {
       setMessages((prev) => [message, ...prev]);

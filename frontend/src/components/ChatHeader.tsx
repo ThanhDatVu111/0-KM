@@ -53,7 +53,7 @@ export default function ChatHeader({
       style={{
         ...Platform.select({
           ios: {
-            shadowColor: '#F5829B',
+            shadowColor: '#F24187',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.1,
             shadowRadius: 2,

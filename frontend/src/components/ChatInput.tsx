@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, Image, Pressable } from 'react-native';
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -203,7 +203,7 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
   };
 
   return (
-    <View className="bg-linear-to-r/increasing from-[#FFC6F9]-100 to-[#6536DA]-100 border-t border-gray-200 px-3 py-2 flex-row items-center overflow-scroll container mx-auto">
+    <View className="realative px-3 py-2 flex-row items-center overflow-scroll container mx-auto">
       {/* Media Thumbnail */}
       {selectedMedia.length > 0 && (
         <View className="absolute bottom-20 left-0 right-0 bg-white border-t border-gray-200 p-2">
@@ -227,35 +227,59 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
         </View>
       )}
 
-      <View className="flex-1 flex-row bg-white border border-accent px-4 py-2 mr-2 rounded-lg">
-        {/* Image Button */}
-        <TouchableOpacity onPress={handleCameraPicker} className="mt-0.5">
-          <FontAwesome name="camera" size={24} color="#F5829B" />
-        </TouchableOpacity>
-        {/* Text Input : Messages */}
-        <TextInput
-          value={content}
-          onChangeText={setContent}
-          placeholder="Type a message..."
-          multiline
-          className=" text-base p-1 items-center px-4 font-poppins-light mr-5"
-          style={{ maxHeight: 100 }}
-          placeholderTextColor="#F5829B"
-        />
-        {/* Voice Button */}
-        {!content && (
-          <TouchableOpacity onPress={() => {}} className="mt-2.5 absolute right-4">
-            <MaterialIcons name="keyboard-voice" size={24} color="#F5829B" />
+      <View className="flex-row items-end px-2 pb-2">
+        <View className="flex-1 flex-row bg-white border border-[#6536DD] px-3 py-0.5 mr-3 rounded-lg">
+          {/* Image Button */}
+          <TouchableOpacity
+            onPress={handleCameraPicker}
+            className="mt-0.5 items-center justify-center"
+          >
+            <FontAwesome name="camera" size={24} color="#F24187" />
           </TouchableOpacity>
-        )}
+          {/* Text Input : Messages */}
+          <TextInput
+            value={content}
+            onChangeText={setContent}
+            placeholder="Type a message..."
+            multiline
+            numberOfLines={2}
+            className="text-base p-2 items-center px-4 mr-3"
+            style={{
+              maxHeight: 100,
+              fontFamily: 'PixelifySans',
+              fontSize: 18,
+            }}
+            placeholderTextColor="#F24187"
+          />
+          {/* Voice Button */}
+          {!content && (
+            <TouchableOpacity onPress={() => {}} className="left-3 right-0 justify-center">
+              <MaterialIcons name="keyboard-voice" size={24} color="#F24187" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {/* Send Button */}
+        <Pressable
+          className="inset-y-0 right-0"
+          onPress={handleSendPress}
+          style={{
+            bottom: 14,
+            backgroundColor: '#F24187',
+            borderRadius: 8,
+            borderWidth: 2,
+            borderColor: '#6536DD',
+            padding: 6,
+            shadowColor: '#6536DD',
+            shadowOffset: { width: 2, height: 2 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+            zIndex: 10,
+          }}
+        >
+          <MaterialCommunityIcons name="send" size={24} color="white" />
+        </Pressable>
       </View>
-      {/* Send Button */}
-      <TouchableOpacity
-        onPress={handleSendPress}
-        className="w-12 h-12 rounded-full bg-accent justify-center items-center"
-      >
-        <Ionicons name="send" size={22} color="white" />
-      </TouchableOpacity>
     </View>
   );
 }

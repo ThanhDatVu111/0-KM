@@ -6,7 +6,7 @@ import { fetchRoom } from '@/apis/room';
 import images from '@/constants/images';
 import ChatHeader from '@/components/ChatHeader';
 import { fetchUser } from '@/apis/user';
-import ChatInput from '@/components/ChatInptut';
+import ChatInput from '@/components/ChatInput';
 import { useSocket } from '@/utils/SocketProvider';
 import ChatPaginatedList from '@/components/ChatPaginatedList';
 import { useChatSocket } from '@/hooks/useSocketChat';
@@ -18,7 +18,7 @@ export default function Chat() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
   const [partnerId, setPartnerId] = useState<string>('');
-  const [partnerOnline, setPartnerOnline] = useState(false);
+  const [partnerOnline, setPartnerOnline] = useState(true);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -50,27 +50,27 @@ export default function Chat() {
 
       // Join chat
       socket.emit('join-chat', roomId);
-      socket.emit('user-online', { room_id: roomId, user_id: userId });
+      // socket.emit('user-online', { room_id: roomId, user_id: userId });
       console.log('Frontend: emitting join-chat');
 
-      const handleOnline = ({ userId }: { userId: string }) => {
-        if (userId === partnerId) {
-          setPartnerOnline(true);
-        }
-      };
+      // const handleOnline = ({ userId }: { userId: string }) => {
+      //   if (userId === partnerId) {
+      //     setPartnerOnline(true);
+      //   }
+      // };
 
-      const handleOffline = ({ userId }: { userId: string }) => {
-        if (userId === partnerId) {
-          setPartnerOnline(false);
-        }
-      };
+      // const handleOffline = ({ userId }: { userId: string }) => {
+      //   if (userId === partnerId) {
+      //     setPartnerOnline(false);
+      //   }
+      // };
 
-      socket.on('partner-online', handleOnline);
-      socket.on('partner-offline', handleOffline);
+      // socket.on('partner-online', handleOnline);
+      // socket.on('partner-offline', handleOffline);
 
       return () => {
-        socket.off('partner-online', handleOnline);
-        socket.off('partner-offline', handleOffline);
+        // socket.off('partner-online', handleOnline);
+        // socket.off('partner-offline', handleOffline);
       };
     }
   }, [socket, roomId, userId, partnerId]);

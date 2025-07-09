@@ -24,15 +24,15 @@ export default function socketHandler(io: Server) {
       console.warn(`⚠️ Socket ${socket.id} connected without user authentication`);
     }
 
-    // Online
-    socket.on('user-online', ({ room_id, user_id }) => {
-      if (!room_id || !user_id) return;
+    // // Online
+    // socket.on('user-online', ({ room_id, user_id }) => {
+    //   if (!room_id || !user_id) return;
 
-      console.log(`✅ User ${user_id} is online in room ${room_id}`);
+    //   console.log(`✅ User ${user_id} is online in room ${room_id}`);
 
-      // Tell the *other* user in the room that this user is online
-      socket.to(room_id).emit('partner-online', { userId: user_id });
-    });
+    //   // Tell the *other* user in the room that this user is online
+    //   socket.to(room_id).emit('partner-online', { userId: user_id });
+    // });
 
     // Join chat room
     socket.on('join-chat', (room_id: string) => {

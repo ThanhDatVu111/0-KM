@@ -115,13 +115,25 @@ export default function ChatBubble({
               onRequestClose={() => setShowMenu(false)}
               from={
                 <Pressable
-                  className={`rounded-2xl px-4 py-2.5 ${isSender ? 'bg-[#F5829B]' : 'bg-white'}`}
+                  className={`rounded-2xl border-4 px-4 py-2.5 bg-white ${isSender ? 'border-[#F24187]' : 'border-[#6536DD]'}`}
                   onLongPress={() => setShowMenu(true)}
+                  style={{
+                    bottom: 3,
+                    padding: 3,
+                    elevation: 4,
+                    zIndex: 10,
+                    shadowColor: isSender ? '#F24187' : '#6536DD',
+                    shadowOffset: { width: isSender ? 1 : -1, height: 1 },
+                    shadowOpacity: 4,
+                    shadowRadius: 1,
+                  }}
                 >
                   <Text
-                    className={`font-poppins-medium text-base ${
-                      isSender ? 'text-white' : 'text-[#F5829B]'
-                    }`}
+                    className={`text-base text-black justify-center align-middle`}
+                    style={{
+                      fontFamily: 'PixelifySans',
+                      fontSize: 16,
+                    }}
                   >
                     {content}
                   </Text>
@@ -190,9 +202,11 @@ export default function ChatBubble({
 
         {/* === TIMESTAMP === */}
         <Text
-          className={`font-poppins-light text-xs mt-1 text-white ${
-            isSender ? 'text-right' : 'text-left'
-          }`}
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 12,
+          }}
+          className={` text-xs mt-1 text-white ${isSender ? 'text-right' : 'text-left'}`}
         >
           {formattedTimestamp} {isEdited && '(edited)'}
         </Text>
@@ -202,7 +216,7 @@ export default function ChatBubble({
       {isSender && (
         <Image
           source={sender_avatar_url ? { uri: sender_avatar_url } : icons.user_icon_female}
-          className="w-8 h-8 rounded-full ml-2 mt-1"
+          className="w-10 h-10 rounded-full ml-2 mt-1"
         />
       )}
     </View>
