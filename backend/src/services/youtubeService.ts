@@ -27,6 +27,7 @@ export async function createRoomVideo(
   try {
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(request.user_id);
+
     if (!roomId) {
       throw new Error('User is not in a room');
     }
@@ -37,7 +38,9 @@ export async function createRoomVideo(
       added_by_user_id: request.user_id,
     };
 
-    return await createRoomYouTubeVideo(input);
+    const result = await createRoomYouTubeVideo(input);
+
+    return result;
   } catch (error) {
     console.error('Error in createRoomVideo service:', error);
     throw error;
@@ -51,11 +54,14 @@ export async function getRoomVideo(user_id: string): Promise<RoomYouTubeVideo | 
   try {
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(user_id);
+
     if (!roomId) {
-      return null; // User is not in a room
+      throw new Error('User is not in a room');
     }
 
-    return await getRoomYouTubeVideo(roomId);
+    const video = await getRoomYouTubeVideo(roomId);
+
+    return video; // This can be null if no video exists
   } catch (error) {
     console.error('Error in getRoomVideo service:', error);
     throw error;

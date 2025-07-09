@@ -161,7 +161,11 @@ export async function getRoomIdForUser(user_id: string): Promise<string | null> 
       .eq('filled', true)
       .single();
 
-    if (error || !data) {
+    if (error) {
+      return null;
+    }
+
+    if (!data) {
       return null;
     }
 

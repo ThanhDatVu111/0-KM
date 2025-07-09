@@ -68,7 +68,8 @@ export async function getRoomYouTubeVideo(
     const video = await getRoomVideo(user_id);
 
     if (!video) {
-      res.status(404).json({ error: 'No video found for this room' });
+      // User is in a room but no video exists - return 200 with null
+      res.status(200).json(null);
       return;
     }
 

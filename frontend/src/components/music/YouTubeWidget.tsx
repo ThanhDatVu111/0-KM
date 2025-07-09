@@ -11,11 +11,7 @@ type Props = {
 };
 
 export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
-  // Debug logging
-  console.log('🎬 YouTubeWidget Debug:', { videoId, className });
-
   if (!videoId) {
-    console.log('🎬 YouTubeWidget: No videoId provided, showing empty state');
     return (
       <View
         className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
@@ -43,11 +39,8 @@ export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
     );
   }
 
-  console.log('🎬 YouTubeWidget: Rendering video with ID:', videoId);
-
   // Validate video ID format (YouTube video IDs are typically 11 characters)
   if (videoId.length !== 11) {
-    console.log('🎬 YouTubeWidget: Invalid video ID length:', videoId.length);
     return (
       <View
         className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
@@ -101,10 +94,10 @@ export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
             style: { borderRadius: 12, overflow: 'hidden' },
           }}
           onError={(error: any) => {
-            console.error('🎬 YouTube player error:', error);
+            console.error('YouTube player error:', error);
           }}
           onReady={() => {
-            console.log('🎬 YouTube player ready for video:', videoId);
+            // Player is ready
           }}
         />
 

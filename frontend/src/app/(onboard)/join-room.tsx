@@ -195,19 +195,23 @@ const JoinRoom = () => {
   useEffect(() => {
     const createRoomFunction = async () => {
       try {
+        console.log('🏠 Checking for existing room for user:', userId);
         const existingRoom = await fetchRoom({ user_id: userId ?? '' });
         if (existingRoom) {
+          console.log('🏠 Found existing room:', existingRoom);
           setRoomId(existingRoom.room_id);
           return;
         }
       } catch (err: any) {
+        console.log('🏠 Error checking existing room:', err.message);
         if (err.message && err.message.includes('Room not found')) {
+          console.log('🏠 Creating new room with ID:', roomId);
           const room = await createRoom({
             room_id: roomId,
             user_1: userId ?? '',
           });
           setRoomId(room.room_id);
-          console.log('✅ Room created:', room);
+          console.log('✅ Room created successfully:', room);
         }
       }
     };
@@ -223,25 +227,25 @@ const JoinRoom = () => {
 
     setLoading(true);
     try {
-      console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
-      console.log('Moving to room:', partnerCode);
+      console.log('🏠 Pairing user:', Array.isArray(userId) ? userId[0] : userId);
+      console.log('🏠 Joining room:', partnerCode);
 
       await pairRoom({
         room_id: partnerCode,
         user_id: Array.isArray(userId) ? userId[0] : userId,
       });
 
-      console.log('Deleting room with ID:', roomIdString);
+      console.log('🏠 Deleting old room with ID:', roomIdString);
 
       await deleteRoom({
         room_id: roomIdString,
       });
 
-      console.log('Paired with partner successfully!');
+      console.log('✅ Paired with partner successfully!');
       Alert.alert('Success', 'You have been paired with your partner!');
       router.push('/(tabs)/home');
     } catch (err) {
-      console.error('Pairing failed:', err);
+      console.error('❌ Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
     } finally {
       setLoading(false);

@@ -33,10 +33,26 @@ export async function getRoomVideo(
 ): Promise<RoomYouTubeVideo | null> {
   try {
     const response = await apiClientInstance.get(`/youtube/room/${user_id}`);
-    return response;
+
+    // If response is null (no video), return null
+    if (response === null) {
+      return null;
+    }
+
+    // If response has video data, return it
+    if (response && typeof response === 'object' && response.video_id) {
+      return response;
+    }
+
+    return null;
   } catch (error: any) {
     if (error.status === 404) {
+      // No video found in room
       return null;
+    }
+    if (error.status === 400 && error.data?.error === 'User must be in a room to add videos') {
+      // User is not in a room - rethrow this error
+      throw error;
     }
     throw error;
   }

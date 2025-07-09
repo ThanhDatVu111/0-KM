@@ -91,7 +91,7 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await createRoomVideo(
+      const result = await createRoomVideo(
         {
           user_id: userId,
           video_id: videoId,
@@ -101,8 +101,11 @@ const Home = () => {
       setShowYouTubeInput(false);
       // Refetch the room video to update the UI
       refetchRoomVideo();
-    } catch (error) {
-      // Handle error silently
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.data?.error || error.message || 'Failed to add YouTube video. Please try again.',
+      );
     }
   };
 
@@ -111,8 +114,12 @@ const Home = () => {
 
     try {
       await deleteRoomVideo(userId, apiClient);
-    } catch (error) {
-      // Handle error silently
+      refetchRoomVideo();
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.data?.error || error.message || 'Failed to remove YouTube video. Please try again.',
+      );
     }
   };
 
