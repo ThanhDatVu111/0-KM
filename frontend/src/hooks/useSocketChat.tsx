@@ -42,7 +42,6 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
 
     return () => {
       socket.emit('leave-room', { roomId: room_id });
-      socket.off('receive-message');
       socket.off('message-edited');
       socket.off('message-deleted');
       socket.off('user-typing');
