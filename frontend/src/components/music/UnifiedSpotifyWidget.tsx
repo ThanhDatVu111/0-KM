@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
 import { useSharedPlayback } from '../../hooks/useSharedPlayback';
 import { usePlaybackCommandListener } from '../../hooks/usePlaybackCommandListener';
+import { logger } from '../../utils/logger';
 
 type SpotifyTrack = {
   id: string;
@@ -46,7 +47,6 @@ export function UnifiedSpotifyWidget({
   const [isConnecting, setIsConnecting] = useState(false);
   const [spotifyState, setSpotifyState] = useState<SpotifyState>('not-connected');
   const [hasConnectedBefore, setHasConnectedBefore] = useState(false);
-  const [lastStateLog, setLastStateLog] = useState<string>('');
 
   // Real Spotify playback controls
   const {
@@ -84,18 +84,6 @@ export function UnifiedSpotifyWidget({
   const isController = sharedPlaybackState?.controlled_by_user_id === userId;
   usePlaybackCommandListener(roomId || '', isController);
 
-  // Debug logging for controller status
-  useEffect(() => {
-    if (roomId && sharedPlaybackState) {
-      console.log('🎵 [Controller Status]', {
-        userId,
-        isController,
-        controlledBy: sharedPlaybackState.controlled_by_user_id,
-        roomId,
-      });
-    }
-  }, [roomId, userId, isController, sharedPlaybackState?.controlled_by_user_id]);
-
   // Check if user has connected to Spotify before
   useEffect(() => {
     const checkSpotifyConnection = async () => {
@@ -110,30 +98,14 @@ export function UnifiedSpotifyWidget({
 
   // Determine the current state
   useEffect(() => {
-    // Throttle debug logging to reduce spam
-    const debugKey = `${!!track}-${hasConnectedBefore}-${track?.name}`;
-    if (lastStateLog !== debugKey) {
-      console.log('🎵 UnifiedSpotifyWidget state check:', {
-        hasTrack: !!track,
-        hasConnectedBefore,
-        trackName: track?.name,
-        trackId: track?.id,
-        artistName: track?.artist,
-      });
-      setLastStateLog(debugKey);
-    }
-
     if (track) {
-      console.log('🎵 [Widget] Setting state to has-track for:', track.name);
       setSpotifyState('has-track');
     } else if (hasConnectedBefore) {
-      console.log('🎵 [Widget] Setting state to connected-no-track');
       setSpotifyState('connected-no-track');
     } else {
-      console.log('🎵 [Widget] Setting state to not-connected');
       setSpotifyState('not-connected');
     }
-  }, [track, hasConnectedBefore, lastStateLog]);
+  }, [track, hasConnectedBefore]);
 
   const refreshSpotifyToken = async (refreshToken: string) => {
     try {
@@ -297,19 +269,19 @@ export function UnifiedSpotifyWidget({
               [{ text: 'OK' }],
             );
           } catch (tokenError) {
-            console.error('Error exchanging code for tokens:', tokenError);
+            logger.spotify.error('Error exchanging code for tokens:', tokenError);
             Alert.alert('Error', 'Failed to get access tokens. Please try again.');
           }
         } else {
           Alert.alert('Error', 'Failed to get authorization code from Spotify');
         }
       } else if (result.type === 'cancel') {
-        console.log('User cancelled Spotify authorization');
+        logger.spotify.debug('User cancelled Spotify authorization');
       } else {
         Alert.alert('Error', 'Failed to connect to Spotify');
       }
     } catch (error) {
-      console.error('Error connecting to Spotify:', error);
+      logger.spotify.error('Error connecting to Spotify:', error);
       Alert.alert('Error', 'Failed to connect to Spotify. Please try again.');
     } finally {
       setIsConnecting(false);
@@ -323,12 +295,6 @@ export function UnifiedSpotifyWidget({
   };
 
   const progressPercentage = track && track.duration > 0 ? (currentTime / track.duration) * 100 : 0;
-
-  // Debug: Log current state before rendering
-  console.log('🎵 [Widget] Rendering with state:', spotifyState, {
-    hasTrack: !!track,
-    trackName: track?.name,
-  });
 
   // Render different states
   if (spotifyState === 'not-connected') {
@@ -554,7 +520,7 @@ export function UnifiedSpotifyWidget({
         {onPress && (
           <TouchableOpacity
             onPress={() => {
-              console.log('🎵 Remove button pressed for track:', track.name);
+              logger.spotify.debug('Remove button pressed for track:', track.name);
               onPress();
             }}
             style={styles.removeButton}

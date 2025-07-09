@@ -17,7 +17,6 @@ import { SignOutButton } from '@/components/SignOutButton';
 import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
 import { SpotifySearch } from '@/components/music/SpotifySearch';
-import { SpotifyDebugPanel } from '@/components/music/SpotifyDebugPanel';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
 import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
@@ -63,33 +62,8 @@ const Home = () => {
     refetchRoomTrack,
   } = useRoomSpotifyTrack();
 
-  // Debug: Log when roomTrack changes in home component
-  useEffect(() => {
-    console.log('🏠 [Home] Room track changed:', {
-      hasTrack: !!roomTrack,
-      trackName: roomTrack?.track_name,
-      artistName: roomTrack?.artist_name,
-      trackId: roomTrack?.track_id,
-    });
-  }, [roomTrack]);
-
   // Real Spotify playback controls
   const { playTrack } = useSpotifyPlayback();
-  const lastYouTubeDebugRef = useRef<string>('');
-
-  // Debug logging (throttled)
-  useEffect(() => {
-    const debugKey = `${!!roomVideo}-${hasRoom}-${videoLoading}-${userId}`;
-    if (lastYouTubeDebugRef.current !== debugKey) {
-      console.log('🎬 Room YouTube Debug:', {
-        roomVideo,
-        hasRoom,
-        videoLoading,
-        userId,
-      });
-      lastYouTubeDebugRef.current = debugKey;
-    }
-  }, [roomVideo, hasRoom, videoLoading, userId]);
 
   useEffect(() => {
     if (userId) {
@@ -107,7 +81,7 @@ const Home = () => {
         setIsHost(true);
       }
     } catch (error) {
-      console.error('Failed to load user room:', error);
+      // Handle error silently
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +102,7 @@ const Home = () => {
       // Refetch the room video to update the UI
       refetchRoomVideo();
     } catch (error) {
-      console.error('Failed to add YouTube video:', error);
+      // Handle error silently
     }
   };
 
@@ -138,14 +112,12 @@ const Home = () => {
     try {
       await deleteRoomVideo(userId, apiClient);
     } catch (error) {
-      console.error('Failed to remove YouTube video:', error);
+      // Handle error silently
     }
   };
 
   const handleAddSpotifyTrack = async (trackData: any) => {
     if (!userId) return;
-
-    console.log('🎵 Adding Spotify track:', trackData);
 
     try {
       await createRoomSpotifyTrack(
@@ -161,27 +133,21 @@ const Home = () => {
         },
         apiClient,
       );
-      console.log('✅ Track added to room successfully');
       setShowSpotifyInput(false);
       // Refetch the room track to update the UI
-      console.log('🔄 Refetching room track...');
       await refetchRoomTrack();
-      console.log('✅ Room track refetched');
 
       // Automatically play the track when added
       try {
         await playTrack(trackData.track_uri);
-        console.log('🎵 Auto-playing track:', trackData.track_name);
         Alert.alert('Success!', `Now playing: ${trackData.track_name}`);
       } catch (playError) {
-        console.error('Failed to auto-play track:', playError);
         Alert.alert(
           'Track Added',
           `${trackData.track_name} was added to your room, but couldn't start playing automatically. Make sure you have Spotify open on another device.`,
         );
       }
     } catch (error) {
-      console.error('Failed to add Spotify track:', error);
       Alert.alert('Error', 'Failed to add track to room. Please try again.');
     }
   };
@@ -193,7 +159,7 @@ const Home = () => {
       await deleteRoomSpotifyTrack(userId, apiClient);
       refetchRoomTrack();
     } catch (error) {
-      console.error('Failed to remove Spotify track:', error);
+      // Handle error silently
     }
   };
 
@@ -365,14 +331,6 @@ const Home = () => {
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
 
-          {/* Debug: Log track data */}
-          {__DEV__ && (
-            <Text className="text-white/60 text-xs mb-2">
-              Home Component Track:{' '}
-              {roomTrack ? `"${roomTrack.track_name}" by ${roomTrack.artist_name}` : 'No track'}
-            </Text>
-          )}
-
           <UnifiedSpotifyWidget
             track={
               roomTrack && roomTrack.track_id
@@ -392,23 +350,7 @@ const Home = () => {
             onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
             onAddTrack={() => setShowSpotifyInput(true)}
           />
-
-          {/* Debug info */}
-          {__DEV__ && (
-            <View className="mt-2 p-2 bg-black/20 rounded">
-              <Text className="text-white/60 text-xs">
-                Track Debug:{' '}
-                {roomTrack ? `"${roomTrack.track_name}" by ${roomTrack.artist_name}` : 'No track'}
-              </Text>
-              <Text className="text-white/60 text-xs">
-                Room ID: {roomId || 'None'} | Has Room: {hasSpotifyRoom ? 'Yes' : 'No'}
-              </Text>
-            </View>
-          )}
         </View>
-
-        {/* Spotify Debug Panel */}
-        <SpotifyDebugPanel />
 
         {/* Join Room Widget */}
         {!roomId && (

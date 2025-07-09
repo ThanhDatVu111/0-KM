@@ -12,7 +12,6 @@ import {
   Platform,
 } from 'react-native';
 import { pairRoom, deleteRoom } from '@/apis/room';
-import { SignOutButton } from '@/components/SignOutButton';
 import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useAuth } from '@clerk/clerk-expo';
@@ -266,9 +265,6 @@ const JoinRoom = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 items-center justify-center px-4 py-8">
-            <View className="absolute top-12 right-4">
-              <SignOutButton />
-            </View>
             <PairingStep
               myCode={roomIdString}
               partnerCode={partnerCode}

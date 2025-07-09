@@ -248,13 +248,10 @@ class SpotifyPlaybackService {
   // Play a specific track
   async playTrack(trackUri: string): Promise<void> {
     try {
-      console.log('🎵 [DEBUG] playTrack called with:', trackUri);
       await this.makeRequest('/me/player/play', 'PUT', {
         uris: [trackUri],
       });
-      console.log('🎵 Started playing track:', trackUri);
     } catch (error) {
-      console.error('❌ [DEBUG] Error playing track:', error);
       throw error;
     }
   }
@@ -265,13 +262,10 @@ class SpotifyPlaybackService {
       const state = await this.getPlaybackState();
       if (state?.isPlaying) {
         await this.makeRequest('/me/player/pause', 'PUT');
-        console.log('⏸️ Paused playback');
       } else {
         await this.makeRequest('/me/player/play', 'PUT');
-        console.log('▶️ Resumed playback');
       }
     } catch (error) {
-      console.error('Error toggling play/pause:', error);
       throw error;
     }
   }
@@ -280,9 +274,7 @@ class SpotifyPlaybackService {
   async skipToNext(): Promise<void> {
     try {
       await this.makeRequest('/me/player/next', 'POST');
-      console.log('⏭️ Skipped to next track');
     } catch (error) {
-      console.error('Error skipping to next:', error);
       throw error;
     }
   }
@@ -291,9 +283,7 @@ class SpotifyPlaybackService {
   async skipToPrevious(): Promise<void> {
     try {
       await this.makeRequest('/me/player/previous', 'POST');
-      console.log('⏮️ Skipped to previous track');
     } catch (error) {
-      console.error('Error skipping to previous:', error);
       throw error;
     }
   }
@@ -305,9 +295,7 @@ class SpotifyPlaybackService {
         `/me/player/volume?volume_percent=${Math.max(0, Math.min(100, volume))}`,
         'PUT',
       );
-      console.log('🔊 Set volume to:', volume);
     } catch (error) {
-      console.error('Error setting volume:', error);
       throw error;
     }
   }
@@ -316,9 +304,7 @@ class SpotifyPlaybackService {
   async seekToPosition(positionMs: number): Promise<void> {
     try {
       await this.makeRequest(`/me/player/seek?position_ms=${positionMs}`, 'PUT');
-      console.log('⏱️ Seeked to position:', positionMs);
     } catch (error) {
-      console.error('Error seeking:', error);
       throw error;
     }
   }
@@ -341,9 +327,7 @@ class SpotifyPlaybackService {
         device_ids: [deviceId],
         play: true,
       });
-      console.log('📱 Transferred playback to device:', deviceId);
     } catch (error) {
-      console.error('Error transferring playback:', error);
       throw error;
     }
   }

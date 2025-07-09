@@ -275,7 +275,6 @@ export async function playSpotifyTrack(
 ): Promise<void> {
   try {
     const { user_id, track_uri } = req.body;
-    console.log('🎵 [Controller] /spotify/play called', { user_id, track_uri });
 
     if (!user_id || !track_uri) {
       res.status(400).json({ error: 'user_id and track_uri are required' });

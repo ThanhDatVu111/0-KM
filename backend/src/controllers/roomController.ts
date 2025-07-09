@@ -57,7 +57,6 @@ export async function joinRoom(
 ): Promise<void> {
   try {
     const { room_id, user_id } = req.body;
-    console.log('joinRoom in controller called with:', { room_id, user_id });
 
     if (!room_id || !user_id) {
       res.status(400).json({ error: 'Missing required fields' });
@@ -197,7 +196,6 @@ export async function getPlaybackState(
 ): Promise<void> {
   try {
     const { room_id } = req.params;
-    console.log('🎵 Getting playback state for room:', room_id);
 
     if (!room_id) {
       res.status(400).json({ error: 'Missing room_id parameter' });
@@ -205,10 +203,8 @@ export async function getPlaybackState(
     }
 
     const playbackState = await roomService.getPlaybackState(room_id);
-    console.log('🎵 Playback state result:', playbackState);
     res.json({ data: playbackState });
   } catch (err: any) {
-    console.error('❌ Error getting playback state:', err);
     next(err);
   }
 }
