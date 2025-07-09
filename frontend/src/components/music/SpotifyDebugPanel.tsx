@@ -289,10 +289,7 @@ export function SpotifyDebugPanel() {
       console.log('🔍 Checking real-time status...');
 
       // Check if real-time is enabled for the table
-      const { data, error } = await supabase
-        .from('room_spotify_tracks')
-        .select('count(*)')
-        .limit(1);
+      const { data, error } = await supabase.from('room_spotify_tracks').select('*').limit(1);
 
       if (error) {
         console.error('❌ Real-time check failed:', error);
@@ -305,6 +302,65 @@ export function SpotifyDebugPanel() {
     } catch (error: any) {
       console.error('❌ Real-time status check failed:', error);
       Alert.alert('Error', `Status check failed: ${error.message}`);
+    }
+  };
+
+  const testManualRealtimeSubscription = async () => {
+    try {
+      console.log('🧪 Testing manual real-time subscription...');
+
+      // Get current room ID
+      const { data: roomData, error: roomError } = await supabase
+        .from('room')
+        .select('room_id')
+        .or(`user_1.eq.${userId},user_2.eq.${userId}`)
+        .eq('filled', true)
+        .single();
+
+      if (roomError || !roomData?.room_id) {
+        Alert.alert('Error', 'No room found for testing');
+        return;
+      }
+
+      const roomId = roomData.room_id;
+      console.log('🧪 Testing manual subscription for room:', roomId);
+
+      // Create a manual subscription
+      const channel = supabase
+        .channel(`manual_test_${roomId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events
+            schema: 'public',
+            table: 'room_spotify_tracks',
+            filter: `room_id=eq.${roomId}`,
+          },
+          (payload) => {
+            console.log('🧪 [Manual Test] Event received:', payload);
+            Alert.alert('Real-time Event', `Event: ${payload.eventType}\nTable: ${payload.table}`);
+          },
+        )
+        .subscribe((status) => {
+          console.log('🧪 [Manual Test] Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            Alert.alert(
+              'Success',
+              'Manual real-time subscription active! Now add a track to test.',
+            );
+          } else {
+            Alert.alert('Error', `Manual subscription failed: ${status}`);
+          }
+        });
+
+      // Store channel for cleanup
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+        console.log('🧪 Manual test channel cleaned up');
+      }, 30000); // Clean up after 30 seconds
+    } catch (error: any) {
+      console.error('❌ Manual test failed:', error);
+      Alert.alert('Error', `Manual test failed: ${error.message}`);
     }
   };
 
@@ -344,6 +400,24 @@ export function SpotifyDebugPanel() {
               </Text>
             </View>
           )}
+
+          {/* Real-time Issue Notice */}
+          <View className="bg-yellow-500/20 border border-yellow-500/50 rounded p-3 mb-3">
+            <Text className="text-yellow-200 font-pmedium mb-2">⚠️ Real-time Updates Issue</Text>
+            <Text className="text-yellow-200/80 text-sm">
+              If User 2 doesn't see track updates in real-time, RLS policies may be blocking
+              subscriptions.
+            </Text>
+            <Text className="text-yellow-200/80 text-sm mt-1">
+              Run:{' '}
+              <Text className="font-mono text-xs">
+                cd backend && node run-disable-rls-migration.js
+              </Text>
+            </Text>
+            <Text className="text-yellow-200/80 text-sm mt-1">
+              This temporarily disables RLS for testing real-time functionality.
+            </Text>
+          </View>
 
           <View className="space-y-3">
             {/* Token Status */}
@@ -452,6 +526,13 @@ export function SpotifyDebugPanel() {
               className="bg-indigo-500 rounded px-3 py-2"
             >
               <Text className="text-white text-center font-pmedium">🔍 Check Real-time Status</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={testManualRealtimeSubscription}
+              className="bg-pink-500 rounded px-3 py-2"
+            >
+              <Text className="text-white text-center font-pmedium">🧪 Test Manual Real-time</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

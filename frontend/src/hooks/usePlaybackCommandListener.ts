@@ -77,7 +77,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               const currentState = await spotifyPlayback.getPlaybackState();
 
               if (currentState?.currentTrack?.uri) {
-                // We have a track, just resume playback
+                // We have a track, just resume playback (don't restart from beginning)
                 console.log('🎵 [Remote Control] Resuming playback');
                 await spotifyPlayback.togglePlayPause();
                 await updateRoomPlaybackState(
@@ -134,20 +134,6 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
             }
             if (action === 'play_track' && track_uri) {
               console.log('🎵 [Remote Control] Playing specific track:', track_uri);
-              await spotifyPlayback.playTrack(track_uri);
-              await updateRoomPlaybackState(
-                roomId,
-                {
-                  is_playing: true,
-                  current_track_uri: track_uri,
-                  progress_ms: 0,
-                },
-                '',
-                apiClient,
-              );
-            } else if (action === 'play' && track_uri) {
-              // Handle play command with track_uri (fallback for play_track)
-              console.log('🎵 [Remote Control] Playing track from play command:', track_uri);
               await spotifyPlayback.playTrack(track_uri);
               await updateRoomPlaybackState(
                 roomId,

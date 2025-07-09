@@ -72,6 +72,7 @@ export function useRoomSpotifyTrack() {
         console.log('📊 No track data received');
       }
 
+      console.log('🎵 [State] Setting room track state to:', trackData);
       setRoomTrack(trackData);
       setHasRoom(true); // If we can fetch room track, user is in a room
       console.log('✅ Room track state updated:', {
@@ -95,103 +96,138 @@ export function useRoomSpotifyTrack() {
     }
   };
 
-  // Set up real-time subscription to room_spotify_tracks changes
+  // Get room ID for the user
   useEffect(() => {
-    if (!userId) return;
+    console.log('🎵 [Debug] Room ID effect triggered, userId:', userId);
+    if (!userId) {
+      console.log('🎵 [Debug] No userId, skipping room ID setup');
+      return;
+    }
 
-    const setupRealtimeSubscription = async () => {
-      console.log('🎵 [Real-time] Setting up subscription for user:', userId);
-
-      // Get room ID first
+    const getRoomIdAndSetup = async () => {
+      console.log('🔍 Getting room ID for user:', userId);
       const currentRoomId = await getRoomId();
+      console.log('🔍 Room ID result:', currentRoomId);
       setRoomId(currentRoomId);
 
       if (!currentRoomId) {
-        console.log('❌ No room found for user, skipping real-time setup');
+        console.log('❌ No room found for user, skipping setup');
         setHasRoom(false);
         setRoomTrack(null);
         return;
       }
 
       setHasRoom(true);
-      console.log('🎵 [Real-time] Setting up Spotify track listener for room:', currentRoomId);
-
-      // Initial fetch
-      await fetchRoomTrack();
-
-      // Subscribe to real-time updates on the room_spotify_tracks table
-      const channel = supabase
-        .channel(`room_spotify_tracks_${currentRoomId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'room_spotify_tracks',
-            filter: `room_id=eq.${currentRoomId}`,
-          },
-          (payload) => {
-            console.log('🎵 [Real-time] INSERT event received:', payload);
-            console.log('🎵 [Real-time] New Spotify track added:', payload.new);
-            console.log('🎵 [Real-time] Fetching updated track data...');
-            // Fetch the updated track data
-            fetchRoomTrack();
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'room_spotify_tracks',
-            filter: `room_id=eq.${currentRoomId}`,
-          },
-          (payload) => {
-            console.log('🎵 [Real-time] UPDATE event received:', payload);
-            console.log('🎵 [Real-time] Spotify track updated:', payload.new);
-            // Fetch the updated track data
-            fetchRoomTrack();
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'room_spotify_tracks',
-            filter: `room_id=eq.${currentRoomId}`,
-          },
-          (payload) => {
-            console.log('🎵 [Real-time] DELETE event received:', payload);
-            console.log('🎵 [Real-time] Spotify track removed:', payload.old);
-            setRoomTrack(null);
-          },
-        )
-        .subscribe((status) => {
-          console.log('🎵 [Real-time] Subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log(
-              '✅ [Real-time] Successfully subscribed to room_spotify_tracks for room:',
-              currentRoomId,
-            );
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ [Real-time] Channel error for room:', currentRoomId);
-          } else if (status === 'TIMED_OUT') {
-            console.error('❌ [Real-time] Channel timeout for room:', currentRoomId);
-          }
-        });
-
-      return () => {
-        console.log('🎵 [Real-time] Cleaning up Spotify track listener for room:', currentRoomId);
-        supabase.removeChannel(channel);
-      };
+      console.log('✅ Room ID set:', currentRoomId);
     };
 
-    const cleanup = setupRealtimeSubscription();
-    return () => {
-      cleanup.then((cleanupFn) => cleanupFn?.());
-    };
+    getRoomIdAndSetup();
   }, [userId]);
+
+  // Debug: Log when roomId changes
+  useEffect(() => {
+    console.log('🎵 [Debug] Room ID changed:', roomId);
+  }, [roomId]);
+
+  // Debug: Log when roomTrack state changes
+  useEffect(() => {
+    console.log('🎵 [State] Room track state changed:', {
+      hasTrack: !!roomTrack,
+      trackName: roomTrack?.track_name,
+      artistName: roomTrack?.artist_name,
+      trackId: roomTrack?.track_id,
+    });
+  }, [roomTrack]);
+
+  // Set up real-time subscription to room_spotify_tracks changes
+  useEffect(() => {
+    console.log('🎵 [Debug] Real-time effect triggered, roomId:', roomId);
+    if (!roomId) {
+      console.log('🎵 [Real-time] No room ID available, skipping subscription setup');
+      return;
+    }
+
+    console.log('🎵 [Real-time] Setting up subscription for room:', roomId);
+
+    // Initial fetch
+    console.log('🎵 [Real-time] Performing initial fetch for room:', roomId);
+    fetchRoomTrack();
+
+    // Subscribe to real-time updates on the room_spotify_tracks table
+    console.log('🎵 [Real-time] Creating channel for room:', roomId);
+    const channel = supabase
+      .channel(`room_spotify_tracks_${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'room_spotify_tracks',
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          console.log('🎵 [Real-time] INSERT event received:', payload);
+          console.log('🎵 [Real-time] New Spotify track added:', payload.new);
+          console.log('🎵 [Real-time] Fetching updated track data...');
+          // Fetch the updated track data immediately
+          await fetchRoomTrack();
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room_spotify_tracks',
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          console.log('🎵 [Real-time] UPDATE event received:', payload);
+          console.log('🎵 [Real-time] Spotify track updated:', payload.new);
+          // Fetch the updated track data immediately
+          await fetchRoomTrack();
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'room_spotify_tracks',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          console.log('🎵 [Real-time] DELETE event received:', payload);
+          console.log('🎵 [Real-time] Spotify track removed:', payload.old);
+          setRoomTrack(null);
+        },
+      )
+      .subscribe((status) => {
+        console.log('🎵 [Real-time] Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log(
+            '✅ [Real-time] Successfully subscribed to room_spotify_tracks for room:',
+            roomId,
+          );
+          console.log('🎵 [Real-time] Channel name:', `room_spotify_tracks_${roomId}`);
+          console.log(
+            '🎵 [Real-time] Listening for INSERT/UPDATE/DELETE events on room_spotify_tracks table',
+          );
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [Real-time] Channel error for room:', roomId);
+          console.error('❌ [Real-time] This might be due to RLS policies or network issues');
+        } else if (status === 'TIMED_OUT') {
+          console.error('❌ [Real-time] Channel timeout for room:', roomId);
+        } else {
+          console.log('🎵 [Real-time] Channel status:', status);
+        }
+      });
+
+    return () => {
+      console.log('🎵 [Real-time] Cleaning up Spotify track listener for room:', roomId);
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, userId, apiClient]); // Added missing dependencies
 
   return {
     roomTrack,

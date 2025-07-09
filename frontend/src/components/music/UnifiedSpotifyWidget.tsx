@@ -117,15 +117,20 @@ export function UnifiedSpotifyWidget({
         hasTrack: !!track,
         hasConnectedBefore,
         trackName: track?.name,
+        trackId: track?.id,
+        artistName: track?.artist,
       });
       setLastStateLog(debugKey);
     }
 
     if (track) {
+      console.log('🎵 [Widget] Setting state to has-track for:', track.name);
       setSpotifyState('has-track');
     } else if (hasConnectedBefore) {
+      console.log('🎵 [Widget] Setting state to connected-no-track');
       setSpotifyState('connected-no-track');
     } else {
+      console.log('🎵 [Widget] Setting state to not-connected');
       setSpotifyState('not-connected');
     }
   }, [track, hasConnectedBefore, lastStateLog]);
@@ -318,6 +323,12 @@ export function UnifiedSpotifyWidget({
   };
 
   const progressPercentage = track && track.duration > 0 ? (currentTime / track.duration) * 100 : 0;
+
+  // Debug: Log current state before rendering
+  console.log('🎵 [Widget] Rendering with state:', spotifyState, {
+    hasTrack: !!track,
+    trackName: track?.name,
+  });
 
   // Render different states
   if (spotifyState === 'not-connected') {

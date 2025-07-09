@@ -10,6 +10,17 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       eventsPerSecond: 10,
     },
   },
+  db: {
+    schema: 'public',
+  },
+});
+
+// Enable real-time debugging
+console.log('🔧 Supabase client initialized with real-time enabled');
+console.log('🔧 Supabase URL:', supabaseUrl);
+console.log('🔧 Real-time config:', {
+  eventsPerSecond: 10,
+  schema: 'public',
 });
 
 export default supabase;

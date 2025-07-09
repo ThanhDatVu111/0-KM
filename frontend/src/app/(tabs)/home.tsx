@@ -63,6 +63,16 @@ const Home = () => {
     refetchRoomTrack,
   } = useRoomSpotifyTrack();
 
+  // Debug: Log when roomTrack changes in home component
+  useEffect(() => {
+    console.log('🏠 [Home] Room track changed:', {
+      hasTrack: !!roomTrack,
+      trackName: roomTrack?.track_name,
+      artistName: roomTrack?.artist_name,
+      trackId: roomTrack?.track_id,
+    });
+  }, [roomTrack]);
+
   // Real Spotify playback controls
   const { playTrack } = useSpotifyPlayback();
   const lastYouTubeDebugRef = useRef<string>('');
@@ -354,6 +364,14 @@ const Home = () => {
           <Text className="text-lg text-white font-pmedium mb-3">
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
+
+          {/* Debug: Log track data */}
+          {__DEV__ && (
+            <Text className="text-white/60 text-xs mb-2">
+              Home Component Track:{' '}
+              {roomTrack ? `"${roomTrack.track_name}" by ${roomTrack.artist_name}` : 'No track'}
+            </Text>
+          )}
 
           <UnifiedSpotifyWidget
             track={
