@@ -7,6 +7,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -33,10 +34,7 @@ import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { Ionicons } from '@expo/vector-icons';
 import { locationTrackingService } from '@/services/locationTracking';
-import * as Location from 'expo-location';
 import { updateUserLocation } from '@/apis/user';
-import { fetchUser } from '@/apis/user';
-import { usePartnerData } from '@/hooks/usePartnerData';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -49,12 +47,50 @@ const WidgetCard = ({
   noPadding?: boolean;
 }) => (
   <View
-    className={`border border-black bg-white/10 shadow-md backdrop-blur-lg ${noPadding ? '' : 'p-4'} ${className}`}
-    style={{ borderWidth: 1.5, borderRadius: 16 }}
+    className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${noPadding ? '' : 'p-4'} ${className}`}
   >
     {children}
   </View>
 );
+
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-2 border-black px-4 py-3 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-2, 0],
+          [2, 0],
+          [0, -2],
+          [0, 2],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 12,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 12,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 const Home = () => {
   const { userId } = useAuth();
@@ -65,7 +101,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
   const [showSpotifyInput, setShowSpotifyInput] = useState(false);
-  const [isLocationTracking, setIsLocationTracking] = useState(false);
+  const isLocationEnabled = true;
 
   const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
   const {
@@ -74,8 +110,6 @@ const Home = () => {
     isLoading: spotifyLoading,
     refetchRoomTrack,
   } = useRoomSpotifyTrack();
-
-  const { partnerData, hasRoom: hasPartnerRoom, isLoading: partnerLoading } = usePartnerData();
 
   // Real Spotify playback controls
   const { playTrack } = useSpotifyPlayback();
@@ -94,13 +128,28 @@ const Home = () => {
     };
   }, [userId]);
 
+  // Effect: Stop location tracking if toggled off
+  useEffect(() => {
+    if (!isLocationEnabled && userId) {
+      locationTrackingService.stopTracking();
+      // Optionally clear location in backend
+      updateUserLocation({
+        user_id: userId,
+        location_latitude: undefined,
+        location_longitude: undefined,
+        location_city: undefined,
+        location_country: undefined,
+        timezone: undefined,
+      });
+    }
+  }, [isLocationEnabled, userId]);
+
   const startLocationTracking = async () => {
     if (!userId) return;
 
     try {
       console.log('📍 Starting location tracking from home screen');
       await locationTrackingService.startTracking(userId);
-      setIsLocationTracking(true);
     } catch (error) {
       console.error('❌ Failed to start location tracking:', error);
       // Don't show alert - location tracking is optional
@@ -111,7 +160,6 @@ const Home = () => {
     try {
       console.log('📍 Stopping location tracking from home screen');
       await locationTrackingService.stopTracking();
-      setIsLocationTracking(false);
     } catch (error) {
       console.error('❌ Failed to stop location tracking:', error);
     }
@@ -235,83 +283,6 @@ const Home = () => {
 
   const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
 
-  const testLocationDetection = async () => {
-    try {
-      console.log('🧪 Testing location detection...');
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Location permission is required');
-        return;
-      }
-
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = currentLocation.coords;
-      console.log('🧪 Current location:', { latitude, longitude });
-
-      const geocodeResult = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      console.log('🧪 Geocode result:', geocodeResult);
-
-      if (geocodeResult.length > 0) {
-        const address = geocodeResult[0];
-        const locationData = {
-          user_id: userId!,
-          location_latitude: latitude,
-          location_longitude: longitude,
-          location_city: address.city || 'Unknown City',
-          location_country: address.country || 'Unknown Country',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        };
-
-        console.log('🧪 Updating user location with:', locationData);
-        await updateUserLocation(locationData);
-        Alert.alert('Success', 'Location updated successfully!');
-      }
-    } catch (error) {
-      console.error('🧪 Error testing location:', error);
-      Alert.alert('Error', 'Failed to update location');
-    }
-  };
-
-  const checkCurrentUserLocation = async () => {
-    try {
-      console.log('🧪 Checking current user location data...');
-      const userData = await fetchUser(userId!);
-      console.log('🧪 Current user data:', userData);
-      console.log('🧪 Current user location data:', {
-        location_latitude: userData.location_latitude,
-        location_longitude: userData.location_longitude,
-        location_city: userData.location_city,
-        location_country: userData.location_country,
-        timezone: userData.timezone,
-      });
-      Alert.alert('User Data', JSON.stringify(userData, null, 2));
-    } catch (error) {
-      console.error('🧪 Error checking user location:', error);
-      Alert.alert('Error', 'Failed to check user location');
-    }
-  };
-
-  const checkPartnerData = async () => {
-    try {
-      console.log('🧪 Checking partner data...');
-      console.log('🧪 Partner data:', partnerData);
-      console.log('🧪 Has room:', hasPartnerRoom);
-      console.log('🧪 Partner loading:', partnerLoading);
-
-      if (partnerData) {
-        Alert.alert('Partner Data', JSON.stringify(partnerData, null, 2));
-      } else {
-        Alert.alert('Partner Data', 'No partner data available');
-      }
-    } catch (error) {
-      console.error('🧪 Error checking partner data:', error);
-      Alert.alert('Error', 'Failed to check partner data');
-    }
-  };
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-[#2A0D45]">
@@ -335,51 +306,27 @@ const Home = () => {
         contentContainerStyle={{ padding: 24, paddingTop: 100, paddingBottom: 120, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Location Tracking Toggle */}
-        <View className="mb-4 flex-row justify-end">
-          <TouchableOpacity
-            onPress={isLocationTracking ? stopLocationTracking : startLocationTracking}
-            className={`flex-row items-center px-3 py-2 rounded-full ${
-              isLocationTracking ? 'bg-green-500/20' : 'bg-white/20'
-            }`}
-          >
-            <Ionicons
-              name={isLocationTracking ? 'location' : 'location-outline'}
-              size={16}
-              color="white"
-            />
-            <Text className="text-white font-pregular text-sm ml-2">
-              {isLocationTracking ? 'Location Active' : 'Enable Location'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Enable Location Toggle */}
+        {/* Removed location toggle UI */}
 
         {/* Top Widget Grid */}
         <View className="flex-row flex-wrap gap-4 mb-6">
           {/* Calendar Widget */}
           <WidgetCard className="flex-1 min-w-[140px] h-48 overflow-hidden" noPadding>
-            <View
-              style={{
-                backgroundColor: '#6536DA',
-                height: 48,
-                justifyContent: 'center',
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-              }}
-            >
-              <Text className="font-psemibold text-lg text-white px-3">Friday 14</Text>
-            </View>
+            <RetroHeader title="CALENDAR" />
             <View
               style={{
                 flex: 1,
                 backgroundColor: 'white',
-                borderBottomLeftRadius: 16,
-                borderBottomRightRadius: 16,
+                borderBottomLeftRadius: 12,
+                borderBottomRightRadius: 12,
                 justifyContent: 'center',
                 alignItems: 'center',
+                padding: 16,
               }}
             >
-              <Text className="text-center font-pregular text-sm text-black px-3">
+              <Text className="text-center font-pbold text-lg text-black mb-1">Friday 14</Text>
+              <Text className="text-center font-pregular text-sm text-gray-600 px-3">
                 Movie night in 3 days!
               </Text>
             </View>
@@ -396,17 +343,20 @@ const Home = () => {
             className="flex-1 min-w-[140px] h-48"
             fallbackUserName="Partner"
             defaultCity="San Francisco"
+            isLocationEnabled={isLocationEnabled}
           />
 
           {/* Image/Memory Widget */}
           <WidgetCard className="flex-1 min-w-[140px] h-48 overflow-hidden" noPadding>
+            <RetroHeader title="MEMORY" />
             <View style={{ flex: 1, position: 'relative' }}>
               <Image
                 source={images.memory}
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderRadius: 16,
+                  borderBottomLeftRadius: 12,
+                  borderBottomRightRadius: 12,
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -419,9 +369,9 @@ const Home = () => {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  backgroundColor: 'rgba(255,255,255,0.85)',
-                  borderBottomLeftRadius: 16,
-                  borderBottomRightRadius: 16,
+                  backgroundColor: 'rgba(255,255,255,0.95)',
+                  borderBottomLeftRadius: 12,
+                  borderBottomRightRadius: 12,
                   padding: 8,
                 }}
               >
@@ -438,12 +388,17 @@ const Home = () => {
             {hasRoom ? "What We're Watching" : 'My Music Video'}
           </Text>
           {roomVideo ? (
-            <YouTubeWidget
-              videoId={roomVideo.video_id}
-              onPress={roomVideo.added_by_user_id === userId ? handleRemoveYouTubeVideo : undefined}
-            />
+            <View className="h-48">
+              <YouTubeWidget
+                videoId={roomVideo.video_id}
+                onPress={
+                  roomVideo.added_by_user_id === userId ? handleRemoveYouTubeVideo : undefined
+                }
+                className="h-full"
+              />
+            </View>
           ) : (
-            <View className="h-32 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
+            <View className="h-48 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
               <Text className="text-white/70 font-pregular text-center px-4">
                 {canAddVideo
                   ? 'No video playing. Tap + Add to start watching together!'
@@ -467,26 +422,31 @@ const Home = () => {
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
 
-          <UnifiedSpotifyWidget
-            track={
-              roomTrack && roomTrack.track_id
-                ? {
-                    id: roomTrack.track_id,
-                    name: roomTrack.track_name,
-                    artist: roomTrack.artist_name,
-                    album: roomTrack.album_name,
-                    albumArt: roomTrack.album_art_url,
-                    duration: Math.floor(roomTrack.duration_ms / 1000),
-                    uri: roomTrack.track_uri,
-                  }
-                : undefined
-            }
-            roomId={roomId || null}
-            canControl={true}
-            onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
-            onDeleteTrack={roomTrack ? handleDeleteSpotifyTrack : undefined}
-            onAddTrack={() => setShowSpotifyInput(true)}
-          />
+          <View className="h-48">
+            <UnifiedSpotifyWidget
+              track={
+                roomTrack && roomTrack.track_id
+                  ? {
+                      id: roomTrack.track_id,
+                      name: roomTrack.track_name,
+                      artist: roomTrack.artist_name,
+                      album: roomTrack.album_name,
+                      albumArt: roomTrack.album_art_url,
+                      duration: Math.floor(roomTrack.duration_ms / 1000),
+                      uri: roomTrack.track_uri,
+                    }
+                  : undefined
+              }
+              roomId={roomId || null}
+              canControl={true}
+              onPress={
+                roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined
+              }
+              onDeleteTrack={roomTrack ? handleDeleteSpotifyTrack : undefined}
+              onAddTrack={() => setShowSpotifyInput(true)}
+              className="h-full"
+            />
+          </View>
         </View>
 
         {/* Join Room Widget */}
@@ -505,25 +465,6 @@ const Home = () => {
       {/* Sign Out Button - Top Right */}
       <View className="absolute top-16 right-5 z-50">
         <SignOutButton />
-      </View>
-
-      {/* Temporary Debug Button */}
-      <View className="absolute top-16 left-5 z-50">
-        <TouchableOpacity
-          onPress={testLocationDetection}
-          className="bg-red-500 px-3 py-2 rounded-lg mb-2"
-        >
-          <Text className="text-white text-xs">Test Location</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={checkCurrentUserLocation}
-          className="bg-blue-500 px-3 py-2 rounded-lg mb-2"
-        >
-          <Text className="text-white text-xs">Check User</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={checkPartnerData} className="bg-green-500 px-3 py-2 rounded-lg">
-          <Text className="text-white text-xs">Check Partner</Text>
-        </TouchableOpacity>
       </View>
 
       {/* YouTube Input Modal */}

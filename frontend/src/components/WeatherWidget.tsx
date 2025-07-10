@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { fetchWeatherByLocation, fetchWeatherByCity, WeatherData } from '@/apis/weather';
@@ -10,12 +9,53 @@ type WeatherWidgetProps = {
   className?: string;
   fallbackUserName?: string;
   defaultCity?: string;
+  isLocationEnabled?: boolean;
 };
+
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-2 border-black px-4 py-3 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-2, 0],
+          [2, 0],
+          [0, -2],
+          [0, 2],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 12,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 12,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export function WeatherWidget({
   className = '',
   fallbackUserName = 'Partner',
   defaultCity = 'San Francisco',
+  isLocationEnabled = true,
 }: WeatherWidgetProps) {
   const { partnerData, hasRoom, isLoading: partnerLoading } = usePartnerData();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -122,26 +162,30 @@ export function WeatherWidget({
 
   if (isLoading) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-        style={{ borderWidth: 1.5, borderRadius: 16 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
-        <Text className="mb-2 font-pregular text-sm text-white">{fallbackUserName}'s weather</Text>
-        <View className="flex-1 items-center justify-center">
-          <Ionicons name="refresh" size={32} color="white" />
-          <Text className="font-pregular text-sm text-white mt-2">Loading weather...</Text>
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="WEATHER" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <View className="items-center">
+            <Ionicons name="refresh" size={24} color="#6536DD" />
+            <Text className="font-pregular text-sm text-black mt-2">Loading weather...</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Show message if location is disabled
+  if (!isLocationEnabled) {
+    return (
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="WEATHER" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <View className="items-center">
+            <Ionicons name="location-outline" size={24} color="#6536DD" />
+            <Text className="text-center font-pregular text-sm text-black mt-2">
+              Enable location to see your partner's weather
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -149,25 +193,10 @@ export function WeatherWidget({
 
   if (!hasRoom || !partnerData) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-        style={{ borderWidth: 1.5, borderRadius: 16 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
-        <Text className="mb-2 font-pregular text-sm text-white">{fallbackUserName}'s weather</Text>
-        <View className="flex-1 items-center justify-center">
-          <Text className="font-pregular text-sm text-white text-center">
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="WEATHER" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <Text className="text-center font-pregular text-sm text-black">
             {!hasRoom ? 'No partner connected' : 'Partner location unavailable'}
           </Text>
         </View>
@@ -183,112 +212,88 @@ export function WeatherWidget({
     const partnerCountry = partnerData?.location?.country || 'Unknown Country';
 
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-        style={{ borderWidth: 1.5, borderRadius: 16 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
-        <Text className="mb-2 font-pregular text-sm text-white">{userName}'s weather</Text>
-        <View className="flex-1 items-center justify-center">
-          {isApiKeyMissing ? (
-            <>
-              <Text className="font-pregular text-sm text-white mb-2">Demo Mode</Text>
-              <Ionicons name="sunny" size={48} color="white" />
-              <Text className="font-pbold text-5xl text-white mt-2">72°F</Text>
-              <Text className="font-pregular text-sm text-white/80 mt-1">Sunny</Text>
-              <Text className="font-pregular text-xs text-white/60 mt-1">
-                {partnerCity}, {partnerCountry}
-              </Text>
-              <Text className="font-pregular text-xs text-white/40 mt-2 text-center px-2">
-                Add EXPO_PUBLIC_WEATHER_API_KEY to .env for real data
-              </Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="cloud-offline" size={32} color="white" />
-              <Text className="font-pregular text-sm text-white mt-2 text-center">
-                {error || 'Weather unavailable'}
-              </Text>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                className="bg-white/20 rounded-full px-3 py-1 mt-2"
-              >
-                <Text className="text-white font-pregular text-xs">Retry</Text>
-              </TouchableOpacity>
-            </>
-          )}
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="WEATHER" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <View className="items-center">
+            {isApiKeyMissing ? (
+              <>
+                <Text className="font-pregular text-sm text-black mb-2">Demo Mode</Text>
+                <Ionicons name="sunny" size={32} color="#6536DD" />
+                <Text className="font-pbold text-2xl text-black mt-2">72°F</Text>
+                <Text className="font-pregular text-xs text-gray-600 mt-1">Sunny</Text>
+                <Text className="font-pregular text-xs text-gray-500 mt-1">
+                  {partnerCity}, {partnerCountry}
+                </Text>
+                <Text className="font-pregular text-xs text-gray-400 mt-2 text-center px-2">
+                  Add EXPO_PUBLIC_WEATHER_API_KEY to .env for real data
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="cloud-offline" size={24} color="#6536DD" />
+                <Text className="font-pregular text-sm text-black mt-2 text-center">
+                  {error || 'Weather unavailable'}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  className="bg-[#6536DD] border-2 border-black mt-2"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 2, height: 2 },
+                    shadowOpacity: 1,
+                    shadowRadius: 0,
+                    elevation: 4,
+                  }}
+                >
+                  <View className="bg-[#6536DD] px-3 py-1">
+                    <Text className="text-white font-pbold text-xs">Retry</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
       </View>
     );
   }
 
   return (
-    <View
-      className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-      style={{ borderWidth: 1.5, borderRadius: 16 }}
-    >
-      <LinearGradient
-        colors={['#6536DA', '#F7BFF7']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          borderRadius: 16,
-          zIndex: -1,
-        }}
-      />
+    <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+      <RetroHeader title="WEATHER" />
+      <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+        {/* Header with refresh button */}
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="font-pregular text-xs text-black">{userName}'s weather</Text>
+          <TouchableOpacity onPress={handleRefresh} className="p-1">
+            <Ionicons name="refresh" size={12} color="#6536DD" />
+          </TouchableOpacity>
+        </View>
 
-      {/* Header with refresh button */}
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="font-pregular text-sm text-white">{userName}'s weather</Text>
-        <TouchableOpacity onPress={handleRefresh} className="p-1">
-          <Ionicons name="refresh" size={16} color="white" />
-        </TouchableOpacity>
-      </View>
+        <View className="items-center">
+          {/* Weather Icon */}
+          <Ionicons name={getWeatherIcon(weatherData.icon) as any} size={32} color="#6536DD" />
 
-      <View className="flex-1 items-center justify-center">
-        {/* Weather Icon */}
-        <Ionicons name={getWeatherIcon(weatherData.icon) as any} size={48} color="white" />
+          {/* Temperature */}
+          <Text className="font-pbold text-2xl text-black mt-2">{weatherData.temperature}°F</Text>
 
-        {/* Temperature */}
-        <Text className="font-pbold text-5xl text-white mt-2">{weatherData.temperature}°F</Text>
-
-        {/* Description */}
-        <Text className="font-pregular text-sm text-white/80 mt-1 text-center capitalize">
-          {weatherData.description}
-        </Text>
-
-        {/* Location */}
-        <Text className="font-pregular text-xs text-white/60 mt-1 text-center">
-          {weatherData.city}, {weatherData.country}
-        </Text>
-
-        {/* Partner's actual location if different from weather API response */}
-        {partnerData?.location?.city && partnerData.location.city !== weatherData.city && (
-          <Text className="font-pregular text-xs text-white/40 mt-1 text-center">
-            Partner in: {partnerData.location.city}, {partnerData.location.country}
+          {/* Description */}
+          <Text className="font-pregular text-xs text-gray-600 mt-1 text-center capitalize">
+            {weatherData.description}
           </Text>
-        )}
 
-        {/* Additional info */}
-        <View className="flex-row items-center mt-2">
-          <Ionicons name="thermometer" size={12} color="white" />
-          <Text className="font-pregular text-xs text-white/80 ml-1">
-            Feels like {weatherData.feelsLike}°F
+          {/* Location */}
+          <Text className="font-pregular text-xs text-gray-500 mt-1 text-center">
+            {weatherData.city}, {weatherData.country}
           </Text>
+
+          {/* Additional info */}
+          <View className="flex-row items-center mt-2">
+            <Ionicons name="thermometer" size={10} color="#6536DD" />
+            <Text className="font-pregular text-xs text-gray-600 ml-1">
+              Feels like {weatherData.feelsLike}°F
+            </Text>
+          </View>
         </View>
       </View>
     </View>

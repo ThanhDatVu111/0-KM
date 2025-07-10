@@ -1,12 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { usePartnerData } from '@/hooks/usePartnerData';
 
 type TimeWidgetProps = {
   className?: string;
   fallbackUserName?: string;
 };
+
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-2 border-black px-4 py-3 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-2, 0],
+          [2, 0],
+          [0, -2],
+          [0, 2],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 12,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 12,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: TimeWidgetProps) {
   const { partnerData, hasRoom, isLoading } = usePartnerData();
@@ -76,25 +114,10 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
 
   if (isLoading) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-        style={{ borderWidth: 1.5, borderRadius: 16 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
-        <Text className="mb-2 font-pregular text-sm text-white">{fallbackUserName}'s time</Text>
-        <View className="flex-1 items-center justify-center">
-          <Text className="font-pregular text-sm text-white">Loading...</Text>
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="TIME" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <Text className="text-center font-pregular text-sm text-black">Loading...</Text>
         </View>
       </View>
     );
@@ -102,25 +125,10 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
 
   if (!hasRoom || !partnerData) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-        style={{ borderWidth: 1.5, borderRadius: 16 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
-        <Text className="mb-2 font-pregular text-sm text-white">{fallbackUserName}'s time</Text>
-        <View className="flex-1 items-center justify-center">
-          <Text className="font-pregular text-sm text-white text-center">
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="TIME" />
+        <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+          <Text className="text-center font-pregular text-sm text-black">
             {!hasRoom ? 'No partner connected' : 'Partner data unavailable'}
           </Text>
         </View>
@@ -129,29 +137,21 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
   }
 
   return (
-    <View
-      className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 ${className}`}
-      style={{ borderWidth: 1.5, borderRadius: 16 }}
-    >
-      <LinearGradient
-        colors={['#6536DA', '#F7BFF7']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          borderRadius: 16,
-          zIndex: -1,
-        }}
-      />
-      <Text className="mb-2 font-pregular text-sm text-white">{userName}'s time</Text>
-      <View className="flex-1 items-center justify-center">
-        <Text className="font-pbold text-5xl text-white">{formatTime(currentTime, timezone)}</Text>
-        <Text className="font-pregular text-sm text-white/80 mt-2">
-          {formatDate(currentTime, timezone)}
-        </Text>
-        {timezone && <Text className="font-pregular text-xs text-white/60 mt-1">{timezone}</Text>}
+    <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+      <RetroHeader title="TIME" />
+      <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
+        <Text className="text-center font-pregular text-xs text-black mb-2">{userName}'s time</Text>
+        <View className="items-center">
+          <Text className="font-pbold text-3xl text-black">
+            {formatTime(currentTime, timezone)}
+          </Text>
+          <Text className="font-pregular text-xs text-gray-600 mt-1 text-center">
+            {formatDate(currentTime, timezone)}
+          </Text>
+          {timezone && (
+            <Text className="font-pregular text-xs text-gray-500 mt-1 text-center">{timezone}</Text>
+          )}
+        </View>
       </View>
     </View>
   );
