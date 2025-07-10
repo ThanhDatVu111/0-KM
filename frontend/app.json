@@ -13,7 +13,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to tag your memories."
+        "NSLocationWhenInUseUsageDescription": "We need your location to show your partner your current weather and time.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to continuously update your partner with your current weather and time.",
+        "UIBackgroundModes": ["location", "background-processing"]
       }
     },
     "android": {
@@ -44,6 +46,12 @@
     "experiments": {
       "typedRoutes": true
     },
-    "permissions": ["CAMERA", "MEDIA_LIBRARY"]
+    "permissions": [
+      "CAMERA",
+      "MEDIA_LIBRARY",
+      "LOCATION",
+      "ACCESS_FINE_LOCATION",
+      "ACCESS_COARSE_LOCATION"
+    ]
   }
 }

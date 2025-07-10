@@ -19,15 +19,24 @@ export const fetchWeatherByLocation = async (
   longitude: number,
 ): Promise<WeatherData> => {
   try {
-    const response = await fetch(
-      `${WEATHER_BASE_URL}/weather?lat=${latitude}&lon=${longitude}&appid=${WEATHER_API_KEY}&units=imperial`,
-    );
+    console.log('🌤️ Fetching weather by location:', { latitude, longitude });
+    console.log('🌤️ API Key available:', !!WEATHER_API_KEY);
+    
+    const url = `${WEATHER_BASE_URL}/weather?lat=${latitude}&lon=${longitude}&appid=${WEATHER_API_KEY}&units=imperial`;
+    console.log('🌤️ Weather API URL:', url.replace(WEATHER_API_KEY!, '***HIDDEN***'));
+    
+    const response = await fetch(url);
+
+    console.log('🌤️ Weather API response status:', response.status);
 
     if (!response.ok) {
-      throw new Error(`Weather API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('🌤️ Weather API error response:', errorText);
+      throw new Error(`Weather API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('🌤️ Weather API data received:', data);
 
     return {
       temperature: Math.round(data.main.temp),
@@ -39,22 +48,31 @@ export const fetchWeatherByLocation = async (
       country: data.sys.country,
     };
   } catch (error) {
-    console.error('Error fetching weather:', error);
+    console.error('❌ Error fetching weather by location:', error);
     throw error;
   }
 };
 
 export const fetchWeatherByCity = async (city: string): Promise<WeatherData> => {
   try {
-    const response = await fetch(
-      `${WEATHER_BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${WEATHER_API_KEY}&units=imperial`,
-    );
+    console.log('🌤️ Fetching weather by city:', city);
+    console.log('🌤️ API Key available:', !!WEATHER_API_KEY);
+    
+    const url = `${WEATHER_BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${WEATHER_API_KEY}&units=imperial`;
+    console.log('🌤️ Weather API URL:', url.replace(WEATHER_API_KEY!, '***HIDDEN***'));
+    
+    const response = await fetch(url);
+
+    console.log('🌤️ Weather API response status:', response.status);
 
     if (!response.ok) {
-      throw new Error(`Weather API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('🌤️ Weather API error response:', errorText);
+      throw new Error(`Weather API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('🌤️ Weather API data received:', data);
 
     return {
       temperature: Math.round(data.main.temp),
@@ -66,7 +84,7 @@ export const fetchWeatherByCity = async (city: string): Promise<WeatherData> => 
       country: data.sys.country,
     };
   } catch (error) {
-    console.error('Error fetching weather:', error);
+    console.error('❌ Error fetching weather by city:', error);
     throw error;
   }
 };

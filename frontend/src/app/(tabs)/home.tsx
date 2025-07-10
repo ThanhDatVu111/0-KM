@@ -32,6 +32,7 @@ import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
 import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { Ionicons } from '@expo/vector-icons';
+import { locationTrackingService } from '@/services/locationTracking';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -60,6 +61,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
   const [showSpotifyInput, setShowSpotifyInput] = useState(false);
+  const [isLocationTracking, setIsLocationTracking] = useState(false);
 
   const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
   const {
@@ -75,8 +77,39 @@ const Home = () => {
   useEffect(() => {
     if (userId) {
       loadUserRoom();
+      startLocationTracking();
     }
+
+    // Cleanup location tracking when component unmounts
+    return () => {
+      if (userId) {
+        stopLocationTracking();
+      }
+    };
   }, [userId]);
+
+  const startLocationTracking = async () => {
+    if (!userId) return;
+
+    try {
+      console.log('📍 Starting location tracking from home screen');
+      await locationTrackingService.startTracking(userId);
+      setIsLocationTracking(true);
+    } catch (error) {
+      console.error('❌ Failed to start location tracking:', error);
+      // Don't show alert - location tracking is optional
+    }
+  };
+
+  const stopLocationTracking = async () => {
+    try {
+      console.log('📍 Stopping location tracking from home screen');
+      await locationTrackingService.stopTracking();
+      setIsLocationTracking(false);
+    } catch (error) {
+      console.error('❌ Failed to stop location tracking:', error);
+    }
+  };
 
   const loadUserRoom = async () => {
     try {
@@ -219,6 +252,25 @@ const Home = () => {
         contentContainerStyle={{ padding: 24, paddingTop: 100, paddingBottom: 120, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Location Tracking Toggle */}
+        <View className="mb-4 flex-row justify-end">
+          <TouchableOpacity
+            onPress={isLocationTracking ? stopLocationTracking : startLocationTracking}
+            className={`flex-row items-center px-3 py-2 rounded-full ${
+              isLocationTracking ? 'bg-green-500/20' : 'bg-white/20'
+            }`}
+          >
+            <Ionicons
+              name={isLocationTracking ? 'location' : 'location-outline'}
+              size={16}
+              color="white"
+            />
+            <Text className="text-white font-pregular text-sm ml-2">
+              {isLocationTracking ? 'Location Active' : 'Enable Location'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Top Widget Grid */}
         <View className="flex-row flex-wrap gap-4 mb-6">
           {/* Calendar Widget */}

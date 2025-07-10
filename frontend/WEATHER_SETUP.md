@@ -19,7 +19,7 @@ EXPO_PUBLIC_SUPABASE_URL=your_supabase_url_here
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # Weather API Configuration
-EXPO_PUBLIC_WEATHER_API_KEY=your_openweathermap_api_key_here
+EXPO_PUBLIC_WEATHER_API_KEY=5e3c865804c27922adb0d06ab4f46ee3
 ```
 
 ## 3. Features
