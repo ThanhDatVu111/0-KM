@@ -388,7 +388,7 @@ const Home = () => {
             {hasRoom ? "What We're Watching" : 'My Music Video'}
           </Text>
           {roomVideo ? (
-            <View className="h-48">
+            <View className="h-72">
               <YouTubeWidget
                 videoId={roomVideo.video_id}
                 onPress={
@@ -398,20 +398,36 @@ const Home = () => {
               />
             </View>
           ) : (
-            <View className="h-48 bg-white/10 rounded-2xl border border-white/20 items-center justify-center">
-              <Text className="text-white/70 font-pregular text-center px-4">
-                {canAddVideo
-                  ? 'No video playing. Tap + Add to start watching together!'
-                  : 'Waiting for your partner to add a video...'}
-              </Text>
-              {canAddVideo && (
-                <TouchableOpacity
-                  onPress={() => setShowYouTubeInput(true)}
-                  className="bg-white/20 px-3 py-1 rounded-full mt-2"
-                >
-                  <Text className="text-white font-pregular text-sm">+ Add</Text>
-                </TouchableOpacity>
-              )}
+            <View className="h-48 shadow-2xl border-2 border-black rounded-lg overflow-hidden">
+              <RetroHeader title="YOUTUBE" />
+              <View className="bg-[#FDA3D4] flex-1 rounded-b-md">
+                <View className="px-4 pt-0 pb-2 flex-1 justify-center items-center">
+                  <Ionicons name="play-circle" size={24} color="#6536DD" />
+                  <Text className="font-pmedium text-sm text-black mt-2 mb-3 text-center">
+                    {canAddVideo
+                      ? 'No video playing'
+                      : 'Waiting for your partner to add a video...'}
+                  </Text>
+                  {canAddVideo && (
+                    <TouchableOpacity
+                      onPress={() => setShowYouTubeInput(true)}
+                      className="bg-[#6536DD] border-2 border-black"
+                      style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 2, height: 2 },
+                        shadowOpacity: 1,
+                        shadowRadius: 0,
+                        elevation: 4,
+                      }}
+                    >
+                      <View className="bg-[#6536DD] px-4 py-2 flex-row items-center">
+                        <Ionicons name="add" size={16} color="white" />
+                        <Text className="text-white font-pmedium text-sm ml-1">ADD VIDEO</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
             </View>
           )}
         </View>
@@ -422,7 +438,7 @@ const Home = () => {
             {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
           </Text>
 
-          <View className="h-48">
+          <View className="h-60">
             <UnifiedSpotifyWidget
               track={
                 roomTrack && roomTrack.track_id

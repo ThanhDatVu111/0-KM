@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ImageBackground,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
@@ -13,6 +21,46 @@ import { useRoomSpotifyTrack } from '../../hooks/useRoomSpotifyTrack';
 import supabase from '../../utils/supabase';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import images from '@/constants/images';
+
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-2 border-black px-4 py-3 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-2, 0],
+          [2, 0],
+          [0, -2],
+          [0, 2],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 12,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 12,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 type SpotifyTrack = {
   id: string;
@@ -85,11 +133,31 @@ export function UnifiedSpotifyWidget({
 
         if (hasSpotifyProvider) {
           console.log('✅ Spotify connected via Supabase OAuth');
-          setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
-          setHasConnectedBefore(true);
+          // Only update state if we're not in the middle of connecting
+          if (!isConnecting) {
+            // Check if we actually have a valid track (not just roomTrack exists)
+            const hasValidTrack = track && track.id;
+            const newState = hasValidTrack ? 'has-track' : 'connected-no-track';
+            console.log(
+              '🎵 [DEBUG] Connection check setting state to:',
+              newState,
+              'hasValidTrack:',
+              hasValidTrack,
+            );
+            setSpotifyState(newState);
+            setHasConnectedBefore(true);
+          } else {
+            console.log('🎵 [DEBUG] Connection check skipped - isConnecting is true');
+          }
         } else {
           console.log('🔍 [DEBUG] No Spotify provider found - user needs to connect');
-          setSpotifyState('not-connected');
+          // Only update state if we're not in the middle of connecting
+          if (!isConnecting) {
+            console.log('🎵 [DEBUG] Connection check setting state to not-connected');
+            setSpotifyState('not-connected');
+          } else {
+            console.log('🎵 [DEBUG] Connection check skipped - isConnecting is true');
+          }
         }
       } catch (error) {
         console.error('Error checking Spotify connection:', error);
@@ -98,7 +166,7 @@ export function UnifiedSpotifyWidget({
     };
 
     checkSpotifyConnection();
-  }, [roomTrack, userId]);
+  }, [roomTrack, userId, isConnecting, track]);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -116,9 +184,24 @@ export function UnifiedSpotifyWidget({
         console.log('🔍 [DEBUG] Auth change - has Spotify:', hasSpotifyProvider);
 
         if (hasSpotifyProvider) {
-          setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
-          setHasConnectedBefore(true);
+          // Only update state if we're not in the middle of connecting
+          if (!isConnecting) {
+            // Check if we actually have a valid track (not just roomTrack exists)
+            const hasValidTrack = track && track.id;
+            const newState = hasValidTrack ? 'has-track' : 'connected-no-track';
+            console.log(
+              '🎵 [DEBUG] Auth change setting state to:',
+              newState,
+              'hasValidTrack:',
+              hasValidTrack,
+            );
+            setSpotifyState(newState);
+            setHasConnectedBefore(true);
+          } else {
+            console.log('🎵 [DEBUG] Auth change skipped - isConnecting is true');
+          }
         } else if (event === 'SIGNED_OUT') {
+          console.log('🎵 [DEBUG] Auth change setting state to not-connected (signed out)');
           setSpotifyState('not-connected');
           setHasConnectedBefore(false);
         }
@@ -126,7 +209,7 @@ export function UnifiedSpotifyWidget({
     });
 
     return () => subscription.unsubscribe();
-  }, [roomTrack]);
+  }, [roomTrack, isConnecting, track]);
 
   // Real Spotify playback controls
   const {
@@ -251,16 +334,24 @@ export function UnifiedSpotifyWidget({
   const isController = sharedPlaybackState?.controlled_by_user_id === userId;
   usePlaybackCommandListener(roomId || '', isController);
 
-  // Determine the current state
+  // Handle track changes - update state when track is added/removed
   useEffect(() => {
-    if (track) {
+    console.log(
+      '🎵 [DEBUG] Track change effect - track:',
+      !!track,
+      'spotifyState:',
+      spotifyState,
+      'hasConnectedBefore:',
+      hasConnectedBefore,
+    );
+    if (track && spotifyState !== 'has-track') {
+      console.log('🎵 [DEBUG] Setting state to has-track');
       setSpotifyState('has-track');
-    } else if (hasConnectedBefore) {
+    } else if (!track && hasConnectedBefore && spotifyState === 'has-track') {
+      console.log('🎵 [DEBUG] Setting state to connected-no-track');
       setSpotifyState('connected-no-track');
-    } else {
-      setSpotifyState('not-connected');
     }
-  }, [track, hasConnectedBefore]);
+  }, [track, hasConnectedBefore, spotifyState]);
 
   const handleSignOutSpotify = async () => {
     try {
@@ -381,29 +472,11 @@ export function UnifiedSpotifyWidget({
                   refreshedSession.session?.user?.app_metadata?.providers,
                 );
 
-                // Refresh the connection status
-                setSpotifyState('connected-no-track');
+                // Set the connection status immediately
                 setHasConnectedBefore(true);
-
-                // Force a re-render by triggering the connection check
-                setTimeout(() => {
-                  const checkConnection = async () => {
-                    const {
-                      data: { session },
-                    } = await supabase.auth.getSession();
-                    const providers = session?.user?.app_metadata?.providers;
-                    const hasSpotifyProvider =
-                      providers && Array.isArray(providers) && providers.includes('spotify');
-                    console.log('🔍 [DEBUG] Post-OAuth check - providers:', providers);
-                    console.log('🔍 [DEBUG] Post-OAuth check - has Spotify:', hasSpotifyProvider);
-
-                    if (hasSpotifyProvider) {
-                      setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
-                      setHasConnectedBefore(true);
-                    }
-                  };
-                  checkConnection();
-                }, 1000);
+                const newState = roomTrack ? 'has-track' : 'connected-no-track';
+                console.log('🔗 [DEBUG] Setting Spotify state to:', newState);
+                setSpotifyState(newState);
 
                 Alert.alert('Success!', 'Spotify connected successfully!');
               }
@@ -440,101 +513,98 @@ export function UnifiedSpotifyWidget({
 
   const progressPercentage = track && track.duration > 0 ? (currentTime / track.duration) * 100 : 0;
 
+  // Debug logging for state
+  console.log(
+    '🎵 [DEBUG] Rendering Spotify widget with state:',
+    spotifyState,
+    'hasConnectedBefore:',
+    hasConnectedBefore,
+    'track:',
+    !!track,
+    'isConnecting:',
+    isConnecting,
+  );
+
   // Render different states
   if (spotifyState === 'not-connected') {
     return (
-      <View
-        className={`border border-white/20 bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
-        style={{ borderWidth: 1.5 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-            opacity: 0.3,
-          }}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            console.log('🔗 [DEBUG] Connect button pressed');
-            Alert.alert('Test', 'Connect button pressed!');
-            handleConnectSpotify();
-          }}
-          disabled={isConnecting}
-          activeOpacity={0.7}
-          className="flex-row items-center justify-between p-2"
-          style={{ zIndex: 1000 }}
-        >
-          <View className="flex-row items-center flex-1">
-            <Ionicons name="musical-notes" size={24} color="white" />
-            <View className="ml-3 flex-1">
-              <Text className="text-white font-pmedium text-base">
-                {isConnecting ? 'Connecting to Spotify...' : 'Connect Spotify'}
-              </Text>
-              <Text className="text-white/70 font-pregular text-sm">
-                Connect your Spotify account to add music to your room
-              </Text>
-            </View>
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="SPOTIFY" />
+        <View className="bg-white flex-1 rounded-b-md">
+          <View className="px-4 pt-0 pb-2 flex-1 justify-center items-center">
+            <Ionicons name="musical-notes" size={24} color="#6536DD" />
+            <Text className="font-pmedium text-sm text-black mt-2 mb-3 text-center">
+              {isConnecting ? 'Connecting to Spotify...' : 'Connect Spotify'}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('🔗 [DEBUG] Connect button pressed');
+                Alert.alert('Test', 'Connect button pressed!');
+                handleConnectSpotify();
+              }}
+              disabled={isConnecting}
+              className="bg-[#6536DD] border-2 border-black"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+                elevation: 4,
+              }}
+            >
+              <View className="bg-[#6536DD] px-4 py-2">
+                <Text className="text-white font-pmedium text-sm">
+                  {isConnecting ? 'CONNECTING...' : 'CONNECT'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
-          <Ionicons name={isConnecting ? 'hourglass' : 'chevron-forward'} size={20} color="white" />
-        </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   if (spotifyState === 'connected-no-track') {
     return (
-      <View
-        className={`border border-white/20 bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
-        style={{ borderWidth: 1.5 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-            opacity: 0.3,
-          }}
-        />
-
-        {/* Sign Out Button - Top Right */}
-        <TouchableOpacity
-          onPress={handleSignOutSpotify}
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 10,
-          }}
-          className="bg-red-500/80 rounded-full p-2"
-        >
-          <Ionicons name="log-out-outline" size={16} color="white" />
-        </TouchableOpacity>
-
-        <View className="items-center justify-center py-6">
-          <Ionicons name="musical-notes" size={32} color="white" />
-          <Text className="text-white font-pmedium text-lg mt-2">No Music in Room</Text>
-          <Text className="text-white/70 font-pregular text-sm text-center mt-2 mb-4">
-            Add a Spotify track to share with your partner
-          </Text>
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="SPOTIFY" />
+        <View className="bg-white flex-1 rounded-b-md relative">
+          {/* Sign Out Button - Top Right */}
           <TouchableOpacity
-            onPress={onAddTrack}
-            className="bg-white/20 rounded-full px-6 py-3 flex-row items-center"
+            onPress={handleSignOutSpotify}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 10,
+            }}
+            className="bg-red-500/80 rounded-full p-2"
           >
-            <Ionicons name="add" size={20} color="white" />
-            <Text className="text-white font-pmedium ml-2">Add Track</Text>
+            <Ionicons name="log-out-outline" size={16} color="white" />
           </TouchableOpacity>
+
+          <View className="items-center justify-center pt-0 pb-2 px-4 flex-1">
+            <Ionicons name="musical-notes" size={24} color="#6536DD" />
+            <Text className="font-pmedium text-sm mt-2 text-black text-center">
+              No Music in Room
+            </Text>
+            <TouchableOpacity
+              onPress={onAddTrack}
+              className="bg-[#6536DD] border-2 border-black mt-3"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+                elevation: 4,
+              }}
+            >
+              <View className="bg-[#6536DD] px-4 py-2 flex-row items-center">
+                <Ionicons name="add" size={16} color="white" />
+                <Text className="text-white font-pmedium text-sm ml-1">ADD TRACK</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -542,212 +612,188 @@ export function UnifiedSpotifyWidget({
 
   if (spotifyState === 'token-expired') {
     return (
-      <View
-        className={`border border-white/20 bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
-        style={{ borderWidth: 1.5 }}
-      >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-            opacity: 0.3,
-          }}
-        />
-
-        <View className="items-center justify-center py-6">
-          <Ionicons name="warning" size={32} color="white" />
-          <Text className="text-white font-pmedium text-lg mt-2">Spotify Connection Expired</Text>
-          <Text className="text-white/70 font-pregular text-sm text-center mt-2 mb-4">
-            Your Spotify connection has expired. Please reconnect to continue.
-          </Text>
-          <TouchableOpacity
-            onPress={handleReconnectSpotify}
-            disabled={isConnecting}
-            className="bg-white/20 rounded-full px-6 py-3 flex-row items-center"
-          >
-            <Ionicons name="refresh" size={20} color="white" />
-            <Text className="text-white font-pmedium ml-2">
-              {isConnecting ? 'Reconnecting...' : 'Reconnect Spotify'}
+      <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
+        <RetroHeader title="SPOTIFY" />
+        <View className="bg-white flex-1 rounded-b-md">
+          <View className="items-center justify-center pt-0 pb-2 px-4 flex-1">
+            <Ionicons name="warning" size={24} color="#6536DD" />
+            <Text className="font-pmedium text-sm mt-2 text-black text-center">
+              Connection Expired
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleReconnectSpotify}
+              disabled={isConnecting}
+              className="bg-[#6536DD] border-2 border-black mt-3"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+                elevation: 4,
+              }}
+            >
+              <View className="bg-[#6536DD] px-4 py-2">
+                <Ionicons name="refresh" size={16} color="white" />
+                <Text className="text-white font-pmedium text-sm ml-1">
+                  {isConnecting ? 'RECONNECTING...' : 'RECONNECT'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   }
 
   // Has track - show the full Spotify widget
-  if (!track) return null;
+  if (!track) {
+    // If we're connected but have no track, we should have already returned above
+    // This is a fallback for edge cases
+    return null;
+  }
 
   return (
     <View
-      className={`border border-black bg-white/10 shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
-      style={{ borderWidth: 1.5 }}
+      className={`w-full h-full shadow-2xl border-2 border-black rounded-lg overflow-hidden ${className}`}
     >
-      <LinearGradient
-        colors={['#1DB954', '#1ed760']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          zIndex: -1,
-        }}
-      />
+      <RetroHeader title="SPOTIFY" />
+      <View className="bg-white flex-1 rounded-b-md">
+        <View className="px-4 pt-1 pb-4 flex-1">
+          <View style={styles.container}>
+            {/* Album Art */}
+            <View style={styles.albumArtContainer}>
+              <View style={styles.albumArtShadow}>
+                <Image
+                  source={{ uri: track.albumArt }}
+                  style={styles.albumArt}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
 
-      {/* Spotify Logo */}
-      <View style={styles.spotifyLogo}>
-        <Ionicons name="musical-notes" size={20} color="white" />
-        <Text style={styles.spotifyText}>Spotify</Text>
-        {isInRoom && sharedPlaybackState?.controlled_by_user_id && (
-          <View style={styles.controllerIndicator}>
-            <Ionicons name="radio" size={12} color="white" />
-            <Text style={styles.controllerText}>
-              {sharedPlaybackState.controlled_by_user_id === userId
-                ? 'You control'
-                : 'Partner controls'}
-            </Text>
-            {sharedPlaybackState.controlled_by_user_id !== userId && (
-              <Text style={styles.autoPlayText}>(Auto-play enabled)</Text>
+            {/* Track Info */}
+            <View style={styles.trackInfo}>
+              <Text style={styles.trackName} numberOfLines={1}>
+                {track.name}
+              </Text>
+              <Text style={styles.artistName} numberOfLines={1}>
+                {track.artist}
+              </Text>
+              <Text style={styles.albumName} numberOfLines={1}>
+                {track.album}
+              </Text>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: currentPlaybackState
+                        ? `${((currentPlaybackState as any).progress / ((currentPlaybackState as any).currentTrack?.duration || 1)) * 1000 * 100}%`
+                        : `${progressPercentage}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <View style={styles.timeInfo}>
+                <Text style={styles.timeText}>
+                  {currentPlaybackState
+                    ? formatTime(Math.floor((currentPlaybackState as any).progress / 1000))
+                    : formatTime(currentTime)}
+                </Text>
+                <Text style={styles.timeText}>
+                  {(currentPlaybackState as any)?.currentTrack?.duration ||
+                    formatTime(track.duration)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Controls */}
+            {canControl && (
+              <View style={styles.controls}>
+                <TouchableOpacity
+                  onPress={handleSkipToPrevious}
+                  style={styles.controlButton}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="play-skip-back" size={24} color="white" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleTogglePlayPause}
+                  style={[styles.playButton, isLoading && { opacity: 0.5 }]}
+                  disabled={isLoading}
+                >
+                  <Ionicons
+                    name={
+                      isLoading
+                        ? 'hourglass'
+                        : (isInRoom && (currentPlaybackState as any)?.is_playing) ||
+                            (!isInRoom && (currentPlaybackState as any)?.isPlaying)
+                          ? 'pause'
+                          : 'play'
+                    }
+                    size={32}
+                    color="white"
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleSkipToNext}
+                  style={styles.controlButton}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="play-skip-forward" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
             )}
-          </View>
-        )}
-      </View>
 
-      <View style={styles.container}>
-        {/* Album Art */}
-        <View style={styles.albumArtContainer}>
-          <View style={styles.albumArtShadow}>
-            <Image source={{ uri: track.albumArt }} style={styles.albumArt} resizeMode="cover" />
-          </View>
-        </View>
+            {/* Remove button overlay - only show if onPress is provided */}
+            {onPress && (
+              <TouchableOpacity
+                onPress={() => {
+                  logger.spotify.debug('Remove button pressed for track:', track.name);
+                  onPress();
+                }}
+                style={styles.removeButton}
+                className="bg-red-500/80 rounded-full p-2"
+              >
+                <Ionicons name="close" size={16} color="white" />
+              </TouchableOpacity>
+            )}
 
-        {/* Track Info */}
-        <View style={styles.trackInfo}>
-          <Text style={styles.trackName} numberOfLines={1}>
-            {track.name}
-          </Text>
-          <Text style={styles.artistName} numberOfLines={1}>
-            {track.artist}
-          </Text>
-          <Text style={styles.albumName} numberOfLines={1}>
-            {track.album}
-          </Text>
-        </View>
+            {/* Delete button - show if onDeleteTrack is provided */}
+            {onDeleteTrack && (
+              <TouchableOpacity
+                onPress={() => {
+                  logger.spotify.debug('Delete button pressed for track:', track.name);
+                  onDeleteTrack();
+                }}
+                style={[styles.removeButton, { top: onPress ? 40 : 8 }]}
+                className="bg-red-600/90 rounded-full p-2"
+              >
+                <Ionicons name="trash" size={16} color="white" />
+              </TouchableOpacity>
+            )}
 
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: currentPlaybackState
-                    ? `${((currentPlaybackState as any).progress / ((currentPlaybackState as any).currentTrack?.duration || 1)) * 1000 * 100}%`
-                    : `${progressPercentage}%`,
-                },
-              ]}
-            />
-          </View>
-          <View style={styles.timeInfo}>
-            <Text style={styles.timeText}>
-              {currentPlaybackState
-                ? formatTime(Math.floor((currentPlaybackState as any).progress / 1000))
-                : formatTime(currentTime)}
-            </Text>
-            <Text style={styles.timeText}>
-              {(currentPlaybackState as any)?.currentTrack?.duration || formatTime(track.duration)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Controls */}
-        {canControl && (
-          <View style={styles.controls}>
+            {/* Sign Out Button - Top Left (when there's a remove button) */}
             <TouchableOpacity
-              onPress={handleSkipToPrevious}
-              style={styles.controlButton}
-              disabled={isLoading}
+              onPress={handleSignOutSpotify}
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                zIndex: 10,
+              }}
+              className="bg-red-500/80 rounded-full p-2"
             >
-              <Ionicons name="play-skip-back" size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleTogglePlayPause}
-              style={[styles.playButton, isLoading && { opacity: 0.5 }]}
-              disabled={isLoading}
-            >
-              <Ionicons
-                name={
-                  isLoading
-                    ? 'hourglass'
-                    : (isInRoom && (currentPlaybackState as any)?.is_playing) ||
-                        (!isInRoom && (currentPlaybackState as any)?.isPlaying)
-                      ? 'pause'
-                      : 'play'
-                }
-                size={32}
-                color="white"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleSkipToNext}
-              style={styles.controlButton}
-              disabled={isLoading}
-            >
-              <Ionicons name="play-skip-forward" size={24} color="white" />
+              <Ionicons name="log-out-outline" size={16} color="white" />
             </TouchableOpacity>
           </View>
-        )}
-
-        {/* Remove button overlay - only show if onPress is provided */}
-        {onPress && (
-          <TouchableOpacity
-            onPress={() => {
-              logger.spotify.debug('Remove button pressed for track:', track.name);
-              onPress();
-            }}
-            style={styles.removeButton}
-            className="bg-red-500/80 rounded-full p-2"
-          >
-            <Ionicons name="close" size={16} color="white" />
-          </TouchableOpacity>
-        )}
-
-        {/* Delete button - show if onDeleteTrack is provided */}
-        {onDeleteTrack && (
-          <TouchableOpacity
-            onPress={() => {
-              logger.spotify.debug('Delete button pressed for track:', track.name);
-              onDeleteTrack();
-            }}
-            style={[styles.removeButton, { top: onPress ? 40 : 8 }]}
-            className="bg-red-600/90 rounded-full p-2"
-          >
-            <Ionicons name="trash" size={16} color="white" />
-          </TouchableOpacity>
-        )}
-
-        {/* Sign Out Button - Top Left (when there's a remove button) */}
-        <TouchableOpacity
-          onPress={handleSignOutSpotify}
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            zIndex: 10,
-          }}
-          className="bg-red-500/80 rounded-full p-2"
-        >
-          <Ionicons name="log-out-outline" size={16} color="white" />
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -756,18 +802,16 @@ export function UnifiedSpotifyWidget({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    padding: 16,
-    backgroundColor: '#000',
     borderRadius: 12,
     position: 'relative',
   },
   albumArtContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   albumArt: {
-    width: 120,
-    height: 120,
+    width: 60,
+    height: 60,
     borderRadius: 8,
   },
   albumArtShadow: {
@@ -782,35 +826,35 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   trackName: {
-    color: 'white',
-    fontSize: 18,
+    color: 'black',
+    fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  artistName: {
-    color: '#1DB954',
-    fontSize: 16,
-    fontWeight: '500',
     textAlign: 'center',
     marginBottom: 2,
   },
+  artistName: {
+    color: '#1DB954',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 1,
+  },
   albumName: {
-    color: '#b3b3b3',
-    fontSize: 14,
+    color: '#666666',
+    fontSize: 10,
     textAlign: 'center',
   },
   progressContainer: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   progressBar: {
-    height: 4,
+    height: 3,
     backgroundColor: '#404040',
     borderRadius: 2,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   progressFill: {
     height: '100%',
@@ -822,24 +866,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   timeText: {
-    color: '#b3b3b3',
-    fontSize: 12,
+    color: '#666666',
+    fontSize: 10,
   },
   controls: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 24,
+    gap: 16,
   },
   controlButton: {
-    padding: 8,
+    padding: 4,
   },
   playButton: {
     backgroundColor: '#1DB954',
-    borderRadius: 30,
-    padding: 12,
-    width: 60,
-    height: 60,
+    borderRadius: 20,
+    padding: 8,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },

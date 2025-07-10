@@ -1,8 +1,46 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { extractVideoId, isValidVideoId } from '@/utils/youtubeUtils';
+
+function RetroHeader({ title }: { title: string }) {
+  return (
+    <View className="bg-[#6536DD] border-b-2 border-black px-4 py-3 items-center rounded-t-md">
+      <View className="relative">
+        {[
+          [-2, 0],
+          [2, 0],
+          [0, -2],
+          [0, 2],
+        ].map(([dx, dy], index) => (
+          <Text
+            key={index}
+            style={{
+              position: 'absolute',
+              fontFamily: 'PressStart2P',
+              fontSize: 12,
+              color: 'white',
+              left: dx,
+              top: dy,
+            }}
+          >
+            {title}
+          </Text>
+        ))}
+
+        <Text
+          style={{
+            fontFamily: 'PressStart2P',
+            fontSize: 12,
+            color: '#F24187',
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 type Props = {
   onVideoIdSubmit: (videoId: string) => void;
@@ -38,58 +76,68 @@ export function YouTubeInput({ onVideoIdSubmit, onCancel }: Props) {
   };
 
   return (
-    <View className="border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl">
-      <LinearGradient
-        colors={['#6536DA', '#F7BFF7']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          borderRadius: 16,
-          zIndex: -1,
-        }}
-      />
-
-      <View className="relative z-10">
-        <Text className="text-white font-pmedium text-lg mb-4 text-center">
-          Add YouTube Music Video
-        </Text>
-
+    <View className="w-full max-w-md shadow-2xl border-2 border-black rounded-lg">
+      <RetroHeader title="YOUTUBE" />
+      <View className="bg-[#FDA3D4] px-6 py-6 rounded-b-md">
         <View className="mb-4">
-          <Text className="text-white/80 font-pregular text-sm mb-2">YouTube URL</Text>
+          <Text className="text-black font-pmedium text-sm mb-2">YouTube URL</Text>
           <TextInput
             value={url}
             onChangeText={setUrl}
             placeholder="https://www.youtube.com/watch?v=..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            className="bg-white/20 text-white p-3 rounded-lg border border-white/30"
+            placeholderTextColor="rgba(0,0,0,0.5)"
+            className="bg-white text-black p-3 rounded-lg border-2 border-black"
             autoCapitalize="none"
             autoCorrect={false}
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 2, height: 2 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 4,
+            }}
           />
         </View>
 
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-3 mb-4">
           <TouchableOpacity
             onPress={onCancel}
-            className="flex-1 bg-white/20 p-3 rounded-lg border border-white/30"
+            className="flex-1 bg-gray-400 border-2 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 2, height: 2 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 4,
+            }}
           >
-            <Text className="text-white font-pmedium text-center">Cancel</Text>
+            <View className="bg-gray-400 p-3">
+              <Text className="text-white font-pmedium text-sm text-center">CANCEL</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isLoading}
-            className="flex-1 bg-white p-3 rounded-lg"
+            className="flex-1 bg-[#6536DD] border-2 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 2, height: 2 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 4,
+              opacity: isLoading ? 0.5 : 1,
+            }}
           >
-            <Text className="text-purple-600 font-pmedium text-center">
-              {isLoading ? 'Adding...' : 'Add Video'}
-            </Text>
+            <View className="bg-[#6536DD] p-3">
+              <Text className="text-white font-pmedium text-sm text-center">
+                {isLoading ? 'ADDING...' : 'ADD VIDEO'}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        <Text className="text-white/60 font-plight text-xs text-center mt-3">
+        <Text className="text-black/70 font-plight text-xs text-center">
           Paste any YouTube URL and we'll extract the video for you
         </Text>
       </View>

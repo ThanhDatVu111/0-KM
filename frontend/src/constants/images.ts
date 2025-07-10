@@ -12,6 +12,8 @@ import entry from '@/assets/images/entry.png';
 import startButton from '@/assets/images/startButton.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import profileBg from '@/assets/images/profileBg.png';
+import widget from '@/assets/images/widget.png';
+import framer from '@/assets/images/framer.png';
 
 export default {
   polaroid,
@@ -28,4 +30,6 @@ export default {
   profileBg,
   decoration,
   memory,
+  widget,
+  framer,
 };
