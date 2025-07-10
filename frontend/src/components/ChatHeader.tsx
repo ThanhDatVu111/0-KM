@@ -49,43 +49,137 @@ export default function ChatHeader({
 
   return (
     <View
-      className="flex-row items-center bg-white px-4 py-3 rounded-full border-2 border-[#F24187]"
+      className="flex-row items-center px-4 py-3"
       style={{
-        ...Platform.select({
-          ios: {
-            shadowColor: '#F24187',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.1,
-            shadowRadius: 2,
-          },
-          android: {
-            elevation: 2,
-          },
-        }),
+        backgroundColor: '#FFF0F5',
+        borderWidth: 3,
+        borderColor: '#B07DE9',
+        borderRadius: 16,
       }}
     >
-      <TouchableOpacity className="mr-3" onPress={() => router.push('/(tabs)/home')}>
-        <Feather name="arrow-left" color="#F24187" size={24} />
+      {/* Retro Back Button */}
+      <TouchableOpacity
+        className="mr-3"
+        onPress={() => router.push('/(tabs)/home')}
+        style={{
+          backgroundColor: '#FFE4EC',
+          borderWidth: 1,
+          borderColor: '#220E6D',
+          borderRadius: 4,
+          padding: 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <Feather name="arrow-left" color="#F24187" size={20} />
       </TouchableOpacity>
 
-      {/* Avatar with fallback to default icon */}
-      <Image source={getAvatarSource(avatar_url)} className="w-10 h-10 rounded-lg mr-3" />
-
-      <View className="flex-1">
-        <Text className="text-lg font-poppins-medium text-[#F24187]">{partnerName}</Text>
-        <Text className="text-sm text-gray-500">{isOnline ? 'Active now' : 'Offline'}</Text>
+      {/* Retro Avatar Frame */}
+      <View
+        style={{
+          backgroundColor: '#FFF0F5',
+          borderWidth: 2,
+          borderColor: '#220E6D',
+          borderRadius: 2,
+          padding: 2,
+          marginRight: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 1, height: 1 },
+          shadowOpacity: 0.5,
+          shadowRadius: 0,
+        }}
+      >
+        <Image
+          source={getAvatarSource(avatar_url)}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+          }}
+        />
       </View>
 
-      <TouchableOpacity className="p-2" onPress={onCallPress}>
-        <Feather name="phone" color="#F24187" size={24} />
+      <View className="flex-1">
+        <Text
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 16,
+            fontWeight: 'bold',
+            color: '#220E6D',
+            textShadowColor: '#FDA3D4',
+            textShadowOffset: { width: 1, height: 1 },
+            textShadowRadius: 0,
+          }}
+        >
+          {partnerName}
+        </Text>
+        <Text
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 11,
+            color: isOnline ? '#27AE60' : '#E74C3C',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+          }}
+        >
+          {isOnline ? '● ONLINE' : '● OFFLINE'}
+        </Text>
+      </View>
+
+      {/* Retro Action Buttons */}
+      <TouchableOpacity
+        onPress={onCallPress}
+        style={{
+          backgroundColor: '#A673E7',
+          borderWidth: 2,
+          borderColor: '#220E6D',
+          borderRadius: 4,
+          padding: 6,
+          marginRight: 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <Feather name="phone" color="#FFF" size={18} />
       </TouchableOpacity>
 
-      <TouchableOpacity className="p-2 ml-2" onPress={onVideoPress}>
-        <Feather name="video" color="#F24187" size={24} />
+      <TouchableOpacity
+        onPress={onVideoPress}
+        style={{
+          backgroundColor: '#F24187',
+          borderWidth: 2,
+          borderColor: '#220E6D',
+          borderRadius: 4,
+          padding: 6,
+          marginRight: 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <Feather name="video" color="#FFF" size={18} />
       </TouchableOpacity>
 
-      <TouchableOpacity className="p-2" onPress={handleSettingsPress}>
-        <Feather name="more-vertical" color="#F24187" size={24} />
+      <TouchableOpacity
+        onPress={handleSettingsPress}
+        style={{
+          backgroundColor: '#FDA3D4',
+          borderWidth: 2,
+          borderColor: '#220E6D',
+          borderRadius: 4,
+          padding: 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        }}
+      >
+        <Feather name="more-vertical" color="#220E6D" size={18} />
       </TouchableOpacity>
     </View>
   );

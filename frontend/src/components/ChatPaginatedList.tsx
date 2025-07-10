@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import ChatBubble from './ChatBubble';
 import { Message } from '@/types/chat';
-import { useAuth } from '@clerk/clerk-expo';
 
 interface ChatPaginatedListProps {
   room_id: string;
@@ -11,6 +10,9 @@ interface ChatPaginatedListProps {
   refresh: boolean;
   loadMore: () => void;
   hasMore: boolean;
+  userAvatar?: string;
+  partnerAvatar?: string;
+  userId: string;
 }
 
 export default function ChatPaginatedList({
@@ -20,20 +22,24 @@ export default function ChatPaginatedList({
   refresh,
   loadMore,
   hasMore,
+  userAvatar,
+  partnerAvatar,
+  userId,
+  
 }: ChatPaginatedListProps) {
-  const { userId } = useAuth();
-
   const renderMessage = ({ item }: { item: Message }) => {
     const isSender = item.sender_id === userId;
+    // Use the appropriate avatar based on who sent the message
+    const avatarUrl = isSender ? userAvatar : partnerAvatar;
 
     return (
       <ChatBubble
         room_id={room_id}
-        user_id={userId!}
+        user_id={userId}
         message_id={item.message_id}
         content={item.content ?? ''}
         isSender={isSender}
-        sender_avatar_url={item.sender_photo_url ?? ''}
+        sender_avatar_url={avatarUrl || item.sender_photo_url || ''}
         isVoice={false}
         isRead={item.is_read ?? false}
         isEdited={item.is_edited ?? false}
