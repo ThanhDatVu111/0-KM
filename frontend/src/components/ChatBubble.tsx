@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import Popover, { PopoverPlacement } from 'react-native-popover-view';
-import { AntDesign, Entypo, Feather, Ionicons, Octicons } from '@expo/vector-icons';
+import { Feather, Ionicons, Octicons } from '@expo/vector-icons';
 import { useChatSocket } from '@/hooks/useSocketChat';
 import icons from '@/constants/icons';
 
@@ -22,7 +22,7 @@ interface ChatBubbleProps {
   isSelected: boolean;
 }
 
-const Divider = () => <View className="h-[0.75px] my-1 bg-[#F24187]" />;
+const Divider = () => <View className="h-[0.75px] my-1 bg-[#8150E0]" />;
 
 const MenuItem = ({
   label,
@@ -33,8 +33,30 @@ const MenuItem = ({
   icon: React.ReactNode;
   onPress: () => void;
 }) => (
-  <Pressable onPress={onPress} className="flex-row justify-between items-center px-4 py-2">
-    <Text>{label}</Text>
+  <Pressable
+    onPress={onPress}
+    style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: '#F8F9FA',
+      borderBottomWidth: 2,
+      borderBottomColor: '#8150E0',
+    }}
+  >
+    <Text
+      style={{
+        fontFamily: 'PixelifySans',
+        fontSize: 12,
+        color: label.includes('DELETE') || label.includes('UNSEND') ? '#DC2626' : '#1F2937',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+      }}
+    >
+      {label}
+    </Text>
     {icon}
   </Pressable>
 );
@@ -115,14 +137,14 @@ export default function ChatBubble({
               onRequestClose={() => setShowMenu(false)}
               from={
                 <Pressable
-                  className={`rounded-2xl border-4 px-4 py-2.5 bg-white ${isSender ? 'border-[#F24187]' : 'border-[#6536DD]'}`}
+                  className={`rounded-2xl border-4 px-4 py-2.5 bg-white ${isSender ? 'border-[#B5CBF9]' : 'border-[#F4BCF6]'}`}
                   onLongPress={() => setShowMenu(true)}
                   style={{
                     bottom: 3,
                     padding: 3,
                     elevation: 4,
                     zIndex: 10,
-                    shadowColor: isSender ? '#F24187' : '#6536DD',
+                    shadowColor: isSender ? '#B5CBF9' : '#F4BCF6',
                     shadowOffset: { width: isSender ? 1 : -1, height: 1 },
                     shadowOpacity: 4,
                     shadowRadius: 1,
@@ -151,8 +173,8 @@ export default function ChatBubble({
               }}
             >
               <MenuItem
-                label="Reply"
-                icon={<Octicons name="reply" size={24} color="#F24187" />}
+                label="REPLY"
+                icon={<Octicons name="reply" size={18} color="#8150E0" />}
                 onPress={() => {
                   setShowMenu(false);
                   console.log('User replying');
@@ -160,8 +182,8 @@ export default function ChatBubble({
               />
               <Divider />
               <MenuItem
-                label="Copy"
-                icon={<Feather name="copy" size={24} color="#F24187" />}
+                label="COPY"
+                icon={<Feather name="copy" size={18} color="#8150E0" />}
                 onPress={() => {
                   setShowMenu(false);
                   console.log('User copied text');
@@ -169,8 +191,8 @@ export default function ChatBubble({
               />
               <Divider />
               <MenuItem
-                label="Edit"
-                icon={<Feather name="edit-2" size={24} color="#F24187" />}
+                label="EDIT"
+                icon={<Feather name="edit-2" size={18} color="#8150E0" />}
                 onPress={() => {
                   setShowMenu(false);
                   handleEditMessage(message_id, content ?? '');
@@ -179,8 +201,8 @@ export default function ChatBubble({
               <Divider />
               {isSender ? (
                 <MenuItem
-                  label="Unsend"
-                  icon={<Ionicons name="arrow-undo-circle-outline" size={24} color="#F24187" />}
+                  label="UNSEND"
+                  icon={<Ionicons name="trash-outline" size={18} color="#DC2626" />}
                   onPress={() => {
                     setShowMenu(false);
                     handleDeleteMessage(message_id);
@@ -188,8 +210,8 @@ export default function ChatBubble({
                 />
               ) : (
                 <MenuItem
-                  label="Delete for you"
-                  icon={<Ionicons name="arrow-undo-circle-outline" size={24} color="#F24187" />}
+                  label="DELETE"
+                  icon={<Ionicons name="trash-outline" size={18} color="#DC2626" />}
                   onPress={() => {
                     setShowMenu(false);
                     handleDeleteMessage(message_id);

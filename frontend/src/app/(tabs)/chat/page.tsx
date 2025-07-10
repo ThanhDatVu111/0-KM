@@ -18,6 +18,8 @@ export default function Chat() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState<string>('');
   const [partnerId, setPartnerId] = useState<string>('');
+  const [partnerAvatar, setPartnerAvatar] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string>('');
   const [partnerOnline, setPartnerOnline] = useState(true);
 
   useEffect(() => {
@@ -30,10 +32,17 @@ export default function Chat() {
         setRoomId(room.room_id);
         const partner_id = room.user_1 === userId ? room.user_2 : room.user_1;
         setPartnerId(partner_id);
+        // Fetch partner data
         const partner = await fetchUser(partner_id);
         if (partner) {
           setPartnerName(partner.username || 'Your Partner');
-          //   setPartnerAvatar(partnerAvatar || icons.user_icon_female);
+          setPartnerAvatar(partner.photo_url || '');
+        }
+
+        // Fetch current user data
+        const currentUser = await fetchUser(userId);
+        if (currentUser) {
+          setUserAvatar(currentUser.photo_url || '');
         }
       } catch (err: any) {
         console.error('Error fetching room or partner:', err);
@@ -98,8 +107,8 @@ export default function Chat() {
   return (
     <ImageBackground source={images.libraryBg} className="flex-1" resizeMode="cover">
       <SafeAreaView className="flex-1 p-5">
+        <ChatHeader isOnline={partnerOnline} partnerName={partnerName} avatar_url={partnerAvatar} />
         {/* Chat Header */}
-        <ChatHeader isOnline={partnerOnline} partnerName={partnerName} />
 
         {/* Chat Main View */}
         <KeyboardAvoidingView
@@ -113,6 +122,9 @@ export default function Chat() {
             refresh={isFetching}
             loadMore={fetchNextPage}
             hasMore={hasNextPage!}
+            userAvatar={userAvatar}
+            partnerAvatar={partnerAvatar}
+            userId={userId!}
           />
 
           {/* Chat Input */}

@@ -20,15 +20,13 @@ function AuthenticatedLayout() {
   // Use the custom hook for authentication and redirection
   useEntryGuard();
   return (
-    <SocketProvider>
-      <QueryClientProvider client={queryClient}>
-        <Stack
-          screenOptions={{
-            headerShown: false, // Hides the top bar
-          }}
-        ></Stack>
-      </QueryClientProvider>
-    </SocketProvider>
+    <QueryClientProvider client={queryClient}>
+      <Stack
+        screenOptions={{
+          headerShown: false, // Hides the top bar
+        }}
+      ></Stack>
+    </QueryClientProvider>
   );
 }
 
