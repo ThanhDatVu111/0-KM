@@ -20,10 +20,11 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
 
     setIsConnected(socket.connected);
     socket.emit('join-room', { roomId: room_id });
-    // socket.emit('user-online', { room_id, user_id });
+    socket.emit('user-online', { room_id, user_id });
 
     socket.on('receive-message', (message: Message) => {
-      setMessages((prev) => [message, ...prev]);
+        setMessages((prev) => [message, ...prev]);
+        
     });
 
     socket.on('message-edited', (message: Message) => {
@@ -31,6 +32,7 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
         prev.map((msg) => (msg.message_id === message.message_id ? message : msg)),
       );
     });
+      
 
     socket.on('message-deleted', ({ message_id }: { message_id: string }) => {
       setMessages((prev) => prev.filter((msg) => msg.message_id !== message_id));
