@@ -33,6 +33,10 @@ import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { Ionicons } from '@expo/vector-icons';
 import { locationTrackingService } from '@/services/locationTracking';
+import * as Location from 'expo-location';
+import { updateUserLocation } from '@/apis/user';
+import { fetchUser } from '@/apis/user';
+import { usePartnerData } from '@/hooks/usePartnerData';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -70,6 +74,8 @@ const Home = () => {
     isLoading: spotifyLoading,
     refetchRoomTrack,
   } = useRoomSpotifyTrack();
+
+  const { partnerData, hasRoom: hasPartnerRoom, isLoading: partnerLoading } = usePartnerData();
 
   // Real Spotify playback controls
   const { playTrack } = useSpotifyPlayback();
@@ -228,6 +234,83 @@ const Home = () => {
   };
 
   const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
+
+  const testLocationDetection = async () => {
+    try {
+      console.log('🧪 Testing location detection...');
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Location permission is required');
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = currentLocation.coords;
+      console.log('🧪 Current location:', { latitude, longitude });
+
+      const geocodeResult = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+      console.log('🧪 Geocode result:', geocodeResult);
+
+      if (geocodeResult.length > 0) {
+        const address = geocodeResult[0];
+        const locationData = {
+          user_id: userId!,
+          location_latitude: latitude,
+          location_longitude: longitude,
+          location_city: address.city || 'Unknown City',
+          location_country: address.country || 'Unknown Country',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        };
+
+        console.log('🧪 Updating user location with:', locationData);
+        await updateUserLocation(locationData);
+        Alert.alert('Success', 'Location updated successfully!');
+      }
+    } catch (error) {
+      console.error('🧪 Error testing location:', error);
+      Alert.alert('Error', 'Failed to update location');
+    }
+  };
+
+  const checkCurrentUserLocation = async () => {
+    try {
+      console.log('🧪 Checking current user location data...');
+      const userData = await fetchUser(userId!);
+      console.log('🧪 Current user data:', userData);
+      console.log('🧪 Current user location data:', {
+        location_latitude: userData.location_latitude,
+        location_longitude: userData.location_longitude,
+        location_city: userData.location_city,
+        location_country: userData.location_country,
+        timezone: userData.timezone,
+      });
+      Alert.alert('User Data', JSON.stringify(userData, null, 2));
+    } catch (error) {
+      console.error('🧪 Error checking user location:', error);
+      Alert.alert('Error', 'Failed to check user location');
+    }
+  };
+
+  const checkPartnerData = async () => {
+    try {
+      console.log('🧪 Checking partner data...');
+      console.log('🧪 Partner data:', partnerData);
+      console.log('🧪 Has room:', hasPartnerRoom);
+      console.log('🧪 Partner loading:', partnerLoading);
+
+      if (partnerData) {
+        Alert.alert('Partner Data', JSON.stringify(partnerData, null, 2));
+      } else {
+        Alert.alert('Partner Data', 'No partner data available');
+      }
+    } catch (error) {
+      console.error('🧪 Error checking partner data:', error);
+      Alert.alert('Error', 'Failed to check partner data');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -422,6 +505,25 @@ const Home = () => {
       {/* Sign Out Button - Top Right */}
       <View className="absolute top-16 right-5 z-50">
         <SignOutButton />
+      </View>
+
+      {/* Temporary Debug Button */}
+      <View className="absolute top-16 left-5 z-50">
+        <TouchableOpacity
+          onPress={testLocationDetection}
+          className="bg-red-500 px-3 py-2 rounded-lg mb-2"
+        >
+          <Text className="text-white text-xs">Test Location</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={checkCurrentUserLocation}
+          className="bg-blue-500 px-3 py-2 rounded-lg mb-2"
+        >
+          <Text className="text-white text-xs">Check User</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={checkPartnerData} className="bg-green-500 px-3 py-2 rounded-lg">
+          <Text className="text-white text-xs">Check Partner</Text>
+        </TouchableOpacity>
       </View>
 
       {/* YouTube Input Modal */}

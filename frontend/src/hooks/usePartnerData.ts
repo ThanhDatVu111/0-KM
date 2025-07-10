@@ -29,6 +29,7 @@ export function usePartnerData() {
     try {
       // Fetch room data to get partner ID
       const roomData = await fetchRoom({ user_id: userId });
+      console.log('🔔 Room data fetched:', roomData);
 
       if (roomData && roomData.filled) {
         setHasRoom(true);
@@ -36,12 +37,14 @@ export function usePartnerData() {
         // Determine partner ID based on current user
         const currentUserIsUser1 = roomData.user_1 === userId;
         const partnerId = currentUserIsUser1 ? roomData.user_2 : roomData.user_1;
+        console.log('🔔 Partner ID determined:', partnerId);
 
         if (partnerId) {
           // Fetch partner's user data
           const partnerUserData = await fetchUser(partnerId);
+          console.log('🔔 Partner user data fetched:', partnerUserData);
 
-          setPartnerData({
+          const partnerDataToSet = {
             userId: partnerId,
             username: partnerUserData.username || 'Partner',
             timezone: partnerUserData.timezone,
@@ -54,7 +57,16 @@ export function usePartnerData() {
                     country: partnerUserData.location_country || 'Unknown Country',
                   }
                 : undefined,
-          });
+          };
+
+          console.log('🔔 Setting partner data:', partnerDataToSet);
+          console.log('🔔 Partner location data:', partnerDataToSet.location);
+          console.log('🔔 Partner location_latitude from DB:', partnerUserData.location_latitude);
+          console.log('🔔 Partner location_longitude from DB:', partnerUserData.location_longitude);
+          console.log('🔔 Partner location_city from DB:', partnerUserData.location_city);
+          console.log('🔔 Partner location_country from DB:', partnerUserData.location_country);
+
+          setPartnerData(partnerDataToSet);
         }
       } else {
         setHasRoom(false);

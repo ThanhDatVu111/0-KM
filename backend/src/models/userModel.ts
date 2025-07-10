@@ -51,6 +51,13 @@ export async function getUser(userId: string) {
   }
 
   console.log('✅ User fetched successfully:', data);
+  console.log('📝 User location data:', {
+    location_latitude: data.location_latitude,
+    location_longitude: data.location_longitude,
+    location_city: data.location_city,
+    location_country: data.location_country,
+    timezone: data.timezone,
+  });
   return data;
 }
 
@@ -65,6 +72,8 @@ export async function updateUserProfile(attrs: {
   location_city?: string;
   location_country?: string;
 }) {
+  console.log('📝 Updating user profile with attrs:', attrs);
+
   const updateFields: any = {};
   if (attrs.username !== undefined) updateFields.username = attrs.username;
   if (attrs.birthdate !== undefined) updateFields.birthdate = attrs.birthdate;
@@ -77,12 +86,20 @@ export async function updateUserProfile(attrs: {
   if (attrs.location_city !== undefined) updateFields.location_city = attrs.location_city;
   if (attrs.location_country !== undefined) updateFields.location_country = attrs.location_country;
 
+  console.log('📝 Update fields to be applied:', updateFields);
+
   const { data, error } = await supabase
     .from('users')
     .update(updateFields)
     .eq('user_id', attrs.user_id)
     .select()
     .single();
-  if (error) throw error;
+
+  if (error) {
+    console.error('❌ Error updating user profile:', error);
+    throw error;
+  }
+
+  console.log('✅ User profile updated successfully:', data);
   return data;
 }

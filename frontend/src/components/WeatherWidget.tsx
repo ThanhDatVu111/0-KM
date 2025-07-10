@@ -64,6 +64,10 @@ export function WeatherWidget({
       console.log('🌤️ Fetching weather data...');
       console.log('🌤️ Partner data:', partnerData);
       console.log('🌤️ Partner location:', partnerData?.location);
+      console.log('🌤️ Partner location latitude:', partnerData?.location?.latitude);
+      console.log('🌤️ Partner location longitude:', partnerData?.location?.longitude);
+      console.log('🌤️ Partner location city:', partnerData?.location?.city);
+      console.log('🌤️ Partner location country:', partnerData?.location?.country);
 
       let data: WeatherData;
 
@@ -85,6 +89,7 @@ export function WeatherWidget({
         data = await fetchWeatherByCity(partnerData.location.city);
       } else {
         console.log('🌤️ Using default city:', defaultCity);
+        console.log('🌤️ Partner location data is missing - using fallback');
         // Fallback to default city
         data = await fetchWeatherByCity(defaultCity);
       }

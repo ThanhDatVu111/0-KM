@@ -34,11 +34,9 @@ export interface FetchedUserResponse {
   birthdate?: string;
   photo_url?: string;
   timezone?: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    city: string;
-    country: string;
-  };
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
   created_at: string;
 }

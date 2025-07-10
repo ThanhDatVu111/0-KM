@@ -390,7 +390,10 @@ function LocationStep({
   const detectLocation = async () => {
     setIsDetecting(true);
     try {
+      console.log('📍 Starting location detection...');
       const { status } = await Location.requestForegroundPermissionsAsync();
+      console.log('📍 Location permission status:', status);
+
       if (status !== 'granted') {
         Alert.alert(
           'Permission Denied',
@@ -400,35 +403,44 @@ function LocationStep({
         return;
       }
 
+      console.log('📍 Getting current position...');
       const currentLocation = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = currentLocation.coords;
+      console.log('📍 Current position obtained:', { latitude, longitude });
 
       // Get city and country from coordinates
+      console.log('📍 Reverse geocoding...');
       const geocodeResult = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
       });
+      console.log('📍 Geocode result:', geocodeResult);
 
       if (geocodeResult.length > 0) {
         const address = geocodeResult[0];
-        setLocation({
+        const locationData = {
           latitude,
           longitude,
           city: address.city || 'Unknown City',
           country: address.country || 'Unknown Country',
-        });
+        };
+        console.log('📍 Setting location data:', locationData);
+        setLocation(locationData);
       } else {
-        setLocation({
+        const locationData = {
           latitude,
           longitude,
           city: 'Unknown City',
           country: 'Unknown Country',
-        });
+        };
+        console.log('📍 Setting fallback location data:', locationData);
+        setLocation(locationData);
       }
 
       // Get timezone
       try {
         const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log('📍 Setting timezone:', timezoneName);
         setTimezone(timezoneName);
       } catch (error) {
         console.error('Error getting timezone:', error);
@@ -584,6 +596,13 @@ const OnboardingFlow = () => {
 
   const handleFinish = async () => {
     try {
+      console.log('📍 Onboarding finish - location data:', location);
+      console.log('📍 Onboarding finish - timezone:', timezone);
+      console.log('📍 Onboarding finish - location_latitude:', location?.latitude);
+      console.log('📍 Onboarding finish - location_longitude:', location?.longitude);
+      console.log('📍 Onboarding finish - location_city:', location?.city);
+      console.log('📍 Onboarding finish - location_country:', location?.country);
+
       const user = await onboardUser({
         user_id: user_id as string,
         name: name,
