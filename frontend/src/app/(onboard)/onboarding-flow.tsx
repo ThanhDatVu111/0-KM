@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -9,9 +9,12 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useLocalSearchParams } from 'expo-router';
@@ -241,11 +244,13 @@ function PhotoStep({
   setPhoto,
   onFinish,
   onPrevious,
+  onNext,
 }: {
   photo: string | null;
   setPhoto: (uri: string) => void;
-  onFinish: () => void;
+  onFinish?: () => void;
   onPrevious?: () => void;
+  onNext?: () => void;
 }) {
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
@@ -328,6 +333,214 @@ function PhotoStep({
         )}
 
         <TouchableOpacity
+          onPress={onNext || onFinish}
+          className="w-full bg-[#6536DD] border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+          }}
+        >
+          <View className="bg-[#6536DD] px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              {onNext ? 'NEXT' : 'FINISH ONBOARDING'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+/** --- Step 4: LocationStep --- */
+function LocationStep({
+  location,
+  setLocation,
+  timezone,
+  setTimezone,
+  onFinish,
+  onPrevious,
+}: {
+  location: {
+    latitude: number;
+    longitude: number;
+    city: string;
+    country: string;
+  } | null;
+  setLocation: (
+    loc: {
+      latitude: number;
+      longitude: number;
+      city: string;
+      country: string;
+    } | null,
+  ) => void;
+  timezone: string;
+  setTimezone: (tz: string) => void;
+  onFinish: () => void;
+  onPrevious: () => void;
+}) {
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  const detectLocation = async () => {
+    setIsDetecting(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Denied',
+          'Location permission is required to show your weather and time to your partner. You can skip this step and set it later in settings.',
+        );
+        setIsDetecting(false);
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = currentLocation.coords;
+
+      // Get city and country from coordinates
+      const geocodeResult = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (geocodeResult.length > 0) {
+        const address = geocodeResult[0];
+        setLocation({
+          latitude,
+          longitude,
+          city: address.city || 'Unknown City',
+          country: address.country || 'Unknown Country',
+        });
+      } else {
+        setLocation({
+          latitude,
+          longitude,
+          city: 'Unknown City',
+          country: 'Unknown Country',
+        });
+      }
+
+      // Get timezone
+      try {
+        const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setTimezone(timezoneName);
+      } catch (error) {
+        console.error('Error getting timezone:', error);
+        setTimezone('UTC');
+      }
+    } catch (error) {
+      console.error('Error detecting location:', error);
+      Alert.alert(
+        'Error',
+        'Failed to detect your location. You can skip this step and set it later.',
+      );
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  return (
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <RetroHeader title="Onboarding" />
+
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md items-center">
+        <View className="mb-6 items-center">
+          <Ionicons name="location" size={48} color="#6536DD" />
+          <Text
+            className="text-center text-lg font-bold mt-2"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            Location & Timezone
+          </Text>
+          <Text
+            className="text-center text-sm text-gray-600 mt-2"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            This helps your partner see your local time and weather
+          </Text>
+        </View>
+
+        {location ? (
+          <View className="w-full mb-6 bg-gray-50 border-2 border-[#6536DD] rounded-lg p-4">
+            <Text className="text-center font-bold mb-2" style={{ fontFamily: 'Poppins-Bold' }}>
+              📍 {location.city}, {location.country}
+            </Text>
+            <Text
+              className="text-center text-sm text-gray-600"
+              style={{ fontFamily: 'Poppins-Regular' }}
+            >
+              🕐 {timezone}
+            </Text>
+            <TouchableOpacity
+              onPress={detectLocation}
+              disabled={isDetecting}
+              className="mt-3 bg-white border-2 border-[#6536DD] rounded-lg"
+            >
+              <View className="px-4 py-2">
+                <Text
+                  className="text-[#6536DD] text-center text-sm font-bold"
+                  style={{ fontFamily: 'Poppins-Bold' }}
+                >
+                  {isDetecting ? 'Detecting...' : 'Update Location'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={detectLocation}
+            disabled={isDetecting}
+            className="w-full mb-6 bg-[#6536DD] border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+              opacity: isDetecting ? 0.5 : 1,
+            }}
+          >
+            <View className="bg-[#6536DD] px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                {isDetecting ? 'DETECTING LOCATION...' : 'DETECT MY LOCATION'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          onPress={onPrevious}
+          className="w-full mb-4 bg-gray-400 border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+          }}
+        >
+          <View className="bg-gray-400 px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              PREVIOUS
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={onFinish}
           className="w-full bg-[#6536DD] border-4 border-black"
           style={{
@@ -343,7 +556,7 @@ function PhotoStep({
               className="text-white text-center text-[16px] font-bold"
               style={{ fontFamily: 'Poppins-Bold' }}
             >
-              FINISH ONBOARDING
+              {location ? 'FINISH ONBOARDING' : 'SKIP & FINISH'}
             </Text>
           </View>
         </TouchableOpacity>
@@ -359,6 +572,13 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    city: string;
+    country: string;
+  } | null>(null);
+  const [timezone, setTimezone] = useState<string>('');
   const { user_id } = useLocalSearchParams();
   const router = useRouter();
 
@@ -369,6 +589,11 @@ const OnboardingFlow = () => {
         name: name,
         birthdate: birthdate.toISOString(),
         photo_url: photo || '',
+        timezone: timezone || undefined,
+        location_latitude: location?.latitude || undefined,
+        location_longitude: location?.longitude || undefined,
+        location_city: location?.city || undefined,
+        location_country: location?.country || undefined,
       });
       console.log('✅ User updated (onboard) in database:', user);
       router.push('/(onboard)/join-room');
@@ -393,6 +618,15 @@ const OnboardingFlow = () => {
       photo={photo}
       setPhoto={setPhoto}
       onPrevious={() => setStep(1)}
+      onNext={() => setStep(3)}
+    />,
+    <LocationStep
+      key="4"
+      location={location}
+      setLocation={setLocation}
+      timezone={timezone}
+      setTimezone={setTimezone}
+      onPrevious={() => setStep(2)}
       onFinish={() => handleFinish()}
     />,
   ];

@@ -59,11 +59,24 @@ export async function updateUserProfile(attrs: {
   username?: string;
   birthdate?: string;
   photo_url?: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
 }) {
   const updateFields: any = {};
   if (attrs.username !== undefined) updateFields.username = attrs.username;
   if (attrs.birthdate !== undefined) updateFields.birthdate = attrs.birthdate;
   if (attrs.photo_url !== undefined) updateFields.photo_url = attrs.photo_url;
+  if (attrs.timezone !== undefined) updateFields.timezone = attrs.timezone;
+  if (attrs.location_latitude !== undefined)
+    updateFields.location_latitude = attrs.location_latitude;
+  if (attrs.location_longitude !== undefined)
+    updateFields.location_longitude = attrs.location_longitude;
+  if (attrs.location_city !== undefined) updateFields.location_city = attrs.location_city;
+  if (attrs.location_country !== undefined) updateFields.location_country = attrs.location_country;
+
   const { data, error } = await supabase
     .from('users')
     .update(updateFields)

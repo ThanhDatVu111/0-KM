@@ -29,6 +29,9 @@ import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
 import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
+import { TimeWidget } from '@/components/TimeWidget';
+import { WeatherWidget } from '@/components/WeatherWidget';
+import { Ionicons } from '@expo/vector-icons';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -248,47 +251,17 @@ const Home = () => {
           </WidgetCard>
 
           {/* Time Widget */}
-          <WidgetCard className="flex-1 min-w-[140px] h-48">
-            <LinearGradient
-              colors={['#6536DA', '#F7BFF7']}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: 16,
-                zIndex: -1,
-              }}
-            />
-            <Text className="mb-2 font-pregular text-sm text-white">Alex's time</Text>
-            <View className="flex-1 items-center justify-center">
-              <Text className="font-pbold text-5xl text-white">9:30</Text>
-            </View>
-          </WidgetCard>
+          <TimeWidget className="flex-1 min-w-[140px] h-48" fallbackUserName="Partner" />
         </View>
 
         {/* Second row */}
         <View className="flex-row flex-wrap gap-4 mb-6">
           {/* Weather Widget */}
-          <WidgetCard className="flex-1 min-w-[140px] h-48">
-            <LinearGradient
-              colors={['#6536DA', '#F7BFF7']}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: 16,
-                zIndex: -1,
-              }}
-            />
-            <Text className="mb-2 font-pregular text-sm text-white">Alex's weather</Text>
-            <View className="flex-1 items-center justify-center">
-              <Text className="font-pbold text-5xl text-white">100F</Text>
-            </View>
-          </WidgetCard>
+          <WeatherWidget
+            className="flex-1 min-w-[140px] h-48"
+            fallbackUserName="Partner"
+            defaultCity="San Francisco"
+          />
 
           {/* Image/Memory Widget */}
           <WidgetCard className="flex-1 min-w-[140px] h-48 overflow-hidden" noPadding>

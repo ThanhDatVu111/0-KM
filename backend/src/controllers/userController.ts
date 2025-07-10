@@ -30,7 +30,17 @@ export async function onboard(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id, name, birthdate, photo_url } = req.body;
+    const {
+      user_id,
+      name,
+      birthdate,
+      photo_url,
+      timezone,
+      location_latitude,
+      location_longitude,
+      location_city,
+      location_country,
+    } = req.body;
 
     if (!user_id || !name || !birthdate || !photo_url) {
       res.status(400).json({ error: 'Missing required fields for onboarding' });
@@ -42,6 +52,11 @@ export async function onboard(
       username: name,
       birthdate,
       photo_url,
+      timezone,
+      location_latitude,
+      location_longitude,
+      location_city,
+      location_country,
     });
 
     res.status(201).json({ data: updatedUser });

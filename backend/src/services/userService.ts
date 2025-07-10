@@ -12,6 +12,11 @@ interface OnboardUserInput {
   username: string;
   birthdate: string;
   photo_url: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
 }
 
 interface FetchUserInput {
@@ -26,11 +31,16 @@ export async function registerUser(input: RegisterUserInput) {
   });
 }
 export function onboardUser(input: OnboardUserInput) {
-  return userModel.updateUser({
+  return userModel.updateUserProfile({
     user_id: input.user_id,
     username: input.username,
     birthdate: input.birthdate,
     photo_url: input.photo_url,
+    timezone: input.timezone,
+    location_latitude: input.location_latitude,
+    location_longitude: input.location_longitude,
+    location_city: input.location_city,
+    location_country: input.location_country,
   });
 }
 
