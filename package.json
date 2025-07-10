@@ -3,15 +3,22 @@
   "private": true,
   "scripts": {
     "format": "prettier --write .",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx"
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
     "prettier": "^3.2.5"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "dotenv": "^16.5.0",
-    "react-native-modal": "^14.0.0-rc.1",
-    "@react-native-async-storage/async-storage": "^2.2.0"
-  }
+    "expo": "^53.0.19",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-capture-protection": "^2.1.1",
+    "react-native-modal": "^14.0.0-rc.1"
+  },
+  "version": "1.0.0"
 }

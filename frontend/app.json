@@ -39,7 +39,13 @@
       ],
       "expo-secure-store",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-capture-protection",
+        {
+          "captureType": "fullMediaCapture"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

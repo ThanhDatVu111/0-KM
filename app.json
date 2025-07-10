@@ -1,0 +1,16 @@
+{
+  "android": {
+    "package": "com.chtran.okmapproot"
+  },
+  "ios": {
+    "bundleIdentifier": "com.chtran.okmapproot"
+  },
+  "plugins": [
+    [
+      "react-native-capture-protection",
+      {
+        "captureType": "restrictedCapture"
+      }
+    ]
+  ]
+}
