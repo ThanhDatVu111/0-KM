@@ -27,17 +27,16 @@ app.use(
   }),
 );
 
-// Apply auth middleware to all routes
-app.use(authMiddleware);
-
-// Route mounting
-app.use('/users', UserRouter);
-app.use('/rooms', RoomRouter);
-app.use('/library', LibraryRouter);
-app.use('/entries', EntriesRouter);
-app.use('/youtube', YouTubeRouter);
+// Route mounting (OAuth routes don't need authentication)
 app.use('/spotify', SpotifyRouter);
-app.use('/rooms', PlaybackCommandRouter);
+
+// Apply auth middleware to protected routes
+app.use('/users', authMiddleware, UserRouter);
+app.use('/rooms', authMiddleware, RoomRouter);
+app.use('/library', authMiddleware, LibraryRouter);
+app.use('/entries', authMiddleware, EntriesRouter);
+app.use('/youtube', authMiddleware, YouTubeRouter);
+app.use('/rooms', authMiddleware, PlaybackCommandRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(

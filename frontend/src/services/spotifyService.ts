@@ -1,61 +1,42 @@
 import supabase from '../utils/supabase';
 
-interface SpotifyPlaybackState {
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  albumArt: string;
+  duration: number;
+  uri: string;
+}
+
+export interface SpotifyPlaybackState {
   isPlaying: boolean;
-  currentTrack?: {
-    id: string;
-    name: string;
-    artist: string;
-    album: string;
-    albumArt: string;
-    duration: number;
-    uri: string;
-  };
+  currentTrack?: SpotifyTrack;
   progress: number;
   volume: number;
 }
 
-class SpotifyPlaybackService {
+class SpotifyService {
   private lastRequestTime: number = 0;
   private requestQueue: Array<() => Promise<any>> = [];
   private isProcessingQueue: boolean = false;
 
-  private async getSpotifyAccessToken(): Promise<string | null> {
+  // Get Spotify access token from Supabase session
+  private async getAccessToken(): Promise<string | null> {
     try {
-      // Get the current session from Supabase
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Error getting Supabase session:', error);
-        return null;
-      }
-
-      // Check if we have Spotify provider data
       const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
-
-      if (!spotifyProvider) {
-        console.log('No Spotify provider found in session');
-        return null;
-      }
-
-      // Get the access token from the provider data
-      const accessToken = spotifyProvider.access_token;
-
-      if (!accessToken) {
-        console.log('No access token found in Spotify provider data');
-        return null;
-      }
-
-      return accessToken;
+      return spotifyProvider?.access_token || null;
     } catch (error) {
       console.error('Error getting Spotify access token:', error);
       return null;
     }
   }
 
+  // Make rate-limited request to Spotify API
   private async makeRequest(
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' = 'GET',
@@ -64,7 +45,7 @@ class SpotifyPlaybackService {
     return new Promise((resolve, reject) => {
       const request = async () => {
         try {
-          const token = await this.getSpotifyAccessToken();
+          const token = await this.getAccessToken();
           if (!token) {
             throw new Error('No valid Spotify access token - please connect to Spotify first');
           }
@@ -130,7 +111,7 @@ class SpotifyPlaybackService {
             throw new Error(`Spotify API error: ${response.status}`);
           }
 
-          // Handle empty responses (like for PUT/POST requests)
+          // Handle empty responses
           const contentType = response.headers.get('content-type');
           if (!contentType || !contentType.includes('application/json')) {
             resolve(null);
@@ -179,6 +160,32 @@ class SpotifyPlaybackService {
     }
 
     this.isProcessingQueue = false;
+  }
+
+  // Search for tracks
+  async searchTracks(query: string): Promise<SpotifyTrack[]> {
+    try {
+      const data: any = await this.makeRequest(
+        `/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
+      );
+
+      if (!data?.tracks?.items) {
+        return [];
+      }
+
+      return data.tracks.items.map((track: any) => ({
+        id: track.id,
+        name: track.name,
+        artist: track.artists[0]?.name || 'Unknown Artist',
+        album: track.album?.name || 'Unknown Album',
+        albumArt: track.album?.images[0]?.url || '',
+        duration: Math.floor(track.duration_ms / 1000),
+        uri: track.uri,
+      }));
+    } catch (error) {
+      console.error('Error searching tracks:', error);
+      throw error;
+    }
   }
 
   // Get current playback state
@@ -271,7 +278,7 @@ class SpotifyPlaybackService {
     }
   }
 
-  // Seek to position in track (seconds)
+  // Seek to position in track (milliseconds)
   async seekToPosition(positionMs: number): Promise<void> {
     try {
       await this.makeRequest(`/me/player/seek?position_ms=${positionMs}`, 'PUT');
@@ -290,19 +297,7 @@ class SpotifyPlaybackService {
       return [];
     }
   }
-
-  // Transfer playback to a specific device
-  async transferPlayback(deviceId: string): Promise<void> {
-    try {
-      await this.makeRequest('/me/player', 'PUT', {
-        device_ids: [deviceId],
-        play: true,
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
 }
 
 // Export singleton instance
-export const spotifyPlayback = new SpotifyPlaybackService();
+export const spotifyService = new SpotifyService();

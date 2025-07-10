@@ -1,22 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { spotifyPlayback } from '../services/SpotifyPlaybackService';
-
-interface SpotifyPlaybackState {
-  isPlaying: boolean;
-  currentTrack?: {
-    id: string;
-    name: string;
-    artist: string;
-    album: string;
-    albumArt: string;
-    duration: number;
-    uri: string;
-  };
-  progress: number;
-  volume: number;
-}
+import { spotifyService, SpotifyPlaybackState } from '../services/spotifyService';
+import { useSpotifyAuth } from './useSpotifyAuth';
 
 export function useSpotifyPlayback() {
+  const { status } = useSpotifyAuth();
   const [playbackState, setPlaybackState] = useState<SpotifyPlaybackState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +12,7 @@ export function useSpotifyPlayback() {
   const fetchPlaybackState = useCallback(async () => {
     try {
       setError(null);
-      const state = await spotifyPlayback.getPlaybackState();
+      const state = await spotifyService.getPlaybackState();
       setPlaybackState(state);
     } catch (err) {
       console.error('Error fetching playback state:', err);
@@ -33,15 +20,21 @@ export function useSpotifyPlayback() {
     }
   }, []);
 
-  // Initialize and start polling
+  // Initialize and start polling only when connected
   useEffect(() => {
+    if (status !== 'connected') {
+      setPlaybackState(null);
+      setError(null);
+      return;
+    }
+
     fetchPlaybackState();
 
-    // Poll for playback state updates every 10 seconds (reduced to avoid rate limits)
+    // Poll for playback state updates every 10 seconds
     const interval = setInterval(fetchPlaybackState, 10000);
 
     return () => clearInterval(interval);
-  }, [fetchPlaybackState]);
+  }, [fetchPlaybackState, status]);
 
   // Play a specific track
   const playTrack = useCallback(
@@ -49,7 +42,7 @@ export function useSpotifyPlayback() {
       try {
         setIsLoading(true);
         setError(null);
-        await spotifyPlayback.playTrack(trackUri);
+        await spotifyService.playTrack(trackUri);
         await fetchPlaybackState(); // Refresh state after playing
       } catch (err) {
         console.error('Error playing track:', err);
@@ -66,7 +59,7 @@ export function useSpotifyPlayback() {
     try {
       setIsLoading(true);
       setError(null);
-      await spotifyPlayback.togglePlayPause();
+      await spotifyService.togglePlayPause();
       await fetchPlaybackState(); // Refresh state after toggle
     } catch (err) {
       console.error('Error toggling play/pause:', err);
@@ -81,7 +74,7 @@ export function useSpotifyPlayback() {
     try {
       setIsLoading(true);
       setError(null);
-      await spotifyPlayback.skipToNext();
+      await spotifyService.skipToNext();
       await fetchPlaybackState(); // Refresh state after skip
     } catch (err) {
       console.error('Error skipping to next:', err);
@@ -96,7 +89,7 @@ export function useSpotifyPlayback() {
     try {
       setIsLoading(true);
       setError(null);
-      await spotifyPlayback.skipToPrevious();
+      await spotifyService.skipToPrevious();
       await fetchPlaybackState(); // Refresh state after skip
     } catch (err) {
       console.error('Error skipping to previous:', err);
@@ -111,26 +104,11 @@ export function useSpotifyPlayback() {
     async (volume: number) => {
       try {
         setError(null);
-        await spotifyPlayback.setVolume(volume);
+        await spotifyService.setVolume(volume);
         await fetchPlaybackState(); // Refresh state after volume change
       } catch (err) {
         console.error('Error setting volume:', err);
         setError('Failed to set volume');
-      }
-    },
-    [fetchPlaybackState],
-  );
-
-  // Seek to position
-  const seekToPosition = useCallback(
-    async (positionMs: number) => {
-      try {
-        setError(null);
-        await spotifyPlayback.seekToPosition(positionMs);
-        await fetchPlaybackState(); // Refresh state after seek
-      } catch (err) {
-        console.error('Error seeking:', err);
-        setError('Failed to seek to position');
       }
     },
     [fetchPlaybackState],
@@ -145,7 +123,6 @@ export function useSpotifyPlayback() {
     skipToNext,
     skipToPrevious,
     setVolume,
-    seekToPosition,
     refresh: fetchPlaybackState,
   };
 }

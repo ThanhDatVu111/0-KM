@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import supabase from '../../utils/supabase';
+import { spotifyService } from '../../services/spotifyService';
+import { useSpotifyAuth } from '../../hooks/useSpotifyAuth';
 
 interface SpotifyTrack {
   id: string;
@@ -23,120 +24,27 @@ export function SpotifySearch({ onTrackSelect, onCancel, onReconnect }: Props) {
   const [query, setQuery] = useState('');
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  const getSpotifyAccessToken = async () => {
-    try {
-      // Get the current session from Supabase
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Error getting Supabase session:', error);
-        return null;
-      }
-
-      // Check if we have Spotify provider data
-      const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
-
-      if (!spotifyProvider) {
-        console.log('No Spotify provider found in session');
-        return null;
-      }
-
-      // Get the access token from the provider data
-      const accessToken = spotifyProvider.access_token;
-
-      if (!accessToken) {
-        console.log('No access token found in Spotify provider data');
-        return null;
-      }
-
-      return accessToken;
-    } catch (error) {
-      console.error('Error getting Spotify access token:', error);
-      return null;
-    }
-  };
+  const { status, connect } = useSpotifyAuth();
 
   const searchTracks = async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
     try {
-      // Get access token from Supabase session
-      const accessToken = await getSpotifyAccessToken();
-      if (!accessToken) {
+      // Check if connected to Spotify
+      if (status !== 'connected') {
         Alert.alert('Spotify Not Connected', 'Please connect your Spotify account first.', [
           { text: 'Cancel', style: 'cancel', onPress: onCancel },
           {
             text: 'Connect',
-            onPress: async () => {
-              try {
-                // Use Supabase OAuth for Spotify
-                                  const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'spotify',
-                    options: {
-                      scopes: [
-                        'user-read-private',
-                        'user-read-email',
-                        'user-read-playback-state',
-                        'user-modify-playback-state',
-                        'user-read-currently-playing',
-                        'streaming',
-                        'playlist-read-private',
-                        'playlist-read-collaborative',
-                      ].join(' '),
-                      redirectTo: '0km-app://',
-                    },
-                  });
-
-                if (error) {
-                  Alert.alert('Error', 'Failed to connect to Spotify');
-                  return;
-                }
-
-                // Close search modal and let the OAuth flow complete
-                onCancel();
-              } catch (error) {
-                Alert.alert('Error', 'Failed to connect to Spotify');
-              }
-            },
+            onPress: connect,
           },
         ]);
         return;
       }
 
-      // Search Spotify API
-      const response = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('TOKEN_EXPIRED');
-        }
-        throw new Error(`Failed to search tracks: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      const searchResults: SpotifyTrack[] = data.tracks.items.map((track: any) => ({
-        id: track.id,
-        name: track.name,
-        artist: track.artists[0]?.name || 'Unknown Artist',
-        album: track.album?.name || 'Unknown Album',
-        albumArt: track.album?.images[0]?.url || '',
-        duration: Math.floor(track.duration_ms / 1000),
-        uri: track.uri,
-      }));
-
+      // Search using the spotify service
+      const searchResults = await spotifyService.searchTracks(searchQuery);
       setTracks(searchResults);
     } catch (error: any) {
       console.error('Error searching tracks:', error);
@@ -149,39 +57,7 @@ export function SpotifySearch({ onTrackSelect, onCancel, onReconnect }: Props) {
             { text: 'Cancel', style: 'cancel', onPress: onCancel },
             {
               text: 'Reconnect',
-              onPress: async () => {
-                try {
-                  // Sign out and reconnect via Supabase OAuth
-                  await supabase.auth.signOut();
-
-                  const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'spotify',
-                    options: {
-                      scopes: [
-                        'user-read-private',
-                        'user-read-email',
-                        'user-read-playback-state',
-                        'user-modify-playback-state',
-                        'user-read-currently-playing',
-                        'streaming',
-                        'playlist-read-private',
-                        'playlist-read-collaborative',
-                      ].join(' '),
-                      redirectTo: '0km-app://',
-                    },
-                  });
-
-                  if (error) {
-                    Alert.alert('Error', 'Failed to reconnect to Spotify');
-                    return;
-                  }
-
-                  // Close search modal and let the OAuth flow complete
-                  onCancel();
-                } catch (error) {
-                  Alert.alert('Error', 'Failed to reconnect to Spotify');
-                }
-              },
+              onPress: connect,
             },
           ],
         );

@@ -13,8 +13,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
-import { searchSpotifyTracks, createRoomSpotifyTrack } from '@/apis/spotify';
-import { useApiClient } from '@/hooks/useApiClient';
+import { spotifyService } from '../../services/spotifyService';
+import { useSharedSpotifyTrack } from '../../hooks/useSharedSpotifyTrack';
+import { useAuth } from '@clerk/clerk-expo';
 
 type SpotifyTrack = {
   id: string;
@@ -34,7 +35,7 @@ type Props = {
 
 export function SpotifyInput({ isVisible, onClose, onTrackAdded }: Props) {
   const { userId } = useAuth();
-  const apiClient = useApiClient();
+  const { updateTrack } = useSharedSpotifyTrack(null); // We'll get roomId from context or props
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +49,7 @@ export function SpotifyInput({ isVisible, onClose, onTrackAdded }: Props) {
 
     setIsLoading(true);
     try {
-      const results = await searchSpotifyTracks(searchQuery);
+      const results = await spotifyService.searchTracks(searchQuery);
       setSearchResults(results);
     } catch (error) {
       console.error('Failed to search Spotify tracks:', error);
@@ -66,16 +67,15 @@ export function SpotifyInput({ isVisible, onClose, onTrackAdded }: Props) {
 
     setIsAdding(true);
     try {
-      await createRoomSpotifyTrack({
-        user_id: userId,
-        track_id: track.id,
+      await updateTrack({
+        track_uri: track.uri,
         track_name: track.name,
         artist_name: track.artist,
         album_name: track.album,
         album_art_url: track.albumArt,
         duration_ms: track.duration * 1000, // Convert to milliseconds
-        track_uri: track.uri,
-      }, apiClient);
+        is_playing: true,
+      });
 
       Alert.alert('Success', 'Track added successfully!');
       onTrackAdded();

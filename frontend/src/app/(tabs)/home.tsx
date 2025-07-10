@@ -19,7 +19,7 @@ import { YouTubeWidget } from '@/components/music/YouTubeWidget';
 import { YouTubeInput } from '@/components/music/YouTubeInput';
 import { SpotifySearch } from '@/components/music/SpotifySearch';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
-import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
+import { useSharedSpotifyTrack } from '@/hooks/useSharedSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
 import {
   createRoomSpotifyTrack,
@@ -29,7 +29,7 @@ import {
 import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
-import { UnifiedSpotifyWidget } from '@/components/music/UnifiedSpotifyWidget';
+import { SpotifyWidget } from '@/components/music/SpotifyWidget';
 import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,13 +105,12 @@ const Home = () => {
 
   const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
   const {
-    roomTrack,
-    hasRoom: hasSpotifyRoom,
+    track: roomTrack,
     isLoading: spotifyLoading,
-    refetchRoomTrack,
-  } = useRoomSpotifyTrack();
+    refetch: refetchRoomTrack,
+  } = useSharedSpotifyTrack(roomId);
 
-  // Real Spotify playback controls
+  // Real Spotify playback controls - only use when connected
   const { playTrack } = useSpotifyPlayback();
 
   useEffect(() => {
@@ -432,34 +431,19 @@ const Home = () => {
           )}
         </View>
 
-        {/* Unified Spotify Widget */}
+        {/* Spotify Widget */}
         <View className="mb-4">
           <Text className="text-lg text-white font-pmedium mb-3">
-            {hasSpotifyRoom ? "What We're Listening To" : 'My Music'}
+            {roomId ? "What We're Listening To" : 'My Music'}
           </Text>
 
           <View className="h-60">
-            <UnifiedSpotifyWidget
-              track={
-                roomTrack && roomTrack.track_id
-                  ? {
-                      id: roomTrack.track_id,
-                      name: roomTrack.track_name,
-                      artist: roomTrack.artist_name,
-                      album: roomTrack.album_name,
-                      albumArt: roomTrack.album_art_url,
-                      duration: Math.floor(roomTrack.duration_ms / 1000),
-                      uri: roomTrack.track_uri,
-                    }
-                  : undefined
-              }
-              roomId={roomId || null}
+            <SpotifyWidget
+              roomId={roomId || undefined}
               canControl={true}
               onPress={
-                roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined
+                roomTrack?.controlled_by_user_id === userId ? handleRemoveSpotifyTrack : undefined
               }
-              onDeleteTrack={roomTrack ? handleDeleteSpotifyTrack : undefined}
-              onAddTrack={() => setShowSpotifyInput(true)}
               className="h-full"
             />
           </View>

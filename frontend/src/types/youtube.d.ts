@@ -1,0 +1,87 @@
+declare module 'react-native-youtube-iframe' {
+  import { Component } from 'react';
+  import { ViewProps } from 'react-native';
+
+  interface YoutubePlayerProps extends ViewProps {
+    height: number;
+    play?: boolean;
+    videoId: string;
+    webViewProps?: any;
+    onError?: (error: any) => void;
+    onReady?: () => void;
+    onStateChange?: (state: string) => void;
+    onPlaybackQualityChange?: (quality: string) => void;
+    onPlaybackRateChange?: (rate: number) => void;
+    onEnd?: () => void;
+    onFullScreenChange?: (isFullScreen: boolean) => void;
+    onFullScreen?: () => void;
+    onExitFullScreen?: () => void;
+    onProgress?: (progress: number) => void;
+    onSeek?: (seekTime: number) => void;
+    onSeekTo?: (seekTime: number) => void;
+    onSeekBack?: () => void;
+    onSeekForward?: () => void;
+    onSeekToPercent?: (percent: number) => void;
+    onSeekToSeconds?: (seconds: number) => void;
+    onSeekToMinutes?: (minutes: number) => void;
+    onSeekToHours?: (hours: number) => void;
+    onSeekToDays?: (days: number) => void;
+    onSeekToWeeks?: (weeks: number) => void;
+    onSeekToMonths?: (months: number) => void;
+    onSeekToYears?: (years: number) => void;
+    onSeekToDecades?: (decades: number) => void;
+    onSeekToCenturies?: (centuries: number) => void;
+    onSeekToMillennia?: (millennia: number) => void;
+    onSeekToEons?: (eons: number) => void;
+    onSeekToEpochs?: (epochs: number) => void;
+    onSeekToPeriods?: (periods: number) => void;
+    onSeekToEras?: (eras: number) => void;
+    onSeekToAges?: (ages: number) => void;
+    onSeekToStages?: (stages: number) => void;
+    onSeekToSeries?: (series: number) => void;
+    onSeekToSystems?: (systems: number) => void;
+    onSeekToGroups?: (groups: number) => void;
+    onSeekToSupergroups?: (supergroups: number) => void;
+    onSeekToEonothems?: (eonothems: number) => void;
+    onSeekToErathems?: (erathems: number) => void;
+    onSeekToSystems?: (systems: number) => void;
+    onSeekToSeries?: (series: number) => void;
+    onSeekToStages?: (stages: number) => void;
+    onSeekToAges?: (ages: number) => void;
+    onSeekToEras?: (eras: number) => void;
+    onSeekToPeriods?: (periods: number) => void;
+    onSeekToEpochs?: (epochs: number) => void;
+    onSeekToEons?: (eons: number) => void;
+    onSeekToMillennia?: (millennia: number) => void;
+    onSeekToCenturies?: (centuries: number) => void;
+    onSeekToDecades?: (decades: number) => void;
+    onSeekToYears?: (years: number) => void;
+    onSeekToMonths?: (months: number) => void;
+    onSeekToWeeks?: (weeks: number) => void;
+    onSeekToDays?: (days: number) => void;
+    onSeekToHours?: (hours: number) => void;
+    onSeekToMinutes?: (minutes: number) => void;
+    onSeekToSeconds?: (seconds: number) => void;
+    onSeekToPercent?: (percent: number) => void;
+    onSeekForward?: () => void;
+    onSeekBack?: () => void;
+    onSeekTo?: (seekTime: number) => void;
+    onSeek?: (seekTime: number) => void;
+    onProgress?: (progress: number) => void;
+    onExitFullScreen?: () => void;
+    onFullScreen?: () => void;
+    onFullScreenChange?: (isFullScreen: boolean) => void;
+    onEnd?: () => void;
+    onPlaybackRateChange?: (rate: number) => void;
+    onPlaybackQualityChange?: (quality: string) => void;
+    onStateChange?: (state: string) => void;
+    onReady?: () => void;
+    onError?: (error: any) => void;
+    webViewProps?: any;
+    videoId: string;
+    play?: boolean;
+    height: number;
+  }
+
+  export default class YoutubePlayer extends Component<YoutubePlayerProps> {}
+}

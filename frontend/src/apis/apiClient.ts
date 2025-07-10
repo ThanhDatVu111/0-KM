@@ -11,7 +11,7 @@ if (!HOST || !PORT || !PUBLIC_URL) {
   );
 }
 
-const LOCAL_URL = `http://${HOST}:${PORT}`;
+const LOCAL_URL = `${HOST}:${PORT}`;
 
 // web → LOCAL_URL
 // On a real device or stimulator → PUBLIC_URL
@@ -32,6 +32,7 @@ export class ApiClient {
     customHeaders?: Record<string, string>,
   ) {
     const url = `${this.baseURL}${endpoint}`;
+    console.log('🔍 [DEBUG] Making GET request to:', url);
 
     const config: RequestInit = {
       headers: {

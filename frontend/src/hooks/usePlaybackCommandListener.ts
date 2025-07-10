@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
-import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
+import { spotifyService } from '@/services/spotifyService';
 import supabase from '@/utils/supabase';
 import { logger } from '@/utils/logger';
 
@@ -55,36 +55,36 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
               const networkLag = Date.now() - new Date(command.requested_at).getTime();
               const adjustedPosition = (command.position_ms || 0) + Math.max(0, networkLag);
 
-              await spotifyPlayback.playTrack(command.track_uri);
+              await spotifyService.playTrack(command.track_uri);
               if (adjustedPosition > 0) {
-                await spotifyPlayback.seekToPosition(adjustedPosition);
+                await spotifyService.seekToPosition(adjustedPosition);
               }
             } else {
-              await spotifyPlayback.togglePlayPause();
+              await spotifyService.togglePlayPause();
             }
             break;
 
           case 'pause':
-            await spotifyPlayback.togglePlayPause();
+            await spotifyService.togglePlayPause();
             break;
 
           case 'next':
-            await spotifyPlayback.skipToNext();
+            await spotifyService.skipToNext();
             break;
 
           case 'previous':
-            await spotifyPlayback.skipToPrevious();
+            await spotifyService.skipToPrevious();
             break;
 
           case 'seek':
             if (command.position_ms !== undefined) {
-              await spotifyPlayback.seekToPosition(command.position_ms);
+              await spotifyService.seekToPosition(command.position_ms);
             }
             break;
 
           case 'volume':
             if (command.volume !== undefined) {
-              await spotifyPlayback.setVolume(command.volume);
+              await spotifyService.setVolume(command.volume);
             }
             break;
 

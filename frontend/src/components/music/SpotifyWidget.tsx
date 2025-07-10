@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,51 +9,71 @@ import {
   ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
+import { useSpotifyAuth } from '../../hooks/useSpotifyAuth';
+import { useSharedSpotifyTrack, SharedSpotifyTrack } from '../../hooks/useSharedSpotifyTrack';
+import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
+import { spotifyService } from '../../services/spotifyService';
 import widgetBg from '@/assets/images/widget.png';
 
-type SpotifyTrack = {
-  id: string;
-  name: string;
-  artist: string;
-  album: string;
-  albumArt: string;
-  duration: number;
-  uri: string;
-};
-
 type Props = {
-  track?: SpotifyTrack;
+  roomId?: string;
   onPress?: () => void;
   className?: string;
-  isPlaying?: boolean;
-  onPlayPause?: () => void;
-  onNext?: () => void;
-  onPrevious?: () => void;
   canControl?: boolean;
-  isController?: boolean;
-  controllerName?: string;
   isLoading?: boolean;
 };
 
 export function SpotifyWidget({
-  track,
+  roomId,
   onPress,
   className = '',
-  isPlaying = false,
-  onPlayPause,
-  onNext,
-  onPrevious,
   canControl = false,
-  isController = false,
-  controllerName,
   isLoading = false,
 }: Props) {
   const { userId } = useAuth();
-  const [currentTime, setCurrentTime] = useState(0);
+  const { status, connect, disconnect } = useSpotifyAuth();
+  const { track, updateTrack, clearTrack } = useSharedSpotifyTrack(roomId || null);
+  const { playbackState, togglePlayPause, skipToNext, skipToPrevious } = useSpotifyPlayback();
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  if (!track) {
+  // Determine if user is controlling the playback
+  const isController = track?.controlled_by_user_id === userId;
+
+  // Handle play/pause
+  const handlePlayPause = async () => {
+    if (!track?.track_uri) return;
+
+    try {
+      if (roomId) {
+        // In room mode - update shared state
+        await updateTrack({ is_playing: !isPlaying });
+        setIsPlaying(!isPlaying);
+      } else {
+        // Individual mode - use Spotify API directly
+        await togglePlayPause();
+      }
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
+      Alert.alert('Error', 'Failed to control playback');
+    }
+  };
+
+  // Handle track removal
+  const handleRemoveTrack = async () => {
+    if (!roomId) return;
+
+    try {
+      await clearTrack();
+      if (onPress) onPress();
+    } catch (error) {
+      console.error('Error removing track:', error);
+      Alert.alert('Error', 'Failed to remove track');
+    }
+  };
+
+  // State 1: Not connected to Spotify
+  if (status !== 'connected') {
     return (
       <ImageBackground
         source={widgetBg}
@@ -62,22 +82,57 @@ export function SpotifyWidget({
       >
         <View className="items-center justify-center py-6">
           <Ionicons name="musical-notes" size={32} color="white" />
-          <Text className="text-white font-pmedium text-lg mt-2">No Music Playing</Text>
+          <Text className="text-white font-pmedium text-lg mt-2">Connect to Spotify</Text>
           <Text className="text-white/70 font-pregular text-sm text-center mt-2">
-            Add a Spotify track to share with your partner
+            Connect your Spotify account to share music with your partner
           </Text>
+          <TouchableOpacity
+            onPress={connect}
+            disabled={status === 'connecting'}
+            className="bg-green-500 px-6 py-3 rounded-full mt-4"
+          >
+            <Text className="text-white font-pmedium">
+              {status === 'connecting' ? 'Connecting...' : 'Connect Spotify'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     );
   }
 
+  // State 2: Connected but no track
+  if (!track?.track_uri) {
+    return (
+      <ImageBackground
+        source={widgetBg}
+        style={{ borderRadius: 16 }}
+        className={`border border-black shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
+      >
+        <View className="items-center justify-center py-6">
+          <Ionicons name="musical-notes" size={32} color="white" />
+          <Text className="text-white font-pmedium text-lg mt-2">Add a Track</Text>
+          <Text className="text-white/70 font-pregular text-sm text-center mt-2">
+            Search for a song to share with your partner
+          </Text>
+          <TouchableOpacity onPress={onPress} className="bg-green-500 px-6 py-3 rounded-full mt-4">
+            <Text className="text-white font-pmedium">Search Music</Text>
+          </TouchableOpacity>
+        </View>
+      </ImageBackground>
+    );
+  }
+
+  // State 3: Playing track
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progressPercentage = track.duration > 0 ? (currentTime / track.duration) * 100 : 0;
+  const progressPercentage =
+    track.duration_ms && track.duration_ms > 0
+      ? ((playbackState?.progress || 0) / track.duration_ms) * 100
+      : 0;
 
   return (
     <ImageBackground
@@ -89,11 +144,11 @@ export function SpotifyWidget({
       <View style={styles.spotifyLogo}>
         <Ionicons name="musical-notes" size={20} color="white" />
         <Text style={styles.spotifyText}>Spotify</Text>
-        {controllerName && (
+        {roomId && (
           <View style={styles.controllerIndicator}>
             <Ionicons name="radio" size={12} color="white" />
             <Text style={styles.controllerText}>
-              {isController ? 'You control' : `${controllerName} controls`}
+              {isController ? 'You control' : 'Partner controls'}
             </Text>
           </View>
         )}
@@ -103,20 +158,24 @@ export function SpotifyWidget({
         {/* Album Art */}
         <View style={styles.albumArtContainer}>
           <View style={styles.albumArtShadow}>
-            <Image source={{ uri: track.albumArt }} style={styles.albumArt} resizeMode="cover" />
+            <Image
+              source={{ uri: track.album_art_url || '' }}
+              style={styles.albumArt}
+              resizeMode="cover"
+            />
           </View>
         </View>
 
         {/* Track Info */}
         <View style={styles.trackInfo}>
           <Text style={styles.trackName} numberOfLines={1}>
-            {track.name}
+            {track.track_name}
           </Text>
           <Text style={styles.artistName} numberOfLines={1}>
-            {track.artist}
+            {track.artist_name}
           </Text>
           <Text style={styles.albumName} numberOfLines={1}>
-            {track.album}
+            {track.album_name}
           </Text>
         </View>
 
@@ -126,8 +185,12 @@ export function SpotifyWidget({
             <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
           </View>
           <View style={styles.timeInfo}>
-            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-            <Text style={styles.timeText}>{formatTime(track.duration)}</Text>
+            <Text style={styles.timeText}>
+              {formatTime(Math.floor((playbackState?.progress || 0) / 1000))}
+            </Text>
+            <Text style={styles.timeText}>
+              {formatTime(Math.floor((track.duration_ms || 0) / 1000))}
+            </Text>
           </View>
         </View>
 
@@ -135,24 +198,15 @@ export function SpotifyWidget({
         {canControl && (
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={onPrevious}
-              style={[styles.controlButton, !onPrevious && styles.disabledButton]}
-              disabled={!onPrevious}
+              onPress={skipToPrevious}
+              style={[styles.controlButton, !canControl && styles.disabledButton]}
+              disabled={!canControl}
             >
-              <Ionicons name="play-skip-back" size={24} color={!onPrevious ? '#666' : 'white'} />
+              <Ionicons name="play-skip-back" size={24} color={!canControl ? '#666' : 'white'} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                console.log('🎵 Play button pressed', {
-                  track,
-                  isPlaying,
-                  canControl,
-                  isController,
-                  controllerName,
-                });
-                if (onPlayPause) onPlayPause();
-              }}
+              onPress={handlePlayPause}
               style={[styles.playButton, isLoading && styles.loadingButton]}
               disabled={isLoading}
             >
@@ -166,11 +220,11 @@ export function SpotifyWidget({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={onNext}
-              style={[styles.controlButton, !onNext && styles.disabledButton]}
-              disabled={!onNext}
+              onPress={skipToNext}
+              style={[styles.controlButton, !canControl && styles.disabledButton]}
+              disabled={!canControl}
             >
-              <Ionicons name="play-skip-forward" size={24} color={!onNext ? '#666' : 'white'} />
+              <Ionicons name="play-skip-forward" size={24} color={!canControl ? '#666' : 'white'} />
             </TouchableOpacity>
           </View>
         )}
@@ -178,7 +232,7 @@ export function SpotifyWidget({
         {/* Remove button overlay - only show if onPress is provided */}
         {onPress && (
           <TouchableOpacity
-            onPress={onPress}
+            onPress={handleRemoveTrack}
             style={styles.removeButton}
             className="bg-red-500/80 rounded-full p-2"
           >

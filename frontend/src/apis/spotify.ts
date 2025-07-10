@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, BASE_URL } from './apiClient';
 
 // Types
 export interface SpotifyTrack {
@@ -48,10 +48,73 @@ export interface UpdateRoomSpotifyTrackRequest {
   track_uri?: string;
 }
 
+// Create an unauthenticated API client for OAuth endpoints
+const unauthenticatedApiClient = {
+  async get(endpoint: string) {
+    const url = `${BASE_URL}${endpoint}`;
+    console.log('🔍 [DEBUG] Making unauthenticated GET request to:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData,
+      };
+    }
+
+    return response.json();
+  },
+
+  async post(endpoint: string, data?: any) {
+    const url = `${BASE_URL}${endpoint}`;
+    console.log('🔍 [DEBUG] Making unauthenticated POST request to:', url);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData,
+      };
+    }
+
+    return response.json();
+  },
+};
+
 // OAuth and Token Management
 export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
-  const data = await apiClient.get('/spotify/auth/url');
-  return data;
+  try {
+    const data = await unauthenticatedApiClient.get('/spotify/auth/url'); // No auth token needed for OAuth
+    console.log('🔗 Backend auth URL response:', data);
+
+    // Backend returns { data: { authUrl } }, convert to { auth_url }
+    const authUrl = data?.data?.authUrl || data?.authUrl;
+    if (!authUrl) {
+      throw new Error('No auth URL received from backend');
+    }
+
+    return { auth_url: authUrl };
+  } catch (error) {
+    console.error('❌ Error getting Spotify auth URL:', error);
+    throw error;
+  }
 }
 
 export async function exchangeSpotifyCode(code: string): Promise<{
@@ -59,8 +122,21 @@ export async function exchangeSpotifyCode(code: string): Promise<{
   refresh_token: string;
   expires_in: number;
 }> {
-  const data = await apiClient.post('/spotify/auth/callback', { code });
-  return data;
+  try {
+    const data = await unauthenticatedApiClient.post('/spotify/auth/callback', { code }); // No auth token needed for OAuth
+    console.log('🔗 Token exchange response:', data);
+
+    // Backend returns { data: { access_token, refresh_token, expires_in } }
+    const tokenData = data?.data || data;
+    if (!tokenData?.access_token) {
+      throw new Error('No access token received from backend');
+    }
+
+    return tokenData;
+  } catch (error) {
+    console.error('❌ Error exchanging Spotify code:', error);
+    throw error;
+  }
 }
 
 export async function refreshSpotifyToken(refreshToken: string): Promise<{
@@ -74,7 +150,9 @@ export async function refreshSpotifyToken(refreshToken: string): Promise<{
 // Spotify Search API
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
-    const data = await apiClient.get(`/spotify/search?q=${encodeURIComponent(query)}`);
+    const data = await unauthenticatedApiClient.get(
+      `/spotify/search?q=${encodeURIComponent(query)}`,
+    );
     return data;
   } catch (error) {
     console.error('Error searching Spotify tracks:', error);
