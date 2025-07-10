@@ -58,6 +58,40 @@ export interface SpotifyTrack {
 }
 
 /**
+ * Get Spotify access token from Supabase user metadata
+ */
+async function getSpotifyAccessTokenFromUser(userId: string): Promise<string | null> {
+  try {
+    // This would typically be done by getting the user's OAuth session from Supabase
+    // For now, we'll use the existing Spotify API instance
+    const accessToken = spotifyApi.getAccessToken();
+    if (accessToken) {
+      return accessToken;
+    }
+
+    // If no token is set, we need to get it from the user's Supabase session
+    // This would require the frontend to pass the access token in the request
+    logger.spotify.warn('No Spotify access token available for user:', userId);
+    return null;
+  } catch (error) {
+    logger.spotify.error('Error getting Spotify access token for user:', userId, error);
+    return null;
+  }
+}
+
+/**
+ * Set Spotify access token for API calls
+ */
+async function setSpotifyAccessTokenForUser(userId: string, accessToken: string): Promise<void> {
+  try {
+    spotifyApi.setAccessToken(accessToken);
+    logger.spotify.debug('Spotify access token set for user:', userId);
+  } catch (error) {
+    logger.spotify.error('Error setting Spotify access token for user:', userId, error);
+  }
+}
+
+/**
  * Create a new room Spotify track
  */
 export async function createRoomTrack(
@@ -196,6 +230,38 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
     return success;
   } catch (error) {
     logger.spotify.error('Error in deleteRoomTrack service:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete room Spotify track by room ID
+ */
+export async function deleteRoomTrackByRoomId(room_id: string): Promise<boolean> {
+  try {
+    // Get the current track to verify it exists
+    const currentTrack = await getRoomSpotifyTrack(room_id);
+    if (!currentTrack) {
+      throw new Error('No track found in room');
+    }
+
+    const success = await deleteRoomSpotifyTrack(currentTrack.id);
+
+    if (success) {
+      // Clear the playback state when track is removed
+      await roomService.updatePlaybackState(room_id, {
+        is_playing: false,
+        current_track_uri: null,
+        progress_ms: 0,
+        controlled_by_user_id: null,
+      });
+
+      logger.spotify.info('Track deleted and playback state cleared for room:', room_id);
+    }
+
+    return success;
+  } catch (error) {
+    logger.spotify.error('Error in deleteRoomTrackByRoomId service:', error);
     throw error;
   }
 }
@@ -349,10 +415,19 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 /**
  * Play a Spotify track (requires Spotify Premium)
  */
-export async function playSpotifyTrack(user_id: string, track_uri: string): Promise<void> {
+export async function playSpotifyTrack(
+  user_id: string,
+  track_uri: string,
+  accessToken?: string,
+): Promise<void> {
   try {
-    const accessToken = spotifyApi.getAccessToken();
-    if (!accessToken) {
+    // Set the access token if provided
+    if (accessToken) {
+      await setSpotifyAccessTokenForUser(user_id, accessToken);
+    }
+
+    const currentAccessToken = spotifyApi.getAccessToken();
+    if (!currentAccessToken) {
       console.log('No Spotify access token available');
       return;
     }
@@ -374,8 +449,13 @@ export async function playSpotifyTrack(user_id: string, track_uri: string): Prom
 /**
  * Pause Spotify playback
  */
-export async function pauseSpotifyPlayback(user_id: string): Promise<void> {
+export async function pauseSpotifyPlayback(user_id: string, accessToken?: string): Promise<void> {
   try {
+    // Set the access token if provided
+    if (accessToken) {
+      await setSpotifyAccessTokenForUser(user_id, accessToken);
+    }
+
     if (!spotifyApi.getAccessToken()) {
       console.log('No Spotify access token available');
       return;
@@ -392,8 +472,13 @@ export async function pauseSpotifyPlayback(user_id: string): Promise<void> {
 /**
  * Skip to next track
  */
-export async function skipToNextTrack(user_id: string): Promise<void> {
+export async function skipToNextTrack(user_id: string, accessToken?: string): Promise<void> {
   try {
+    // Set the access token if provided
+    if (accessToken) {
+      await setSpotifyAccessTokenForUser(user_id, accessToken);
+    }
+
     if (!spotifyApi.getAccessToken()) {
       console.log('No Spotify access token available');
       return;
@@ -410,8 +495,13 @@ export async function skipToNextTrack(user_id: string): Promise<void> {
 /**
  * Skip to previous track
  */
-export async function skipToPreviousTrack(user_id: string): Promise<void> {
+export async function skipToPreviousTrack(user_id: string, accessToken?: string): Promise<void> {
   try {
+    // Set the access token if provided
+    if (accessToken) {
+      await setSpotifyAccessTokenForUser(user_id, accessToken);
+    }
+
     if (!spotifyApi.getAccessToken()) {
       console.log('No Spotify access token available');
       return;
@@ -428,8 +518,17 @@ export async function skipToPreviousTrack(user_id: string): Promise<void> {
 /**
  * Set playback volume
  */
-export async function setPlaybackVolume(user_id: string, volume: number): Promise<void> {
+export async function setPlaybackVolume(
+  user_id: string,
+  volume: number,
+  accessToken?: string,
+): Promise<void> {
   try {
+    // Set the access token if provided
+    if (accessToken) {
+      await setSpotifyAccessTokenForUser(user_id, accessToken);
+    }
+
     if (!spotifyApi.getAccessToken()) {
       console.log('No Spotify access token available');
       return;

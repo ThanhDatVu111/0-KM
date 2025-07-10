@@ -1,391 +1,464 @@
-import { Request, Response, NextFunction } from 'express';
-import {
-  createRoomTrack,
-  getRoomTrack,
-  updateRoomTrack,
-  deleteRoomTrack,
-  searchSpotifyTracks as searchSpotifyTracksService,
-  playSpotifyTrack as playSpotifyTrackService,
-  pauseSpotifyPlayback as pauseSpotifyPlaybackService,
-  skipToNextTrack as skipToNextTrackService,
-  skipToPreviousTrack as skipToPreviousTrackService,
-  setPlaybackVolume as setPlaybackVolumeService,
-  getSpotifyAuthUrl,
-  exchangeCodeForToken,
-  refreshAccessToken,
-  CreateRoomSpotifyTrackRequest,
-  UpdateRoomSpotifyTrackRequest,
-} from '../services/spotifyService';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { Request, Response } from 'express';
+import * as spotifyService from '../services/spotifyService';
 import { logger } from '../utils/logger';
+import { AuthenticatedRequest } from '../middleware/auth';
 
-/**
- * Get Spotify authorization URL
- */
-export async function getAuthUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+// Create room Spotify track
+export async function createRoomTrack(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const authUrl = getSpotifyAuthUrl();
-    res.json({ auth_url: authUrl });
-  } catch (error: any) {
-    logger.spotify.error('Error in getAuthUrl controller:', error);
-    next(error);
+    const request = req.body as spotifyService.CreateRoomSpotifyTrackRequest;
+    const accessToken = req.headers['x-spotify-access-token'] as string;
+
+    logger.spotify.info('Creating room Spotify track:', {
+      userId: req.user?.id,
+      trackName: request.track_name,
+      artistName: request.artist_name,
+    });
+
+    const track = await spotifyService.createRoomTrack(req, request);
+
+    if (track) {
+      // If we have an access token, try to play the track
+      if (accessToken && request.track_uri) {
+        try {
+          await spotifyService.playSpotifyTrack(req.user?.id || '', request.track_uri, accessToken);
+          logger.spotify.info('Track started playing automatically');
+        } catch (playError) {
+          logger.spotify.warn('Failed to auto-play track:', playError);
+          // Don't fail the request if auto-play fails
+        }
+      }
+
+      res.status(201).json({
+        success: true,
+        data: track,
+        message: 'Room Spotify track created successfully',
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to create room Spotify track',
+      });
+    }
+  } catch (error) {
+    logger.spotify.error('Error in createRoomTrack controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Handle Spotify OAuth callback
- */
-export async function handleAuthCallback(
-  req: Request,
+// Get room Spotify track
+export async function getRoomTrack(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
+    logger.spotify.debug('Getting room Spotify track for user:', userId);
+
+    const track = await spotifyService.getRoomTrack(userId);
+
+    res.status(200).json({
+      success: true,
+      data: track,
+      message: track ? 'Room Spotify track retrieved successfully' : 'No track found in room',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in getRoomTrack controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Update room Spotify track
+export async function updateRoomTrack(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
+    const request = req.body as spotifyService.UpdateRoomSpotifyTrackRequest;
+
+    logger.spotify.info('Updating room Spotify track:', {
+      userId,
+      trackId: request.id,
+    });
+
+    const track = await spotifyService.updateRoomTrack(userId, request);
+
+    if (track) {
+      res.status(200).json({
+        success: true,
+        data: track,
+        message: 'Room Spotify track updated successfully',
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Track not found or update failed',
+      });
+    }
+  } catch (error) {
+    logger.spotify.error('Error in updateRoomTrack controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Delete room Spotify track
+export async function deleteRoomTrack(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
+    logger.spotify.info('Deleting room Spotify track for user:', userId);
+
+    const success = await spotifyService.deleteRoomTrack(userId);
+
+    if (success) {
+      res.status(200).json({
+        success: true,
+        message: 'Room Spotify track deleted successfully',
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Track not found or delete failed',
+      });
+    }
+  } catch (error) {
+    logger.spotify.error('Error in deleteRoomTrack controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Delete room Spotify track by room ID
+export async function deleteRoomTrackByRoomId(
+  req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction,
 ): Promise<void> {
+  try {
+    const roomId = req.params.roomId;
+    if (!roomId) {
+      res.status(400).json({
+        success: false,
+        message: 'Room ID is required',
+      });
+      return;
+    }
+
+    logger.spotify.info('Deleting room Spotify track for room:', roomId);
+
+    const success = await spotifyService.deleteRoomTrackByRoomId(roomId);
+
+    if (success) {
+      res.status(200).json({
+        success: true,
+        message: 'Room Spotify track deleted successfully',
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Track not found or delete failed',
+      });
+    }
+  } catch (error) {
+    logger.spotify.error('Error in deleteRoomTrackByRoomId controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Search Spotify tracks
+export async function searchTracks(req: Request, res: Response): Promise<void> {
+  try {
+    const { query } = req.query;
+
+    if (!query || typeof query !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'Search query is required',
+      });
+      return;
+    }
+
+    logger.spotify.debug('Searching Spotify tracks with query:', query);
+
+    const tracks = await spotifyService.searchSpotifyTracks(query);
+
+    res.status(200).json({
+      success: true,
+      data: tracks,
+      message: `Found ${tracks.length} tracks`,
+    });
+  } catch (error) {
+    logger.spotify.error('Error in searchTracks controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Get Spotify authorization URL
+export async function getAuthUrl(req: Request, res: Response): Promise<void> {
+  try {
+    const authUrl = spotifyService.getSpotifyAuthUrl();
+
+    res.status(200).json({
+      success: true,
+      data: { authUrl },
+      message: 'Spotify authorization URL generated successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in getAuthUrl controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+// Exchange authorization code for access token
+export async function exchangeCodeForToken(req: Request, res: Response): Promise<void> {
   try {
     const { code } = req.body;
 
     if (!code) {
-      res.status(400).json({ error: 'Authorization code is required' });
+      res.status(400).json({
+        success: false,
+        message: 'Authorization code is required',
+      });
       return;
     }
 
-    const tokenData = await exchangeCodeForToken(code);
-    res.json(tokenData);
-  } catch (error: any) {
-    logger.spotify.error('Error in handleAuthCallback controller:', error);
-    next(error);
+    logger.spotify.debug('Exchanging authorization code for access token');
+
+    const tokenData = await spotifyService.exchangeCodeForToken(code);
+
+    res.status(200).json({
+      success: true,
+      data: tokenData,
+      message: 'Access token obtained successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in exchangeCodeForToken controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Refresh Spotify access token
- */
-export async function refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+// Play Spotify track
+export async function playTrack(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { refresh_token } = req.body;
-
-    if (!refresh_token) {
-      res.status(400).json({ error: 'Refresh token is required' });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
       return;
     }
 
-    const tokenData = await refreshAccessToken(refresh_token);
-    res.json(tokenData);
-  } catch (error: any) {
-    logger.spotify.error('Error in refreshToken controller:', error);
-    next(error);
+    const { track_uri } = req.body;
+    const accessToken = req.headers['x-spotify-access-token'] as string;
+
+    if (!track_uri) {
+      res.status(400).json({
+        success: false,
+        message: 'Track URI is required',
+      });
+      return;
+    }
+
+    logger.spotify.info('Playing Spotify track:', { userId, track_uri });
+
+    await spotifyService.playSpotifyTrack(userId, track_uri, accessToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Track started playing successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in playTrack controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Create a new room Spotify track
- */
-export async function createRoomSpotifyTrack(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+// Pause Spotify playback
+export async function pausePlayback(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const {
-      user_id,
-      track_id,
-      track_name,
-      artist_name,
-      album_name,
-      album_art_url,
-      duration_ms,
-      track_uri,
-    } = req.body;
-
-    if (
-      !track_id ||
-      !track_name ||
-      !artist_name ||
-      !album_name ||
-      !album_art_url ||
-      !duration_ms ||
-      !track_uri
-    ) {
-      res.status(400).json({ error: 'All fields are required' });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
       return;
     }
 
-    const request: CreateRoomSpotifyTrackRequest = {
-      user_id: user_id || '', // Fallback for backward compatibility
-      track_id,
-      track_name,
-      artist_name,
-      album_name,
-      album_art_url,
-      duration_ms,
-      track_uri,
-    };
+    const accessToken = req.headers['x-spotify-access-token'] as string;
 
-    const track = await createRoomTrack(req, request);
+    logger.spotify.info('Pausing Spotify playback for user:', userId);
 
-    if (!track) {
-      res.status(500).json({ error: 'Failed to create room track' });
-      return;
-    }
+    await spotifyService.pauseSpotifyPlayback(userId, accessToken);
 
-    res.status(201).json(track);
-  } catch (error: any) {
-    logger.spotify.error('Error in createRoomSpotifyTrack controller:', error);
-
-    if (error.message === 'User is not in a room') {
-      res.status(400).json({ error: 'User must be in a room to add tracks' });
-      return;
-    }
-
-    if (error.message === 'User not authenticated') {
-      res.status(401).json({ error: 'User not authenticated' });
-      return;
-    }
-
-    next(error);
+    res.status(200).json({
+      success: true,
+      message: 'Playback paused successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in pausePlayback controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Get the current room Spotify track
- */
-export async function getRoomSpotifyTrack(
-  req: Request<{ user_id: string }>,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+// Skip to next track
+export async function skipToNext(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { user_id } = req.params;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
       return;
     }
 
-    const track = await getRoomTrack(user_id);
+    const accessToken = req.headers['x-spotify-access-token'] as string;
 
-    if (!track) {
-      res.status(404).json({ error: 'No track found in room' });
-      return;
-    }
+    logger.spotify.info('Skipping to next track for user:', userId);
 
-    res.status(200).json(track);
-  } catch (error: any) {
-    logger.spotify.error('Error in getRoomSpotifyTrack controller:', error);
-    next(error);
+    await spotifyService.skipToNextTrack(userId, accessToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Skipped to next track successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in skipToNext controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Update room Spotify track
- */
-export async function updateRoomSpotifyTrack(
-  req: Request<{ user_id: string }>,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+// Skip to previous track
+export async function skipToPrevious(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { user_id } = req.params;
-    const updateData = req.body;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
       return;
     }
 
-    const request: UpdateRoomSpotifyTrackRequest = {
-      id: '', // Will be set in service
-      ...updateData,
-    };
+    const accessToken = req.headers['x-spotify-access-token'] as string;
 
-    const track = await updateRoomTrack(user_id, request);
+    logger.spotify.info('Skipping to previous track for user:', userId);
 
-    if (!track) {
-      res.status(404).json({ error: 'Failed to update room track' });
-      return;
-    }
+    await spotifyService.skipToPreviousTrack(userId, accessToken);
 
-    res.status(200).json(track);
-  } catch (error: any) {
-    console.error('Error in updateRoomSpotifyTrack controller:', error);
-    next(error);
+    res.status(200).json({
+      success: true,
+      message: 'Skipped to previous track successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in skipToPrevious controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
-/**
- * Delete room Spotify track
- */
-export async function deleteRoomSpotifyTrack(
-  req: Request<{ user_id: string }>,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+// Set playback volume
+export async function setVolume(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const { user_id } = req.params;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
       return;
     }
 
-    const success = await deleteRoomTrack(user_id);
+    const { volume } = req.body;
+    const accessToken = req.headers['x-spotify-access-token'] as string;
 
-    if (!success) {
-      res.status(404).json({ error: 'Failed to delete room track' });
+    if (typeof volume !== 'number' || volume < 0 || volume > 100) {
+      res.status(400).json({
+        success: false,
+        message: 'Volume must be a number between 0 and 100',
+      });
       return;
     }
 
-    res.status(204).send();
-  } catch (error: any) {
-    console.error('Error in deleteRoomSpotifyTrack controller:', error);
-    next(error);
-  }
-}
+    logger.spotify.info('Setting playback volume for user:', { userId, volume });
 
-/**
- * Search Spotify tracks
- */
-export async function searchSpotifyTracks(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { q } = req.query;
+    await spotifyService.setPlaybackVolume(userId, volume, accessToken);
 
-    if (!q || typeof q !== 'string') {
-      res.status(400).json({ error: 'Query parameter "q" is required' });
-      return;
-    }
-
-    const tracks = await searchSpotifyTracksService(q);
-    res.status(200).json(tracks);
-  } catch (error: any) {
-    console.error('Error in searchSpotifyTracks controller:', error);
-    next(error);
-  }
-}
-
-/**
- * Play Spotify track
- */
-export async function playSpotifyTrack(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { user_id, track_uri } = req.body;
-
-    if (!user_id || !track_uri) {
-      res.status(400).json({ error: 'user_id and track_uri are required' });
-      return;
-    }
-
-    await playSpotifyTrackService(user_id, track_uri);
-    res.status(200).json({ message: 'Playback started' });
-  } catch (error: any) {
-    console.error('❌ Error in playSpotifyTrack controller:', error);
-    next(error);
-  }
-}
-
-/**
- * Pause Spotify playback
- */
-export async function pauseSpotifyPlayback(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
-      return;
-    }
-
-    await pauseSpotifyPlaybackService(user_id);
-    res.status(200).json({ message: 'Playback paused' });
-  } catch (error: any) {
-    console.error('Error in pauseSpotifyPlayback controller:', error);
-    next(error);
-  }
-}
-
-/**
- * Skip to next track
- */
-export async function skipToNextTrack(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
-      return;
-    }
-
-    await skipToNextTrackService(user_id);
-    res.status(200).json({ message: 'Skipped to next track' });
-  } catch (error: any) {
-    console.error('Error in skipToNextTrack controller:', error);
-    next(error);
-  }
-}
-
-/**
- * Skip to previous track
- */
-export async function skipToPreviousTrack(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      res.status(400).json({ error: 'user_id is required' });
-      return;
-    }
-
-    await skipToPreviousTrackService(user_id);
-    res.status(200).json({ message: 'Skipped to previous track' });
-  } catch (error: any) {
-    console.error('Error in skipToPreviousTrack controller:', error);
-    next(error);
-  }
-}
-
-/**
- * Set playback volume
- */
-export async function setPlaybackVolume(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { user_id, volume } = req.body;
-
-    if (!user_id || typeof volume !== 'number') {
-      res.status(400).json({ error: 'user_id and volume (number) are required' });
-      return;
-    }
-
-    if (volume < 0 || volume > 100) {
-      res.status(400).json({ error: 'Volume must be between 0 and 100' });
-      return;
-    }
-
-    await setPlaybackVolumeService(user_id, volume);
-    res.status(200).json({ message: 'Volume set' });
-  } catch (error: any) {
-    console.error('Error in setPlaybackVolume controller:', error);
-    next(error);
+    res.status(200).json({
+      success: true,
+      message: 'Volume set successfully',
+    });
+  } catch (error) {
+    logger.spotify.error('Error in setVolume controller:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

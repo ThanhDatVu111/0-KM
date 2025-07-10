@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
+import supabase from '../../utils/supabase';
 
 interface SpotifyTrack {
   id: string;
@@ -16,22 +16,95 @@ interface SpotifyTrack {
 interface Props {
   onTrackSelect: (track: SpotifyTrack) => void;
   onCancel: () => void;
+  onReconnect?: () => void;
 }
 
-export function SpotifySearch({ onTrackSelect, onCancel }: Props) {
+export function SpotifySearch({ onTrackSelect, onCancel, onReconnect }: Props) {
   const [query, setQuery] = useState('');
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const getSpotifyAccessToken = async () => {
+    try {
+      // Get the current session from Supabase
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error getting Supabase session:', error);
+        return null;
+      }
+
+      // Check if we have Spotify provider data
+      const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
+
+      if (!spotifyProvider) {
+        console.log('No Spotify provider found in session');
+        return null;
+      }
+
+      // Get the access token from the provider data
+      const accessToken = spotifyProvider.access_token;
+
+      if (!accessToken) {
+        console.log('No access token found in Spotify provider data');
+        return null;
+      }
+
+      return accessToken;
+    } catch (error) {
+      console.error('Error getting Spotify access token:', error);
+      return null;
+    }
+  };
 
   const searchTracks = async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
     setIsLoading(true);
     try {
-      // Get valid access token
-      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
+      // Get access token from Supabase session
+      const accessToken = await getSpotifyAccessToken();
       if (!accessToken) {
-        Alert.alert('Error', 'Please connect to Spotify first');
+        Alert.alert('Spotify Not Connected', 'Please connect your Spotify account first.', [
+          { text: 'Cancel', style: 'cancel', onPress: onCancel },
+          {
+            text: 'Connect',
+            onPress: async () => {
+              try {
+                // Use Supabase OAuth for Spotify
+                                  const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'spotify',
+                    options: {
+                      scopes: [
+                        'user-read-private',
+                        'user-read-email',
+                        'user-read-playback-state',
+                        'user-modify-playback-state',
+                        'user-read-currently-playing',
+                        'streaming',
+                        'playlist-read-private',
+                        'playlist-read-collaborative',
+                      ].join(' '),
+                      redirectTo: '0km-app://',
+                    },
+                  });
+
+                if (error) {
+                  Alert.alert('Error', 'Failed to connect to Spotify');
+                  return;
+                }
+
+                // Close search modal and let the OAuth flow complete
+                onCancel();
+              } catch (error) {
+                Alert.alert('Error', 'Failed to connect to Spotify');
+              }
+            },
+          },
+        ]);
         return;
       }
 
@@ -71,17 +144,43 @@ export function SpotifySearch({ onTrackSelect, onCancel }: Props) {
       if (error.message === 'TOKEN_EXPIRED') {
         Alert.alert(
           'Spotify Connection Expired',
-          'Your Spotify connection has expired. Please reconnect to Spotify.',
+          'Your Spotify connection has expired. Would you like to reconnect?',
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancel', style: 'cancel', onPress: onCancel },
             {
               text: 'Reconnect',
               onPress: async () => {
-                // Clear tokens and force reconnection
-                await SecureStore.deleteItemAsync('spotify_access_token');
-                await SecureStore.deleteItemAsync('spotify_refresh_token');
-                await SecureStore.deleteItemAsync('spotify_token_expiry');
-                onCancel(); // Close search modal
+                try {
+                  // Sign out and reconnect via Supabase OAuth
+                  await supabase.auth.signOut();
+
+                  const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'spotify',
+                    options: {
+                      scopes: [
+                        'user-read-private',
+                        'user-read-email',
+                        'user-read-playback-state',
+                        'user-modify-playback-state',
+                        'user-read-currently-playing',
+                        'streaming',
+                        'playlist-read-private',
+                        'playlist-read-collaborative',
+                      ].join(' '),
+                      redirectTo: '0km-app://',
+                    },
+                  });
+
+                  if (error) {
+                    Alert.alert('Error', 'Failed to reconnect to Spotify');
+                    return;
+                  }
+
+                  // Close search modal and let the OAuth flow complete
+                  onCancel();
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to reconnect to Spotify');
+                }
               },
             },
           ],

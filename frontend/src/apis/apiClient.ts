@@ -18,20 +18,26 @@ const LOCAL_URL = `http://${HOST}:${PORT}`;
 export const BASE_URL = Platform.OS === 'web' ? LOCAL_URL : PUBLIC_URL;
 
 // Create a simple API client
-class ApiClient {
+export class ApiClient {
   private baseURL: string;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }
 
-  async request(endpoint: string, options: RequestInit = {}, userToken?: string | null) {
+  async request(
+    endpoint: string,
+    options: RequestInit = {},
+    userToken?: string | null,
+    customHeaders?: Record<string, string>,
+  ) {
     const url = `${this.baseURL}${endpoint}`;
 
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...(userToken && { Authorization: `Bearer ${userToken}` }),
+        ...customHeaders,
         ...options.headers,
       },
       ...options,
@@ -56,8 +62,8 @@ class ApiClient {
     }
   }
 
-  async get(endpoint: string, userToken?: string | null) {
-    const response = await this.request(endpoint, { method: 'GET' }, userToken);
+  async get(endpoint: string, userToken?: string | null, customHeaders?: Record<string, string>) {
+    const response = await this.request(endpoint, { method: 'GET' }, userToken, customHeaders);
 
     // Handle empty responses (like 204 No Content)
     if (response.status === 204) {
@@ -73,7 +79,12 @@ class ApiClient {
     }
   }
 
-  async post(endpoint: string, data?: any, userToken?: string | null) {
+  async post(
+    endpoint: string,
+    data?: any,
+    userToken?: string | null,
+    customHeaders?: Record<string, string>,
+  ) {
     const response = await this.request(
       endpoint,
       {
@@ -81,6 +92,7 @@ class ApiClient {
         body: data ? JSON.stringify(data) : undefined,
       },
       userToken,
+      customHeaders,
     );
 
     // Handle empty responses (like 204 No Content)
@@ -97,7 +109,12 @@ class ApiClient {
     }
   }
 
-  async put(endpoint: string, data?: any, userToken?: string | null) {
+  async put(
+    endpoint: string,
+    data?: any,
+    userToken?: string | null,
+    customHeaders?: Record<string, string>,
+  ) {
     const response = await this.request(
       endpoint,
       {
@@ -105,6 +122,7 @@ class ApiClient {
         body: data ? JSON.stringify(data) : undefined,
       },
       userToken,
+      customHeaders,
     );
 
     // Handle empty responses (like 204 No Content)
@@ -121,8 +139,12 @@ class ApiClient {
     }
   }
 
-  async delete(endpoint: string, userToken?: string | null) {
-    const response = await this.request(endpoint, { method: 'DELETE' }, userToken);
+  async delete(
+    endpoint: string,
+    userToken?: string | null,
+    customHeaders?: Record<string, string>,
+  ) {
+    const response = await this.request(endpoint, { method: 'DELETE' }, userToken, customHeaders);
 
     // Handle empty responses (like 204 No Content)
     if (response.status === 204) {

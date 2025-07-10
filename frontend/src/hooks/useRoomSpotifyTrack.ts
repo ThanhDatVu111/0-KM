@@ -69,6 +69,7 @@ export function useRoomSpotifyTrack() {
           track_uri: trackData.track_uri,
           added_by_user_id: trackData.added_by_user_id,
         });
+        logger.spotify.debug('Full track data object:', JSON.stringify(trackData, null, 2));
       } else {
         logger.spotify.debug('No track data received');
       }

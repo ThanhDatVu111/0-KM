@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import supabase from '../utils/supabase';
 
 interface SpotifyPlaybackState {
   isPlaying: boolean;
@@ -16,75 +16,43 @@ interface SpotifyPlaybackState {
 }
 
 class SpotifyPlaybackService {
-  private accessToken: string | null = null;
   private lastRequestTime: number = 0;
   private requestQueue: Array<() => Promise<any>> = [];
   private isProcessingQueue: boolean = false;
 
-  async initialize() {
-    this.accessToken = await SecureStore.getItemAsync('spotify_access_token');
-  }
-
-  private async getValidToken(): Promise<string | null> {
-    if (!this.accessToken) {
-      await this.initialize();
-    }
-
-    // Check if token is expired and refresh if needed
-    const tokenExpiry = await SecureStore.getItemAsync('spotify_token_expiry');
-    if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {
-      console.log('🔄 Spotify token expired, refreshing...');
-      await this.refreshToken();
-    }
-
-    return this.accessToken;
-  }
-
-  private async refreshToken(): Promise<void> {
+  private async getSpotifyAccessToken(): Promise<string | null> {
     try {
-      const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
+      // Get the current session from Supabase
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Error getting Supabase session:', error);
+        return null;
       }
 
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization:
-            'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }).toString(),
-      });
+      // Check if we have Spotify provider data
+      const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
 
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(`Token refresh failed: ${data.error}`);
+      if (!spotifyProvider) {
+        console.log('No Spotify provider found in session');
+        return null;
       }
 
-      // Store new tokens
-      await SecureStore.setItemAsync('spotify_access_token', data.access_token);
-      if (data.refresh_token) {
-        await SecureStore.setItemAsync('spotify_refresh_token', data.refresh_token);
-      }
-      await SecureStore.setItemAsync(
-        'spotify_token_expiry',
-        (Date.now() + (data.expires_in || 3600) * 1000).toString(),
-      );
+      // Get the access token from the provider data
+      const accessToken = spotifyProvider.access_token;
 
-      this.accessToken = data.access_token;
-      console.log('✅ Spotify token refreshed successfully');
+      if (!accessToken) {
+        console.log('No access token found in Spotify provider data');
+        return null;
+      }
+
+      return accessToken;
     } catch (error) {
-      console.error('❌ Failed to refresh Spotify token:', error);
-      // Clear invalid tokens
-      await SecureStore.deleteItemAsync('spotify_access_token');
-      await SecureStore.deleteItemAsync('spotify_refresh_token');
-      await SecureStore.deleteItemAsync('spotify_token_expiry');
-      this.accessToken = null;
-      throw error;
+      console.error('Error getting Spotify access token:', error);
+      return null;
     }
   }
 
@@ -96,9 +64,9 @@ class SpotifyPlaybackService {
     return new Promise((resolve, reject) => {
       const request = async () => {
         try {
-          const token = await this.getValidToken();
+          const token = await this.getSpotifyAccessToken();
           if (!token) {
-            throw new Error('No valid Spotify access token');
+            throw new Error('No valid Spotify access token - please connect to Spotify first');
           }
 
           // Rate limiting: minimum 100ms between requests
@@ -156,6 +124,9 @@ class SpotifyPlaybackService {
           }
 
           if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              throw new Error('TOKEN_EXPIRED');
+            }
             throw new Error(`Spotify API error: ${response.status}`);
           }
 

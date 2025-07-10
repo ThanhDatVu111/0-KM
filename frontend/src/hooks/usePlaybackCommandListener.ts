@@ -1,60 +1,137 @@
-import { useEffect, useRef } from 'react';
-import supabase from '@/utils/supabase';
+import { useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '@clerk/clerk-expo';
 import { spotifyPlayback } from '@/services/SpotifyPlaybackService';
-import { getRoomPlaybackState, updateRoomPlaybackState } from '@/apis/playback';
-import { useApiClient } from '@/hooks/useApiClient';
+import supabase from '@/utils/supabase';
 import { logger } from '@/utils/logger';
 
-export function usePlaybackCommandListener(roomId: string, isController: boolean = false) {
-  const lastLogTime = useRef<number>(0);
-  const hasTransferredPlayback = useRef<boolean>(false);
-  const apiClient = useApiClient();
+interface PlaybackCommand {
+  command: 'play' | 'pause' | 'next' | 'previous' | 'seek' | 'volume';
+  track_uri?: string;
+  position_ms?: number;
+  volume?: number;
+  requested_at: string;
+  requested_by_user_id?: string;
+}
 
-  // Throttle logging to every 5 seconds
-  const throttledLog = (message: string, data?: any) => {
-    const now = Date.now();
-    if (now - lastLogTime.current > 5000) {
-      // 5 seconds
-      logger.spotify.debug(message, data);
-      lastLogTime.current = now;
-    }
-  };
+export function usePlaybackCommandListener(roomId: string, isController: boolean) {
+  const { userId } = useAuth();
+  const lastCommandTime = useRef<number>(0);
+  const isExecuting = useRef<boolean>(false);
 
-  // Transfer playback to an active device when controller is set up
-  const ensureActiveDevice = async () => {
-    if (!isController || hasTransferredPlayback.current) return;
+  // Debounce function to prevent rapid command execution
+  const debounce = useCallback((func: Function, delay: number) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
+  }, []);
 
-    try {
-      logger.spotify.debug('Ensuring active device for playback...');
-      const devices = await spotifyPlayback.getDevices();
-
-      if (devices.length === 0) {
-        logger.spotify.debug('No devices found - user needs to open Spotify');
+  // Execute playback command with error handling and rate limiting
+  const executeCommand = useCallback(
+    async (command: PlaybackCommand) => {
+      if (!isController || isExecuting.current) {
+        logger.spotify.debug('Skipping command execution - not controller or already executing');
         return;
       }
 
-      // Find an active device or use the first available
-      const activeDevice = devices.find((d) => d.is_active) || devices[0];
-
-      if (activeDevice) {
-        logger.spotify.debug('Transferring playback to device:', activeDevice.name);
-        await spotifyPlayback.transferPlayback(activeDevice.id);
-        hasTransferredPlayback.current = true;
-        logger.spotify.debug('Playback transferred successfully');
+      // Rate limiting: minimum 100ms between commands
+      const now = Date.now();
+      if (now - lastCommandTime.current < 100) {
+        logger.spotify.debug('Rate limiting command execution');
+        return;
       }
-    } catch (error) {
-      logger.spotify.error('Failed to transfer playback:', error);
-    }
-  };
 
+      isExecuting.current = true;
+      lastCommandTime.current = now;
+
+      try {
+        logger.spotify.info('Executing playback command:', command);
+
+        switch (command.command) {
+          case 'play':
+            if (command.track_uri) {
+              // Calculate network lag offset for timestamp-aware seeking
+              const networkLag = Date.now() - new Date(command.requested_at).getTime();
+              const adjustedPosition = (command.position_ms || 0) + Math.max(0, networkLag);
+
+              await spotifyPlayback.playTrack(command.track_uri);
+              if (adjustedPosition > 0) {
+                await spotifyPlayback.seekToPosition(adjustedPosition);
+              }
+            } else {
+              await spotifyPlayback.togglePlayPause();
+            }
+            break;
+
+          case 'pause':
+            await spotifyPlayback.togglePlayPause();
+            break;
+
+          case 'next':
+            await spotifyPlayback.skipToNext();
+            break;
+
+          case 'previous':
+            await spotifyPlayback.skipToPrevious();
+            break;
+
+          case 'seek':
+            if (command.position_ms !== undefined) {
+              await spotifyPlayback.seekToPosition(command.position_ms);
+            }
+            break;
+
+          case 'volume':
+            if (command.volume !== undefined) {
+              await spotifyPlayback.setVolume(command.volume);
+            }
+            break;
+
+          default:
+            logger.spotify.warn('Unknown command:', command.command);
+        }
+      } catch (error: any) {
+        logger.spotify.error('Error executing playback command:', error);
+
+        // Handle specific Spotify API errors
+        if (error.message?.includes('429')) {
+          // Rate limited - wait and retry
+          const retryAfter = 5000; // Default 5 seconds
+          logger.spotify.info(`Rate limited, retrying after ${retryAfter}ms`);
+          setTimeout(() => {
+            isExecuting.current = false;
+          }, retryAfter);
+          return;
+        }
+
+        if (error.message?.includes('401')) {
+          // Token expired - this will be handled by the SpotifyPlaybackService
+          logger.spotify.info('Token expired, service will handle refresh');
+        }
+      } finally {
+        isExecuting.current = false;
+      }
+    },
+    [isController],
+  );
+
+  // Debounced command execution
+  const debouncedExecuteCommand = useCallback(debounce(executeCommand, 50), [
+    executeCommand,
+    debounce,
+  ]);
+
+  // Set up real-time subscription to playback commands
   useEffect(() => {
-    if (!roomId || !isController) return;
+    if (!roomId || !isController) {
+      logger.spotify.debug('Not setting up command listener - no room or not controller');
+      return;
+    }
 
-    throttledLog('🎵 [Remote Control] Setting up command listener for room:', roomId);
+    logger.spotify.info('Setting up playback command listener for room:', roomId);
 
-    // Ensure we have an active device for playback
-    ensureActiveDevice();
-
+    // Subscribe to real-time updates on playback commands
     const channel = supabase
       .channel(`playback_commands_${roomId}`)
       .on(
@@ -65,154 +142,30 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
           table: 'playback_commands',
           filter: `room_id=eq.${roomId}`,
         },
-        async (payload) => {
-          const { action, track_uri } = payload.new;
-          logger.spotify.info('Received command:', action, track_uri); // Keep this one immediate for debugging
+        (payload) => {
+          const command = payload.new as PlaybackCommand;
+          logger.spotify.debug('Received playback command:', command);
 
-          try {
-            // Add delay to prevent rapid command execution
-            await new Promise((resolve) => setTimeout(resolve, 500));
-
-            if (action === 'play') {
-              // Check if we have a current track to play
-              const currentState = await spotifyPlayback.getPlaybackState();
-
-              if (currentState?.currentTrack?.uri) {
-                // We have a track, just resume playback (don't restart from beginning)
-                logger.spotify.debug('Resuming playback');
-                await spotifyPlayback.togglePlayPause();
-                await updateRoomPlaybackState(
-                  roomId,
-                  {
-                    is_playing: true,
-                    current_track_uri: currentState.currentTrack.uri,
-                    progress_ms: currentState.progress || 0,
-                  },
-                  '',
-                  apiClient,
-                );
-              } else if (track_uri) {
-                // No current track but we have a track_uri, start playing that track
-                logger.spotify.debug('Starting playback of track:', track_uri);
-                await spotifyPlayback.playTrack(track_uri);
-                await updateRoomPlaybackState(
-                  roomId,
-                  {
-                    is_playing: true,
-                    current_track_uri: track_uri,
-                    progress_ms: 0,
-                  },
-                  '',
-                  apiClient,
-                );
-              } else {
-                logger.spotify.debug('No track available to play');
-              }
-            }
-            if (action === 'pause') {
-              // For pause, we can just toggle regardless of current state
-              logger.spotify.debug('Pausing playback');
-              await spotifyPlayback.togglePlayPause();
-
-              // Get the current track URI from the command or try to get from state
-              const trackUri =
-                track_uri ||
-                (await spotifyPlayback
-                  .getPlaybackState()
-                  .then((state) => state?.currentTrack?.uri));
-              if (trackUri) {
-                await updateRoomPlaybackState(
-                  roomId,
-                  {
-                    is_playing: false,
-                    current_track_uri: trackUri,
-                    progress_ms: 0,
-                  },
-                  '',
-                  apiClient,
-                );
-              }
-            }
-            if (action === 'play_track' && track_uri) {
-              logger.spotify.debug('Playing specific track:', track_uri);
-              await spotifyPlayback.playTrack(track_uri);
-              await updateRoomPlaybackState(
-                roomId,
-                {
-                  is_playing: true,
-                  current_track_uri: track_uri,
-                  progress_ms: 0,
-                },
-                '',
-                apiClient,
-              );
-            }
-            if (action === 'next') {
-              logger.spotify.debug('Skipping to next track');
-              await spotifyPlayback.skipToNext();
-              // Update state after skipping
-              const currentState = await spotifyPlayback.getPlaybackState();
-              if (currentState?.currentTrack?.uri) {
-                await updateRoomPlaybackState(
-                  roomId,
-                  {
-                    is_playing: currentState.isPlaying,
-                    current_track_uri: currentState.currentTrack.uri,
-                    progress_ms: currentState.progress || 0,
-                  },
-                  '',
-                  apiClient,
-                );
-              }
-            }
-            if (action === 'previous') {
-              logger.spotify.debug('Skipping to previous track');
-              await spotifyPlayback.skipToPrevious();
-              // Update state after skipping
-              const currentState = await spotifyPlayback.getPlaybackState();
-              if (currentState?.currentTrack?.uri) {
-                await updateRoomPlaybackState(
-                  roomId,
-                  {
-                    is_playing: currentState.isPlaying,
-                    current_track_uri: currentState.currentTrack.uri,
-                    progress_ms: currentState.progress || 0,
-                  },
-                  '',
-                  apiClient,
-                );
-              }
-            }
-          } catch (error) {
-            logger.spotify.error('Error executing command:', error);
-
-            // Log more details about the error
-            if (error instanceof Error) {
-              logger.spotify.error('Error details:', {
-                message: error.message,
-                action,
-                track_uri,
-                roomId,
-                isController,
-              });
-
-              // If we get a 404 error, it might mean we need to transfer playback
-              if (error.message.includes('404') || error.message.includes('No active device')) {
-                logger.spotify.debug('404 error detected - attempting to transfer playback...');
-                hasTransferredPlayback.current = false; // Reset flag to try again
-                await ensureActiveDevice();
-              }
-            }
-
-            // Don't throw - just log the error to prevent crashes
+          // Only execute commands from other users (or anonymous commands)
+          if (!command.requested_by_user_id || command.requested_by_user_id !== userId) {
+            debouncedExecuteCommand(command);
           }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        logger.spotify.debug('Playback command subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          logger.spotify.info('Successfully subscribed to playback commands for room:', roomId);
+        }
+      });
 
     return () => {
-      throttledLog('🎵 [Remote Control] Cleaning up command listener');
+      logger.spotify.debug('Cleaning up playback command listener for room:', roomId);
       supabase.removeChannel(channel);
     };
-  }, [roomId, isController]);
+  }, [roomId, isController, userId, debouncedExecuteCommand]);
+
+  return {
+    isController,
+  };
 }

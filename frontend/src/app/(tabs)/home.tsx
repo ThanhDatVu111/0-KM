@@ -20,7 +20,11 @@ import { SpotifySearch } from '@/components/music/SpotifySearch';
 import { useRoomYouTubeVideo } from '@/hooks/useRoomYouTubeVideo';
 import { useRoomSpotifyTrack } from '@/hooks/useRoomSpotifyTrack';
 import { createRoomVideo, deleteRoomVideo } from '@/apis/youtube';
-import { createRoomSpotifyTrack, deleteRoomSpotifyTrack } from '@/apis/spotify';
+import {
+  createRoomSpotifyTrack,
+  deleteRoomSpotifyTrack,
+  deleteRoomSpotifyTrackByRoomId,
+} from '@/apis/spotify';
 import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
@@ -168,6 +172,23 @@ const Home = () => {
     } catch (error) {
       // Handle error silently
     }
+  };
+
+  const handleDeleteSpotifyTrack = async () => {
+    if (!roomId) return;
+
+    try {
+      await deleteRoomSpotifyTrackByRoomId(roomId, apiClient);
+      refetchRoomTrack();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete track. Please try again.');
+    }
+  };
+
+  const handleSpotifyReconnect = () => {
+    // Close the search modal and let the user reconnect through the widget
+    setShowSpotifyInput(false);
+    // The UnifiedSpotifyWidget will handle the reconnection flow
   };
 
   const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
@@ -355,6 +376,7 @@ const Home = () => {
             roomId={roomId || null}
             canControl={true}
             onPress={roomTrack?.added_by_user_id === userId ? handleRemoveSpotifyTrack : undefined}
+            onDeleteTrack={roomTrack ? handleDeleteSpotifyTrack : undefined}
             onAddTrack={() => setShowSpotifyInput(true)}
           />
         </View>
@@ -416,6 +438,7 @@ const Home = () => {
               handleAddSpotifyTrack(trackData);
             }}
             onCancel={() => setShowSpotifyInput(false)}
+            onReconnect={handleSpotifyReconnect}
           />
         </View>
       </Modal>

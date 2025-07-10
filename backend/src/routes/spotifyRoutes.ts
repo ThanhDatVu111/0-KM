@@ -1,41 +1,42 @@
 import { Router } from 'express';
 import {
-  createRoomSpotifyTrack,
-  getRoomSpotifyTrack,
-  updateRoomSpotifyTrack,
-  deleteRoomSpotifyTrack,
-  searchSpotifyTracks,
-  playSpotifyTrack,
-  pauseSpotifyPlayback,
-  skipToNextTrack,
-  skipToPreviousTrack,
-  setPlaybackVolume,
+  createRoomTrack,
+  getRoomTrack,
+  updateRoomTrack,
+  deleteRoomTrack,
+  deleteRoomTrackByRoomId,
+  searchTracks,
+  playTrack,
+  pausePlayback,
+  skipToNext,
+  skipToPrevious,
+  setVolume,
   getAuthUrl,
-  handleAuthCallback,
-  refreshToken,
+  exchangeCodeForToken,
 } from '../controllers/spotifyController';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// OAuth routes
+// OAuth routes (no authentication required)
 router.get('/auth/url', getAuthUrl);
-router.post('/auth/callback', handleAuthCallback);
-router.post('/auth/refresh', refreshToken);
+router.post('/auth/callback', exchangeCodeForToken);
 
-// Room-based track routes
-router.post('/room', createRoomSpotifyTrack);
-router.get('/room/:user_id', getRoomSpotifyTrack);
-router.put('/room/:user_id', updateRoomSpotifyTrack);
-router.delete('/room/:user_id', deleteRoomSpotifyTrack);
+// Room-based track routes (require authentication)
+router.post('/room', authMiddleware, createRoomTrack);
+router.get('/room/:user_id', authMiddleware, getRoomTrack);
+router.put('/room/:user_id', authMiddleware, updateRoomTrack);
+router.delete('/room/:user_id', authMiddleware, deleteRoomTrack);
+router.delete('/room/delete/:room_id', authMiddleware, deleteRoomTrackByRoomId);
 
-// Search route
-router.get('/search', searchSpotifyTracks);
+// Search route (no authentication required)
+router.get('/search', searchTracks);
 
-// Playback control routes
-router.post('/play', playSpotifyTrack);
-router.post('/pause', pauseSpotifyPlayback);
-router.post('/next', skipToNextTrack);
-router.post('/previous', skipToPreviousTrack);
-router.post('/volume', setPlaybackVolume);
+// Playback control routes (require authentication)
+router.post('/play', authMiddleware, playTrack);
+router.post('/pause', authMiddleware, pausePlayback);
+router.post('/next', authMiddleware, skipToNext);
+router.post('/previous', authMiddleware, skipToPrevious);
+router.post('/volume', authMiddleware, setVolume);
 
 export default router;

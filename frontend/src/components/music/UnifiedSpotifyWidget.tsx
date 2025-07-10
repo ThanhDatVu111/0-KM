@@ -3,13 +3,16 @@ import { View, StyleSheet, Text, TouchableOpacity, Image, Alert } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import * as SecureStore from 'expo-secure-store';
 import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
 import { useSharedPlayback } from '../../hooks/useSharedPlayback';
 import { usePlaybackCommandListener } from '../../hooks/usePlaybackCommandListener';
+import { apiClient } from '../../apis/apiClient';
+import { sendPlaybackCommand } from '../../services/playbackCommands';
 import { logger } from '../../utils/logger';
+import { useRoomSpotifyTrack } from '../../hooks/useRoomSpotifyTrack';
+import supabase from '../../utils/supabase';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 
 type SpotifyTrack = {
   id: string;
@@ -28,10 +31,11 @@ type Props = {
   canControl?: boolean;
   onAddTrack?: () => void;
   onSignOut?: () => void;
+  onDeleteTrack?: () => void;
   roomId?: string | null;
 };
 
-type SpotifyState = 'not-connected' | 'connected-no-track' | 'has-track';
+type SpotifyState = 'not-connected' | 'connected-no-track' | 'has-track' | 'token-expired';
 
 export function UnifiedSpotifyWidget({
   track,
@@ -40,21 +44,97 @@ export function UnifiedSpotifyWidget({
   canControl = false,
   onAddTrack,
   onSignOut,
+  onDeleteTrack,
   roomId,
 }: Props) {
   const { userId } = useAuth();
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [spotifyState, setSpotifyState] = useState<SpotifyState>('not-connected');
   const [hasConnectedBefore, setHasConnectedBefore] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isWidgetLoading, setIsWidgetLoading] = useState(false);
+
+  // Get room track and playback state
+  const { roomTrack, hasRoom } = useRoomSpotifyTrack();
+
+  // Check if we have a valid Spotify session on mount and when session changes
+  useEffect(() => {
+    const checkSpotifyConnection = async () => {
+      try {
+        console.log('🔍 [DEBUG] Checking Supabase Spotify connection for user:', userId);
+
+        // Check if user has a Spotify session in Supabase
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('Error getting Supabase session:', error);
+          setSpotifyState('not-connected');
+          return;
+        }
+
+        // Check if we have Spotify provider data
+        const providers = session?.user?.app_metadata?.providers;
+        const hasSpotifyProvider =
+          providers && Array.isArray(providers) && providers.includes('spotify');
+        console.log('🔍 [DEBUG] Full session data:', JSON.stringify(session, null, 2));
+        console.log('🔍 [DEBUG] Session providers:', providers);
+        console.log('🔍 [DEBUG] Has Spotify provider:', hasSpotifyProvider);
+
+        if (hasSpotifyProvider) {
+          console.log('✅ Spotify connected via Supabase OAuth');
+          setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
+          setHasConnectedBefore(true);
+        } else {
+          console.log('🔍 [DEBUG] No Spotify provider found - user needs to connect');
+          setSpotifyState('not-connected');
+        }
+      } catch (error) {
+        console.error('Error checking Spotify connection:', error);
+        setSpotifyState('not-connected');
+      }
+    };
+
+    checkSpotifyConnection();
+  }, [roomTrack, userId]);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔍 [DEBUG] Auth state changed:', event);
+      // Check for any auth state change that might include session updates
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+        // Re-check Spotify connection when auth state changes
+        const providers = session?.user?.app_metadata?.providers;
+        const hasSpotifyProvider =
+          providers && Array.isArray(providers) && providers.includes('spotify');
+        console.log('🔍 [DEBUG] Auth change - providers:', providers);
+        console.log('🔍 [DEBUG] Auth change - has Spotify:', hasSpotifyProvider);
+
+        if (hasSpotifyProvider) {
+          setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
+          setHasConnectedBefore(true);
+        } else if (event === 'SIGNED_OUT') {
+          setSpotifyState('not-connected');
+          setHasConnectedBefore(false);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [roomTrack]);
 
   // Real Spotify playback controls
   const {
-    playbackState,
+    playbackState: localPlaybackState,
     isLoading: playbackLoading,
     error: playbackError,
-    playTrack,
     togglePlayPause,
+    playTrack,
     skipToNext,
     skipToPrevious,
     setVolume,
@@ -63,7 +143,7 @@ export function UnifiedSpotifyWidget({
 
   // Shared playback controls (for room sync)
   const {
-    sharedPlaybackState,
+    sharedPlaybackState: sharedPlaybackState,
     isLoading: sharedLoading,
     togglePlayPause: sharedTogglePlayPause,
     playTrack: sharedPlayTrack,
@@ -73,28 +153,103 @@ export function UnifiedSpotifyWidget({
 
   // Use shared playback if in a room, otherwise use local
   const isInRoom = !!roomId;
-  const currentPlaybackState = isInRoom ? sharedPlaybackState : playbackState;
-  const currentTogglePlayPause = isInRoom ? sharedTogglePlayPause : togglePlayPause;
-  const currentSkipToNext = isInRoom ? sharedSkipToNext : skipToNext;
-  const currentSkipToPrevious = isInRoom ? sharedSkipToPrevious : skipToPrevious;
-  const currentPlayTrack = isInRoom ? sharedPlayTrack : playTrack;
+  const currentPlaybackState = isInRoom ? sharedPlaybackState : localPlaybackState;
   const isLoading = isInRoom ? sharedLoading : playbackLoading;
+
+  // Mirror action approach: send commands to backend instead of direct Spotify calls
+  const handleTogglePlayPause = async () => {
+    if (!isInRoom || !roomId || !userId) {
+      // Fallback to local playback if not in room
+      await togglePlayPause();
+      return;
+    }
+
+    try {
+      const isCurrentlyPlaying =
+        (currentPlaybackState as any)?.is_playing || (currentPlaybackState as any)?.isPlaying;
+
+      if (isCurrentlyPlaying) {
+        // If playing, pause
+        await sendPlaybackCommand(roomId, { command: 'pause' }, userId, apiClient);
+      } else {
+        // If paused and we have a track, play it
+        if (track) {
+          await sendPlaybackCommand(
+            roomId,
+            {
+              command: 'play',
+              track_uri: track.uri,
+              position_ms: 0,
+            },
+            userId,
+            apiClient,
+          );
+        } else {
+          // Just toggle play/pause without specific track
+          await sendPlaybackCommand(roomId, { command: 'play' }, userId, apiClient);
+        }
+      }
+    } catch (error) {
+      logger.spotify.error('Error sending play/pause command:', error);
+      // Fallback to local playback
+      await togglePlayPause();
+    }
+  };
+
+  const handleSkipToNext = async () => {
+    if (!isInRoom || !roomId || !userId) {
+      await skipToNext();
+      return;
+    }
+
+    try {
+      await sendPlaybackCommand(roomId, { command: 'next' }, userId, apiClient);
+    } catch (error) {
+      logger.spotify.error('Error sending next command:', error);
+      await skipToNext();
+    }
+  };
+
+  const handleSkipToPrevious = async () => {
+    if (!isInRoom || !roomId || !userId) {
+      await skipToPrevious();
+      return;
+    }
+
+    try {
+      await sendPlaybackCommand(roomId, { command: 'previous' }, userId, apiClient);
+    } catch (error) {
+      logger.spotify.error('Error sending previous command:', error);
+      await skipToPrevious();
+    }
+  };
+
+  const handlePlayTrack = async (trackUri: string) => {
+    if (!isInRoom || !roomId || !userId) {
+      await playTrack(trackUri);
+      return;
+    }
+
+    try {
+      await sendPlaybackCommand(
+        roomId,
+        {
+          command: 'play',
+          track_uri: trackUri,
+          position_ms: 0,
+        },
+        userId,
+        apiClient,
+      );
+    } catch (error) {
+      logger.spotify.error('Error sending play track command:', error);
+      await playTrack(trackUri);
+    }
+  };
 
   // Set up command listener for controller (User 1)
   const isController = sharedPlaybackState?.controlled_by_user_id === userId;
   usePlaybackCommandListener(roomId || '', isController);
-
-  // Check if user has connected to Spotify before
-  useEffect(() => {
-    const checkSpotifyConnection = async () => {
-      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
-      const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
-      if (accessToken && refreshToken) {
-        setHasConnectedBefore(true);
-      }
-    };
-    checkSpotifyConnection();
-  }, []);
 
   // Determine the current state
   useEffect(() => {
@@ -107,181 +262,170 @@ export function UnifiedSpotifyWidget({
     }
   }, [track, hasConnectedBefore]);
 
-  const refreshSpotifyToken = async (refreshToken: string) => {
-    try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization:
-            'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }).toString(),
-      });
-
-      const tokenData = await response.json();
-
-      // Check for errors
-      if (tokenData.error) {
-        throw new Error(`Token refresh error: ${tokenData.error_description || tokenData.error}`);
-      }
-
-      // Store new tokens (ensure all values are strings)
-      await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token || '');
-      await SecureStore.setItemAsync(
-        'spotify_token_expiry',
-        (Date.now() + (tokenData.expires_in || 3600) * 1000).toString(),
-      );
-
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      throw error;
-    }
-  };
-
-  const getValidAccessToken = async () => {
-    try {
-      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
-      const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
-      const tokenExpiry = await SecureStore.getItemAsync('spotify_token_expiry');
-
-      if (!accessToken || !refreshToken) {
-        return null;
-      }
-
-      // Check if token is expired
-      if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {
-        // Token expired, refresh it
-        return await refreshSpotifyToken(refreshToken);
-      }
-
-      return accessToken;
-    } catch (error) {
-      console.error('Error getting valid access token:', error);
-      return null;
-    }
-  };
-
   const handleSignOutSpotify = async () => {
-    // Clear stored tokens
-    await SecureStore.deleteItemAsync('spotify_access_token');
-    await SecureStore.deleteItemAsync('spotify_refresh_token');
-    await SecureStore.deleteItemAsync('spotify_token_expiry');
+    try {
+      // Sign out from Spotify provider in Supabase
+      const { error } = await supabase.auth.signOut();
 
+      if (error) {
+        console.error('Error signing out from Spotify:', error);
+        Alert.alert('Error', 'Failed to disconnect from Spotify');
+        return;
+      }
+
+      setSpotifyState('not-connected');
+      setHasConnectedBefore(false);
+
+      if (onSignOut) {
+        onSignOut();
+      }
+
+      Alert.alert('Success', 'Disconnected from Spotify');
+    } catch (error) {
+      console.error('Error signing out from Spotify:', error);
+      Alert.alert('Error', 'Failed to disconnect from Spotify');
+    }
+  };
+
+  const handleReconnectSpotify = async () => {
+    // Reset state and trigger reconnection
     setSpotifyState('not-connected');
     setHasConnectedBefore(false);
-
-    if (onSignOut) {
-      onSignOut();
-    }
+    await handleConnectSpotify();
   };
 
   const handleConnectSpotify = async () => {
     try {
+      console.log('🔗 [DEBUG] Starting Supabase Spotify OAuth for user:', userId);
+      console.log('🔗 [DEBUG] Button pressed - handleConnectSpotify called');
       setIsConnecting(true);
 
-      // Clear any existing WebBrowser sessions
-      await WebBrowser.coolDownAsync();
-
-      // Create the redirect URI using Expo's AuthSession
+      // Generate the correct redirect URI using custom scheme
       const redirectUri = AuthSession.makeRedirectUri({
         scheme: '0km-app',
       });
+      console.log('🔗 Redirect URI:', redirectUri); // should log: 0km-app://
 
-      console.log('🔗 Redirect URI:', redirectUri);
+      // Use Supabase OAuth for Spotify
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'spotify',
+        options: {
+          scopes: [
+            'user-read-private',
+            'user-read-email',
+            'user-read-playback-state',
+            'user-modify-playback-state',
+            'user-read-currently-playing',
+            'streaming',
+            'playlist-read-private',
+            'playlist-read-collaborative',
+          ].join(' '),
+          redirectTo: redirectUri,
+        },
+      });
 
-      // Spotify OAuth scopes
-      const scopes = [
-        'user-read-private',
-        'user-read-email',
-        'user-read-playback-state',
-        'user-modify-playback-state',
-        'user-read-currently-playing',
-        'streaming',
-        'playlist-read-private',
-        'playlist-read-collaborative',
-      ];
+      console.log('🔗 [DEBUG] Supabase OAuth response:', { data, error });
+      console.log('🔗 [DEBUG] OAuth URL that should open:', data?.url);
 
-      // Create the Spotify authorization URL with unique state to prevent caching
-      const clientId = 'f805d2782059483e801da7782a7e04c8';
-      const uniqueState = `state_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes.join(' '))}&state=${uniqueState}&prompt=consent&show_dialog=true`;
+      if (error) {
+        console.error('Supabase OAuth error:', error);
+        Alert.alert('Error', 'Failed to connect to Spotify. Please try again.');
+        return;
+      }
 
-      console.log('🔗 Auth URL:', authUrl);
+      // Open the OAuth URL in browser
+      if (data?.url) {
+        console.log('🔗 [DEBUG] Opening OAuth URL in browser:', data.url);
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
 
-      // Open the Spotify authorization URL in a web browser
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+        console.log('🔗 [DEBUG] Browser result:', result);
 
-      if (result.type === 'success') {
-        // Extract the authorization code from the URL
-        const url = new URL(result.url);
-        const code = url.searchParams.get('code');
+        if (result.type === 'success') {
+          console.log('✅ [DEBUG] OAuth completed successfully');
+          console.log('🔗 [DEBUG] Final URL:', result.url);
 
-        if (code) {
-          console.log('✅ Got authorization code:', code);
-
-          // Exchange the code for access tokens
+          // Process the OAuth callback
           try {
-            const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                Authorization:
-                  'Basic ' +
-                  btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
-              },
-              body: new URLSearchParams({
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: redirectUri,
-              }).toString(),
+            // Extract tokens from the URL
+            const url = new URL(result.url);
+            const accessToken = url.hash.match(/access_token=([^&]*)/)?.[1];
+            const refreshToken = url.hash.match(/refresh_token=([^&]*)/)?.[1];
+            const providerToken = url.hash.match(/provider_token=([^&]*)/)?.[1];
+
+            console.log('🔗 [DEBUG] Extracted tokens:', {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              hasProviderToken: !!providerToken,
             });
 
-            const tokenData = await tokenResponse.json();
-            console.log('🎵 Spotify tokens:', tokenData);
+            if (accessToken && refreshToken) {
+              // Set the session with the new tokens
+              const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
 
-            // Check if we got an error response
-            if (tokenData.error) {
-              throw new Error(
-                `Spotify API Error: ${tokenData.error_description || tokenData.error}`,
-              );
+              if (sessionError) {
+                console.error('❌ [DEBUG] Error setting session:', sessionError);
+              } else {
+                console.log('✅ [DEBUG] Session updated successfully');
+                console.log(
+                  '🔍 [DEBUG] New session providers:',
+                  sessionData.session?.user?.app_metadata?.providers,
+                );
+
+                // Force a session refresh to get the latest provider data
+                const { data: refreshedSession } = await supabase.auth.getSession();
+                console.log(
+                  '🔍 [DEBUG] Refreshed session providers:',
+                  refreshedSession.session?.user?.app_metadata?.providers,
+                );
+
+                // Refresh the connection status
+                setSpotifyState('connected-no-track');
+                setHasConnectedBefore(true);
+
+                // Force a re-render by triggering the connection check
+                setTimeout(() => {
+                  const checkConnection = async () => {
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+                    const providers = session?.user?.app_metadata?.providers;
+                    const hasSpotifyProvider =
+                      providers && Array.isArray(providers) && providers.includes('spotify');
+                    console.log('🔍 [DEBUG] Post-OAuth check - providers:', providers);
+                    console.log('🔍 [DEBUG] Post-OAuth check - has Spotify:', hasSpotifyProvider);
+
+                    if (hasSpotifyProvider) {
+                      setSpotifyState(roomTrack ? 'has-track' : 'connected-no-track');
+                      setHasConnectedBefore(true);
+                    }
+                  };
+                  checkConnection();
+                }, 1000);
+
+                Alert.alert('Success!', 'Spotify connected successfully!');
+              }
+            } else {
+              console.error('❌ [DEBUG] Missing tokens in callback URL');
+              Alert.alert('Error', 'Failed to get access tokens from Spotify');
             }
-
-            // Store tokens securely (ensure all values are strings)
-            await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token || '');
-            await SecureStore.setItemAsync('spotify_refresh_token', tokenData.refresh_token || '');
-            await SecureStore.setItemAsync(
-              'spotify_token_expiry',
-              (Date.now() + (tokenData.expires_in || 3600) * 1000).toString(),
-            );
-
-            // Update state to connected
-            setSpotifyState('connected-no-track');
-            setHasConnectedBefore(true);
-
-            Alert.alert(
-              'Success!',
-              'Spotify connected successfully! You can now add tracks to your room.',
-              [{ text: 'OK' }],
-            );
-          } catch (tokenError) {
-            logger.spotify.error('Error exchanging code for tokens:', tokenError);
-            Alert.alert('Error', 'Failed to get access tokens. Please try again.');
+          } catch (callbackError) {
+            console.error('❌ [DEBUG] Error processing OAuth callback:', callbackError);
+            Alert.alert('Error', 'Failed to process Spotify connection');
           }
+        } else if (result.type === 'cancel') {
+          console.log('❌ [DEBUG] User cancelled OAuth');
         } else {
-          Alert.alert('Error', 'Failed to get authorization code from Spotify');
+          console.log('❌ [DEBUG] OAuth failed:', result);
         }
-      } else if (result.type === 'cancel') {
-        logger.spotify.debug('User cancelled Spotify authorization');
       } else {
-        Alert.alert('Error', 'Failed to connect to Spotify');
+        console.error('❌ [DEBUG] No OAuth URL received from Supabase');
+        Alert.alert('Error', 'No OAuth URL received. Please try again.');
       }
     } catch (error) {
-      logger.spotify.error('Error connecting to Spotify:', error);
+      logger.spotify.error('Error connecting to Spotify via Supabase:', error);
       Alert.alert('Error', 'Failed to connect to Spotify. Please try again.');
     } finally {
       setIsConnecting(false);
@@ -317,9 +461,15 @@ export function UnifiedSpotifyWidget({
           }}
         />
         <TouchableOpacity
-          onPress={handleConnectSpotify}
+          onPress={() => {
+            console.log('🔗 [DEBUG] Connect button pressed');
+            Alert.alert('Test', 'Connect button pressed!');
+            handleConnectSpotify();
+          }}
           disabled={isConnecting}
-          className="flex-row items-center justify-between"
+          activeOpacity={0.7}
+          className="flex-row items-center justify-between p-2"
+          style={{ zIndex: 1000 }}
         >
           <View className="flex-row items-center flex-1">
             <Ionicons name="musical-notes" size={24} color="white" />
@@ -384,6 +534,47 @@ export function UnifiedSpotifyWidget({
           >
             <Ionicons name="add" size={20} color="white" />
             <Text className="text-white font-pmedium ml-2">Add Track</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (spotifyState === 'token-expired') {
+    return (
+      <View
+        className={`border border-white/20 bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
+        style={{ borderWidth: 1.5 }}
+      >
+        <LinearGradient
+          colors={['#6536DA', '#F7BFF7']}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: 16,
+            zIndex: -1,
+            opacity: 0.3,
+          }}
+        />
+
+        <View className="items-center justify-center py-6">
+          <Ionicons name="warning" size={32} color="white" />
+          <Text className="text-white font-pmedium text-lg mt-2">Spotify Connection Expired</Text>
+          <Text className="text-white/70 font-pregular text-sm text-center mt-2 mb-4">
+            Your Spotify connection has expired. Please reconnect to continue.
+          </Text>
+          <TouchableOpacity
+            onPress={handleReconnectSpotify}
+            disabled={isConnecting}
+            className="bg-white/20 rounded-full px-6 py-3 flex-row items-center"
+          >
+            <Ionicons name="refresh" size={20} color="white" />
+            <Text className="text-white font-pmedium ml-2">
+              {isConnecting ? 'Reconnecting...' : 'Reconnect Spotify'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -457,8 +648,8 @@ export function UnifiedSpotifyWidget({
               style={[
                 styles.progressFill,
                 {
-                  width: playbackState
-                    ? `${(playbackState.progress / (playbackState.currentTrack?.duration || 1)) * 1000 * 100}%`
+                  width: currentPlaybackState
+                    ? `${((currentPlaybackState as any).progress / ((currentPlaybackState as any).currentTrack?.duration || 1)) * 1000 * 100}%`
                     : `${progressPercentage}%`,
                 },
               ]}
@@ -466,12 +657,12 @@ export function UnifiedSpotifyWidget({
           </View>
           <View style={styles.timeInfo}>
             <Text style={styles.timeText}>
-              {playbackState
-                ? formatTime(Math.floor(playbackState.progress / 1000))
+              {currentPlaybackState
+                ? formatTime(Math.floor((currentPlaybackState as any).progress / 1000))
                 : formatTime(currentTime)}
             </Text>
             <Text style={styles.timeText}>
-              {playbackState?.currentTrack?.duration || formatTime(track.duration)}
+              {(currentPlaybackState as any)?.currentTrack?.duration || formatTime(track.duration)}
             </Text>
           </View>
         </View>
@@ -480,7 +671,7 @@ export function UnifiedSpotifyWidget({
         {canControl && (
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={currentSkipToPrevious}
+              onPress={handleSkipToPrevious}
               style={styles.controlButton}
               disabled={isLoading}
             >
@@ -488,7 +679,7 @@ export function UnifiedSpotifyWidget({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={currentTogglePlayPause}
+              onPress={handleTogglePlayPause}
               style={[styles.playButton, isLoading && { opacity: 0.5 }]}
               disabled={isLoading}
             >
@@ -507,7 +698,7 @@ export function UnifiedSpotifyWidget({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={currentSkipToNext}
+              onPress={handleSkipToNext}
               style={styles.controlButton}
               disabled={isLoading}
             >
@@ -527,6 +718,20 @@ export function UnifiedSpotifyWidget({
             className="bg-red-500/80 rounded-full p-2"
           >
             <Ionicons name="close" size={16} color="white" />
+          </TouchableOpacity>
+        )}
+
+        {/* Delete button - show if onDeleteTrack is provided */}
+        {onDeleteTrack && (
+          <TouchableOpacity
+            onPress={() => {
+              logger.spotify.debug('Delete button pressed for track:', track.name);
+              onDeleteTrack();
+            }}
+            style={[styles.removeButton, { top: onPress ? 40 : 8 }]}
+            className="bg-red-600/90 rounded-full p-2"
+          >
+            <Ionicons name="trash" size={16} color="white" />
           </TouchableOpacity>
         )}
 

@@ -47,7 +47,7 @@ export async function createRoomSpotifyTrack(
 ): Promise<RoomSpotifyTrack | null> {
   try {
     const client = supabaseClient || supabase;
-    
+
     // First, delete any existing track for this room
     await deleteRoomSpotifyTrackByRoomId(input.room_id, client);
 
@@ -101,6 +101,7 @@ export async function getRoomSpotifyTrack(room_id: string): Promise<RoomSpotifyT
       return null;
     }
 
+    console.log('🔍 [DEBUG] Database track data:', JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     console.error('Error in getRoomSpotifyTrack:', error);
@@ -166,7 +167,10 @@ export async function deleteRoomSpotifyTrack(id: string): Promise<boolean> {
 /**
  * Delete room Spotify track by room ID
  */
-export async function deleteRoomSpotifyTrackByRoomId(room_id: string, supabaseClient?: any): Promise<boolean> {
+export async function deleteRoomSpotifyTrackByRoomId(
+  room_id: string,
+  supabaseClient?: any,
+): Promise<boolean> {
   try {
     const client = supabaseClient || supabase;
     const { error } = await client.from('room_spotify_tracks').delete().eq('room_id', room_id);
@@ -410,4 +414,3 @@ export async function getPartnerSpotifyTrack(user_id: string): Promise<SpotifyTr
     return null;
   }
 }
- 

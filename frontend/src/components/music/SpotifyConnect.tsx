@@ -17,7 +17,7 @@ export function SpotifyConnect({ onConnected }: Props) {
     try {
       setIsConnecting(true);
 
-      // Create the redirect URI using Expo's AuthSession
+      // Create the redirect URI using custom scheme
       const redirectUri = AuthSession.makeRedirectUri({
         scheme: '0km-app',
       });

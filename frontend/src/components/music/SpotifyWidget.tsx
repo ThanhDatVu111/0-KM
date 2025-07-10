@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ImageBackground,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@clerk/clerk-expo';
+import widgetBg from '@/assets/images/widget.png';
 
 type SpotifyTrack = {
   id: string;
@@ -45,23 +54,12 @@ export function SpotifyWidget({
   const [currentTime, setCurrentTime] = useState(0);
 
   if (!track) {
-    console.log('🎵 SpotifyWidget: No track provided, showing empty state');
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
+      <ImageBackground
+        source={widgetBg}
+        style={{ borderRadius: 16 }}
+        className={`border border-black shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
       >
-        <LinearGradient
-          colors={['#1DB954', '#1ed760']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
         <View className="items-center justify-center py-6">
           <Ionicons name="musical-notes" size={32} color="white" />
           <Text className="text-white font-pmedium text-lg mt-2">No Music Playing</Text>
@@ -69,7 +67,7 @@ export function SpotifyWidget({
             Add a Spotify track to share with your partner
           </Text>
         </View>
-      </View>
+      </ImageBackground>
     );
   }
 
@@ -82,22 +80,11 @@ export function SpotifyWidget({
   const progressPercentage = track.duration > 0 ? (currentTime / track.duration) * 100 : 0;
 
   return (
-    <View
-      className={`border border-black bg-white/10 shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
-      style={{ borderWidth: 1.5 }}
+    <ImageBackground
+      source={widgetBg}
+      style={{ borderRadius: 16, borderWidth: 1.5 }}
+      className={`border border-black shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
     >
-      <LinearGradient
-        colors={['#1DB954', '#1ed760']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          zIndex: -1,
-        }}
-      />
-
       {/* Spotify Logo */}
       <View style={styles.spotifyLogo}>
         <Ionicons name="musical-notes" size={20} color="white" />
@@ -199,7 +186,7 @@ export function SpotifyWidget({
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 

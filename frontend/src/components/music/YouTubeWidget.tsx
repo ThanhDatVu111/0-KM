@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ImageBackground } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import widgetBg from '@/assets/images/widget.png';
 
 type Props = {
   videoId: string;
@@ -13,21 +14,11 @@ type Props = {
 export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
   if (!videoId) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
+      <ImageBackground
+        source={widgetBg}
+        style={{ borderRadius: 16 }}
+        className={`border border-black shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
       >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
         <View className="items-center justify-center py-6">
           <Ionicons name="play-circle" size={32} color="white" />
           <Text className="text-white font-pmedium text-lg mt-2">No Music Video</Text>
@@ -35,28 +26,18 @@ export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
             Add a YouTube video to share with your partner
           </Text>
         </View>
-      </View>
+      </ImageBackground>
     );
   }
 
   // Validate video ID format (YouTube video IDs are typically 11 characters)
   if (videoId.length !== 11) {
     return (
-      <View
-        className={`border border-black bg-white/10 shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
+      <ImageBackground
+        source={widgetBg}
+        style={{ borderRadius: 16 }}
+        className={`border border-black shadow-md backdrop-blur-lg p-4 rounded-2xl ${className}`}
       >
-        <LinearGradient
-          colors={['#6536DA', '#F7BFF7']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 16,
-            zIndex: -1,
-          }}
-        />
         <View className="items-center justify-center py-6">
           <Ionicons name="alert-circle" size={32} color="white" />
           <Text className="text-white font-pmedium text-lg mt-2">Invalid Video</Text>
@@ -64,27 +45,16 @@ export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
             The video ID format is invalid
           </Text>
         </View>
-      </View>
+      </ImageBackground>
     );
   }
 
   return (
-    <View
-      className={`border border-black bg-white/10 shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
-      style={{ borderWidth: 1.5 }}
+    <ImageBackground
+      source={widgetBg}
+      style={{ borderRadius: 16, borderWidth: 1.5 }}
+      className={`border border-black shadow-md backdrop-blur-lg overflow-hidden rounded-2xl ${className}`}
     >
-      <LinearGradient
-        colors={['#6536DA', '#F7BFF7']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          zIndex: -1,
-        }}
-      />
-
       <View style={styles.container}>
         <YoutubePlayer
           height={220}
@@ -112,7 +82,7 @@ export function YouTubeWidget({ videoId, onPress, className = '' }: Props) {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
