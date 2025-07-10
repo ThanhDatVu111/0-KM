@@ -4,6 +4,7 @@ import Popover, { PopoverPlacement } from 'react-native-popover-view';
 import { Feather, Ionicons, Octicons } from '@expo/vector-icons';
 import { useChatSocket } from '@/hooks/useSocketChat';
 import icons from '@/constants/icons';
+import * as Clipboard from 'expo-clipboard';
 
 interface ChatBubbleProps {
   room_id: string;
@@ -185,6 +186,7 @@ export default function ChatBubble({
                 label="COPY"
                 icon={<Feather name="copy" size={18} color="#8150E0" />}
                 onPress={() => {
+                  Clipboard.setStringAsync(content ?? '');
                   setShowMenu(false);
                   console.log('User copied text');
                 }}

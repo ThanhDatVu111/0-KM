@@ -11,6 +11,11 @@ import { useSocket } from '@/utils/SocketProvider';
 import ChatPaginatedList from '@/components/ChatPaginatedList';
 import { useChatSocket } from '@/hooks/useSocketChat';
 import { useInfiniteQueryChat } from '@/hooks/useChatQuery';
+import {
+  CaptureProtection,
+  useCaptureProtection,
+  CaptureEventType,
+} from 'react-native-capture-protection';
 
 export default function Chat() {
   const socket = useSocket();
@@ -20,7 +25,7 @@ export default function Chat() {
   const [partnerId, setPartnerId] = useState<string>('');
   const [partnerAvatar, setPartnerAvatar] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('');
-  const [partnerOnline, setPartnerOnline] = useState(true);
+  const [partnerOnline, setPartnerOnline] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -61,25 +66,26 @@ export default function Chat() {
       socket.emit('join-chat', roomId);
       // socket.emit('user-online', { room_id: roomId, user_id: userId });
       console.log('Frontend: emitting join-chat');
+      CaptureProtection.prevent();
 
-      // const handleOnline = ({ userId }: { userId: string }) => {
-      //   if (userId === partnerId) {
-      //     setPartnerOnline(true);
-      //   }
-      // };
+      const handleOnline = ({ userId }: { userId: string }) => {
+        if (userId === partnerId) {
+          setPartnerOnline(true);
+        }
+      };
 
-      // const handleOffline = ({ userId }: { userId: string }) => {
-      //   if (userId === partnerId) {
-      //     setPartnerOnline(false);
-      //   }
-      // };
+      const handleOffline = ({ userId }: { userId: string }) => {
+        if (userId === partnerId) {
+          setPartnerOnline(false);
+        }
+      };
 
-      // socket.on('partner-online', handleOnline);
-      // socket.on('partner-offline', handleOffline);
+      socket.on('partner-online', handleOnline);
+      socket.on('partner-offline', handleOffline);
 
       return () => {
-        // socket.off('partner-online', handleOnline);
-        // socket.off('partner-offline', handleOffline);
+        socket.off('partner-online', handleOnline);
+        socket.off('partner-offline', handleOffline);
       };
     }
   }, [socket, roomId, userId, partnerId]);

@@ -53,6 +53,7 @@
     "react-dom": "19.0.0",
     "react-native": "^0.79.5",
     "react-native-calendars": "^1.1313.0",
+    "react-native-capture-protection": "^2.1.1",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-google-places-autocomplete": "^2.5.7",
     "react-native-linear-gradient": "^2.8.3",
