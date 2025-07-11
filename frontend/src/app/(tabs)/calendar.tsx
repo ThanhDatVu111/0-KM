@@ -108,15 +108,21 @@ function GGCalendar() {
         const room = await fetchRoomByUserId({ user_id: userId });
         setRoomId(room.room_id);
         setOtherUserId(room.other_user_id);
-
-        const user = await fetchUser(userId);
-        setUserEmail(user.email);
-
-        const partner = await fetchUser(other_user_id);
-        setPartnerEmail(partner.email);
       } catch (err) {}
     })();
-  }, [userId]);
+  }, [userId, room_id]);
+
+  useEffect(() => {
+    if (!other_user_id) return;
+    (async () => {
+      try {
+        const partner = await fetchUser(other_user_id);
+        setPartnerEmail(partner.email);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [other_user_id]);
 
   // 2) Check if partner is synced
   useEffect(() => {
