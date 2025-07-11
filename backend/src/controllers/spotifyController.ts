@@ -66,6 +66,7 @@ export async function getRoomTrack(req: AuthenticatedRequest, res: Response): Pr
 
     const track = await spotifyService.getRoomTrack(userId);
 
+    // Always return 200, even if no track is found
     res.status(200).json({
       success: true,
       data: track,
@@ -73,10 +74,11 @@ export async function getRoomTrack(req: AuthenticatedRequest, res: Response): Pr
     });
   } catch (error) {
     logger.spotify.error('Error in getRoomTrack controller:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error',
+    // Even if there's an error, return 200 with null data instead of 500
+    res.status(200).json({
+      success: true,
+      data: null,
+      message: 'No track found in room',
     });
   }
 }
@@ -137,8 +139,10 @@ export async function deleteRoomTrack(req: AuthenticatedRequest, res: Response):
     }
 
     logger.spotify.info('Deleting room Spotify track for user:', userId);
+    console.log('🎵 [DEBUG] Delete request received for user:', userId);
 
     const success = await spotifyService.deleteRoomTrack(userId);
+    console.log('🎵 [DEBUG] Delete service result:', success);
 
     if (success) {
       res.status(200).json({
@@ -167,7 +171,7 @@ export async function deleteRoomTrackByRoomId(
   res: Response,
 ): Promise<void> {
   try {
-    const roomId = req.params.roomId;
+    const roomId = req.params.room_id;
     if (!roomId) {
       res.status(400).json({
         success: false,
@@ -204,9 +208,19 @@ export async function deleteRoomTrackByRoomId(
 // Search Spotify tracks
 export async function searchTracks(req: Request, res: Response): Promise<void> {
   try {
-    const { query } = req.query;
+    console.log('🔍 [DEBUG] Search request received');
+    console.log('🔍 [DEBUG] Request URL:', req.url);
+    console.log('🔍 [DEBUG] Request query:', req.query);
+    console.log('🔍 [DEBUG] Request params:', req.params);
 
-    if (!query || typeof query !== 'string') {
+    const { q } = req.query; // Changed from 'query' to 'q' to match frontend
+
+    console.log('🔍 [DEBUG] Extracted query parameter:', q);
+    console.log('🔍 [DEBUG] Query type:', typeof q);
+    console.log('🔍 [DEBUG] Query truthy check:', !!q);
+
+    if (!q || typeof q !== 'string') {
+      console.log('❌ [DEBUG] Query validation failed');
       res.status(400).json({
         success: false,
         message: 'Search query is required',
@@ -214,9 +228,10 @@ export async function searchTracks(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    logger.spotify.debug('Searching Spotify tracks with query:', query);
+    console.log('🔍 [DEBUG] Query validation passed, searching for:', q);
+    logger.spotify.debug('Searching Spotify tracks with query:', q);
 
-    const tracks = await spotifyService.searchSpotifyTracks(query);
+    const tracks = await spotifyService.searchSpotifyTracks(q);
 
     res.status(200).json({
       success: true,

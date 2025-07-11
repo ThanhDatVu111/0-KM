@@ -52,7 +52,6 @@ export interface UpdateRoomSpotifyTrackRequest {
 const unauthenticatedApiClient = {
   async get(endpoint: string) {
     const url = `${BASE_URL}${endpoint}`;
-    console.log('🔍 [DEBUG] Making unauthenticated GET request to:', url);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -75,7 +74,6 @@ const unauthenticatedApiClient = {
 
   async post(endpoint: string, data?: any) {
     const url = `${BASE_URL}${endpoint}`;
-    console.log('🔍 [DEBUG] Making unauthenticated POST request to:', url);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -102,7 +100,6 @@ const unauthenticatedApiClient = {
 export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
   try {
     const data = await unauthenticatedApiClient.get('/spotify/auth/url'); // No auth token needed for OAuth
-    console.log('🔗 Backend auth URL response:', data);
 
     // Backend returns { data: { authUrl } }, convert to { auth_url }
     const authUrl = data?.data?.authUrl || data?.authUrl;
@@ -112,7 +109,6 @@ export async function getSpotifyAuthUrl(): Promise<{ auth_url: string }> {
 
     return { auth_url: authUrl };
   } catch (error) {
-    console.error('❌ Error getting Spotify auth URL:', error);
     throw error;
   }
 }
@@ -124,7 +120,6 @@ export async function exchangeSpotifyCode(code: string): Promise<{
 }> {
   try {
     const data = await unauthenticatedApiClient.post('/spotify/auth/callback', { code }); // No auth token needed for OAuth
-    console.log('🔗 Token exchange response:', data);
 
     // Backend returns { data: { access_token, refresh_token, expires_in } }
     const tokenData = data?.data || data;
@@ -134,7 +129,6 @@ export async function exchangeSpotifyCode(code: string): Promise<{
 
     return tokenData;
   } catch (error) {
-    console.error('❌ Error exchanging Spotify code:', error);
     throw error;
   }
 }
@@ -150,12 +144,16 @@ export async function refreshSpotifyToken(refreshToken: string): Promise<{
 // Spotify Search API
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
-    const data = await unauthenticatedApiClient.get(
-      `/spotify/search?q=${encodeURIComponent(query)}`,
-    );
-    return data;
+    const trimmedQuery = query.trim();
+    const url = `/spotify/search?q=${encodeURIComponent(trimmedQuery)}`;
+
+    const response = await unauthenticatedApiClient.get(url);
+
+    // Extract the data field from the response
+    const tracks = response?.data || [];
+
+    return tracks;
   } catch (error) {
-    console.error('Error searching Spotify tracks:', error);
     throw error;
   }
 }
@@ -165,7 +163,11 @@ export async function createRoomSpotifyTrack(
   request: CreateRoomSpotifyTrackRequest,
   apiClientInstance: any,
 ): Promise<RoomSpotifyTrack> {
-  const data = await apiClientInstance.post('/spotify/room', request);
+  const response = await apiClientInstance.post('/spotify/room', request);
+
+  // Extract the data field from the response
+  const data = response?.data || response;
+
   return data;
 }
 
@@ -174,7 +176,11 @@ export async function getRoomSpotifyTrack(
   apiClientInstance: any,
 ): Promise<RoomSpotifyTrack | null> {
   try {
-    const data = await apiClientInstance.get(`/spotify/room/${user_id}`);
+    const response = await apiClientInstance.get(`/spotify/room/${user_id}`);
+
+    // Extract the data field from the response
+    const data = response?.data || response;
+
     return data;
   } catch (error: any) {
     if (error.status === 404) {

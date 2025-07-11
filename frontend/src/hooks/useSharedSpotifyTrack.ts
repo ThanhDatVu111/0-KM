@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
-import supabase from '../utils/supabase';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
+import { useApiClient } from './useApiClient';
+import {
+  getRoomSpotifyTrack,
+  createRoomSpotifyTrack,
+  deleteRoomSpotifyTrackByRoomId,
+} from '../apis/spotify';
 import { logger } from '../utils/logger';
 
 export interface SharedSpotifyTrack {
@@ -16,13 +21,15 @@ export interface SharedSpotifyTrack {
 
 export function useSharedSpotifyTrack(roomId: string | null) {
   const { userId } = useAuth();
+  const apiClient = useApiClient();
   const [track, setTrack] = useState<SharedSpotifyTrack | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const subscriptionRef = useRef<any>(null);
 
-  // Fetch initial track data
-  const fetchTrack = async () => {
-    if (!roomId) return;
+  // Fetch initial track data using backend API
+  const fetchTrack = useCallback(async () => {
+    if (!roomId || !userId) return;
 
     setIsLoading(true);
     setError(null);
@@ -30,22 +37,8 @@ export function useSharedSpotifyTrack(roomId: string | null) {
     try {
       logger.spotify.debug('Fetching shared track for room:', roomId);
 
-      const { data, error } = await supabase
-        .from('room_spotify_tracks')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No track found
-          setTrack(null);
-          return;
-        }
-        throw error;
-      }
+      // Use backend API to get the track
+      const data = await getRoomSpotifyTrack(userId, apiClient);
 
       if (data) {
         const sharedTrack: SharedSpotifyTrack = {
@@ -61,24 +54,23 @@ export function useSharedSpotifyTrack(roomId: string | null) {
 
         setTrack(sharedTrack);
         logger.spotify.debug('Shared track loaded:', sharedTrack);
+      } else {
+        setTrack(null);
       }
     } catch (err) {
-      console.error('Error fetching shared track:', err);
       setError('Failed to load track');
+      setTrack(null); // Ensure track is null on error
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [roomId, userId, apiClient]);
 
-  // Update track state
+  // Update track state using backend API
   const updateTrack = async (updates: Partial<SharedSpotifyTrack>) => {
     if (!roomId || !userId) return;
 
     try {
       logger.spotify.debug('Updating shared track:', updates);
-
-      // First, delete any existing track for this room
-      await supabase.from('room_spotify_tracks').delete().eq('room_id', roomId);
 
       // If we're clearing the track, we're done
       if (!updates.track_uri) {
@@ -86,32 +78,29 @@ export function useSharedSpotifyTrack(roomId: string | null) {
         return;
       }
 
-      // Insert new track
-      const { data, error } = await supabase
-        .from('room_spotify_tracks')
-        .insert({
-          room_id: roomId,
+      // Use backend API to create the track
+      const result = await createRoomSpotifyTrack(
+        {
+          user_id: userId,
+          track_id: updates.track_uri.split(':').pop() || '', // Extract track ID from URI
+          track_name: updates.track_name || '',
+          artist_name: updates.artist_name || '',
+          album_name: updates.album_name || '',
+          album_art_url: updates.album_art_url || '',
+          duration_ms: updates.duration_ms || 0,
           track_uri: updates.track_uri,
-          track_name: updates.track_name,
-          artist_name: updates.artist_name,
-          album_name: updates.album_name,
-          album_art_url: updates.album_art_url,
-          duration_ms: updates.duration_ms,
-          added_by_user_id: userId,
-        })
-        .select()
-        .single();
+        },
+        apiClient,
+      );
 
-      if (error) throw error;
-
-      if (data) {
+      if (result) {
         const newTrack: SharedSpotifyTrack = {
-          track_uri: data.track_uri,
-          track_name: data.track_name,
-          artist_name: data.artist_name,
-          album_name: data.album_name,
-          album_art_url: data.album_art_url,
-          duration_ms: data.duration_ms,
+          track_uri: result.track_uri,
+          track_name: result.track_name,
+          artist_name: result.artist_name,
+          album_name: result.album_name,
+          album_art_url: result.album_art_url,
+          duration_ms: result.duration_ms,
           is_playing: updates.is_playing ?? false,
           controlled_by_user_id: userId,
         };
@@ -120,27 +109,31 @@ export function useSharedSpotifyTrack(roomId: string | null) {
         logger.spotify.debug('Track updated successfully:', newTrack);
       }
     } catch (err) {
-      console.error('Error updating shared track:', err);
       setError('Failed to update track');
     }
   };
 
-  // Clear track
+  // Clear track using backend API
   const clearTrack = async () => {
     if (!roomId) return;
 
     try {
-      await supabase.from('room_spotify_tracks').delete().eq('room_id', roomId);
+      // Use backend API to delete the track
+      await deleteRoomSpotifyTrackByRoomId(roomId, apiClient);
 
       setTrack(null);
       logger.spotify.debug('Track cleared for room:', roomId);
+
+      // Force a re-render after clearing
+      setTimeout(() => {
+        setTrack(null);
+      }, 100);
     } catch (err) {
-      console.error('Error clearing track:', err);
       setError('Failed to clear track');
     }
   };
 
-  // Set up real-time subscription
+  // Set up real-time subscription (keep this for now, but we'll rely more on manual refetching)
   useEffect(() => {
     if (!roomId) {
       setTrack(null);
@@ -149,83 +142,23 @@ export function useSharedSpotifyTrack(roomId: string | null) {
 
     logger.spotify.debug('Setting up real-time subscription for room:', roomId);
 
-    // Initial fetch
-    fetchTrack();
+    // Initial fetch with a small delay to prevent race conditions
+    setTimeout(() => {
+      fetchTrack();
+    }, 100);
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel(`room_spotify_tracks_${roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'room_spotify_tracks',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          logger.spotify.debug('INSERT event received:', payload);
-          const newTrack: SharedSpotifyTrack = {
-            track_uri: payload.new.track_uri,
-            track_name: payload.new.track_name,
-            artist_name: payload.new.artist_name,
-            album_name: payload.new.album_name,
-            album_art_url: payload.new.album_art_url,
-            duration_ms: payload.new.duration_ms,
-            is_playing: false,
-            controlled_by_user_id: payload.new.added_by_user_id,
-          };
-          setTrack(newTrack);
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'room_spotify_tracks',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          logger.spotify.debug('UPDATE event received:', payload);
-          const updatedTrack: SharedSpotifyTrack = {
-            track_uri: payload.new.track_uri,
-            track_name: payload.new.track_name,
-            artist_name: payload.new.artist_name,
-            album_name: payload.new.album_name,
-            album_art_url: payload.new.album_art_url,
-            duration_ms: payload.new.duration_ms,
-            is_playing: false,
-            controlled_by_user_id: payload.new.added_by_user_id,
-          };
-          setTrack(updatedTrack);
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'room_spotify_tracks',
-          filter: `room_id=eq.${roomId}`,
-        },
-        () => {
-          logger.spotify.debug('DELETE event received');
-          setTrack(null);
-        },
-      )
-      .subscribe((status) => {
-        logger.spotify.debug('Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          logger.spotify.info('Successfully subscribed to room_spotify_tracks for room:', roomId);
-        }
-      });
+    // For now, we'll rely on manual refetching instead of real-time subscriptions
+    // since the backend API doesn't trigger Supabase real-time events
+    // We can add polling or manual refresh triggers as needed
 
     return () => {
       logger.spotify.debug('Cleaning up subscription for room:', roomId);
-      supabase.removeChannel(channel);
+      if (subscriptionRef.current) {
+        // Clean up any existing subscriptions if we add them back later
+        subscriptionRef.current = null;
+      }
     };
-  }, [roomId, userId]);
+  }, [roomId, userId, fetchTrack]);
 
   return {
     track,

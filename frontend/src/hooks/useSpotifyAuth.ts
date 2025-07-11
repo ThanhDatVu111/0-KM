@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import supabase from '../utils/supabase';
 import { Alert } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { getSpotifyAuthUrl, exchangeSpotifyCode } from '../apis/spotify';
+import supabase from '../utils/supabase';
 
 export type SpotifyAuthStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
@@ -17,142 +17,53 @@ export function useSpotifyAuth() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Check for tokens in user metadata (backend OAuth flow)
-      const spotifyAccessToken = session?.user?.user_metadata?.spotify_access_token;
-      const spotifyTokenExpiry = session?.user?.user_metadata?.spotify_token_expiry;
+      console.log('🔍 [DEBUG] Checking connection - Session exists:', !!session);
+      console.log('🔍 [DEBUG] Session user:', session?.user?.id);
+      console.log(
+        '🔍 [DEBUG] User metadata:',
+        JSON.stringify(session?.user?.user_metadata, null, 2),
+      );
+      console.log('🔍 [DEBUG] App metadata:', JSON.stringify(session?.user?.app_metadata, null, 2));
 
-      if (spotifyAccessToken && spotifyTokenExpiry && Date.now() < spotifyTokenExpiry) {
-        setAccessToken(spotifyAccessToken);
-        setStatus('connected');
-        return true;
-      }
-
-      // Fallback: Check for Supabase OAuth provider
-      const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
+      // Spotify provider tokens (Supabase v2)
+      const spotifyProvider = session?.user.app_metadata?.providers?.spotify;
       if (spotifyProvider?.access_token) {
+        console.log('🔗 Spotify OAuth tokens found in Supabase:', spotifyProvider);
         setAccessToken(spotifyProvider.access_token);
         setStatus('connected');
         return true;
       }
 
-      // Check for locally stored tokens (for users who connected before signing in)
-      // This would be implemented with SecureStore or similar
-      // For now, we'll just set to idle
+      // Fallback: legacy metadata tokens
+      const spotifyAccessToken = session?.user.user_metadata?.spotify_access_token;
+      const spotifyExpiry = session?.user.user_metadata?.spotify_token_expiry;
+      if (spotifyAccessToken && spotifyExpiry && Date.now() < spotifyExpiry) {
+        console.log('🔗 Legacy OAuth tokens found in metadata');
+        setAccessToken(spotifyAccessToken);
+        setStatus('connected');
+        return true;
+      }
+
+      console.log('🔗 No Spotify tokens found');
       setStatus('idle');
       return false;
-    } catch (error) {
-      console.error('Error checking Spotify connection:', error);
+    } catch (err) {
+      console.error('Error checking Spotify connection:', err);
       setStatus('error');
       return false;
     }
   };
 
-  // Trigger OAuth flow (backend first, fallback to Supabase)
+  // Trigger Spotify OAuth flow via Supabase
   const connect = async () => {
     setStatus('connecting');
     try {
-      console.log('🔗 Starting Spotify OAuth flow...');
+      // Generate redirect URI for Expo
+      const redirectUri = AuthSession.makeRedirectUri();
+      console.log('📎 Redirect URI:', redirectUri);
 
-      // Try backend OAuth first
-      try {
-        console.log('🔗 Attempting backend OAuth...');
-        const authResponse = await getSpotifyAuthUrl();
-        console.log('🔗 Backend auth response:', authResponse);
-
-        if (!authResponse || !authResponse.auth_url) {
-          throw new Error('No auth URL received from backend');
-        }
-
-        // Test browser functionality first
-        console.log('🔗 Testing browser functionality...');
-        const testResult = await WebBrowser.openAuthSessionAsync(
-          'https://www.google.com',
-          'exp://fb4hvyo-anonymous-8081.exp.direct',
-        );
-        console.log('🔗 Test browser result:', testResult.type);
-
-        // Open the auth URL in browser
-        console.log('🔗 Opening browser with auth URL:', authResponse.auth_url);
-        const result = await WebBrowser.openAuthSessionAsync(
-          authResponse.auth_url,
-          'exp://fb4hvyo-anonymous-8081.exp.direct',
-        );
-
-        console.log('🔗 Browser result:', {
-          type: result.type,
-          url: 'url' in result ? result.url : undefined,
-        });
-
-        if (result.type === 'success') {
-          console.log('🔗 OAuth redirect successful, URL:', result.url);
-          // Extract the authorization code from the URL
-          const url = new URL(result.url);
-          const code = url.searchParams.get('code');
-
-          if (code) {
-            console.log('🔗 Got authorization code, exchanging for tokens...');
-            // Exchange code for tokens via backend
-            const tokenData = await exchangeSpotifyCode(code);
-            console.log('🔗 Token exchange successful:', tokenData);
-
-            // Try to store tokens in Supabase user metadata (if user is authenticated)
-            try {
-              const {
-                data: { session },
-              } = await supabase.auth.getSession();
-              if (session?.user) {
-                const { error } = await supabase.auth.updateUser({
-                  data: {
-                    spotify_access_token: tokenData.access_token,
-                    spotify_refresh_token: tokenData.refresh_token,
-                    spotify_token_expiry: Date.now() + tokenData.expires_in * 1000,
-                  },
-                });
-
-                if (error) {
-                  console.error('❌ Error storing tokens in Supabase:', error);
-                  // Don't throw here - tokens are still valid for this session
-                }
-              } else {
-                console.log('🔐 No Supabase session, storing tokens locally');
-                // Store tokens in local storage or secure store for now
-                // This will be handled when user signs in to the app
-              }
-            } catch (storageError) {
-              console.error('❌ Error storing tokens:', storageError);
-              // Don't throw here - tokens are still valid for this session
-            }
-
-            setAccessToken(tokenData.access_token);
-            setStatus('connected');
-            console.log('🔗 Spotify connected successfully!');
-            return;
-          } else {
-            console.log('🔗 No authorization code found in redirect URL');
-            throw new Error('No authorization code received from Spotify');
-          }
-        } else if (result.type === 'cancel') {
-          console.log('🔗 OAuth was cancelled by user');
-          setStatus('idle');
-          return;
-        } else {
-          console.log('🔗 OAuth failed:', result.type);
-          throw new Error(`OAuth failed: ${result.type}`);
-        }
-      } catch (backendError: any) {
-        console.log('Backend OAuth failed, trying Supabase OAuth:', backendError);
-        console.log('Backend error details:', {
-          message: backendError?.message,
-          stack: backendError?.stack,
-          response: backendError?.response,
-        });
-
-        // Don't throw here, continue to Supabase OAuth fallback
-      }
-
-      // Fallback to Supabase OAuth
-      console.log('🔄 Falling back to Supabase OAuth...');
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Start Supabase OAuth
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'spotify',
         options: {
           scopes: [
@@ -165,7 +76,8 @@ export function useSpotifyAuth() {
             'playlist-read-private',
             'playlist-read-collaborative',
           ].join(' '),
-          redirectTo: '0km-app://',
+          queryParams: { show_dialog: 'true' },
+          redirectTo: redirectUri,
         },
       });
 
@@ -173,69 +85,185 @@ export function useSpotifyAuth() {
         console.error('❌ Supabase OAuth error:', error);
         throw error;
       }
-    } catch (error) {
-      console.error('❌ Error connecting to Spotify:', error);
+
+      if (!data?.url) {
+        throw new Error('No auth URL returned from Supabase');
+      }
+
+      console.log('👉 Opening browser for Spotify login...');
+      console.log('🔗 Auth URL:', data.url);
+
+      // Open browser for Spotify login and wait for redirect
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      console.log('🔁 OAuth flow result:', result);
+
+      if (result.type === 'success' && result.url) {
+        console.log('✅ OAuth successful, handling callback...');
+        console.log('🔗 Callback URL:', result.url);
+
+        // Parse the callback URL to extract tokens
+        const url = new URL(result.url);
+        const fragment = url.hash.substring(1); // Remove the # symbol
+        const params = new URLSearchParams(fragment);
+
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const providerToken = params.get('provider_token');
+        const providerRefreshToken = params.get('provider_refresh_token');
+
+        console.log('🔗 Extracted tokens:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          hasProviderToken: !!providerToken,
+          hasProviderRefreshToken: !!providerRefreshToken,
+        });
+
+        if (accessToken && refreshToken) {
+          // Set the session with the tokens
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            console.error('❌ Error setting session:', sessionError);
+            throw new Error('Failed to set session');
+          }
+
+          console.log('🔗 Session set successfully');
+
+          // Store Spotify provider tokens in user metadata
+          if (providerToken && providerRefreshToken) {
+            const { error: updateError } = await supabase.auth.updateUser({
+              data: {
+                spotify_access_token: providerToken,
+                spotify_refresh_token: providerRefreshToken,
+                spotify_token_expiry: Date.now() + 3600 * 1000, // 1 hour from now
+              },
+            });
+
+            if (updateError) {
+              console.error('❌ Error updating user metadata:', updateError);
+            } else {
+              console.log('🔗 Spotify tokens stored in user metadata');
+            }
+          }
+
+          // Check if we're now connected
+          const connected = await checkConnection();
+          if (connected) {
+            console.log('🔗 Successfully connected to Spotify!');
+            setStatus('connected');
+          } else {
+            console.log('❌ OAuth completed but not connected');
+            setStatus('error');
+            Alert.alert('Error', 'OAuth completed but connection failed. Please try again.');
+          }
+        } else {
+          console.error('❌ Missing tokens in callback URL');
+          setStatus('error');
+          Alert.alert('Error', 'Missing tokens in OAuth callback. Please try again.');
+        }
+      } else if (result.type === 'cancel') {
+        console.log('❌ OAuth cancelled');
+        setStatus('idle');
+        Alert.alert('Cancelled', 'Spotify login was cancelled.');
+      } else {
+        console.error('❌ OAuth failed:', result);
+        setStatus('error');
+        Alert.alert('Error', 'Spotify login failed.');
+      }
+
+      // Close the web browser session
+      WebBrowser.maybeCompleteAuthSession();
+    } catch (err: any) {
+      console.error('❌ OAuth error:', err);
       setStatus('error');
-      Alert.alert('Error', 'Failed to connect to Spotify. Please try again.');
+      Alert.alert('Error', err.message || 'Could not connect to Spotify');
     }
   };
 
-  // Disconnect from Spotify
+  // Disconnect from Spotify / Supabase
   const disconnect = async () => {
     try {
       await supabase.auth.signOut();
       setStatus('idle');
       setAccessToken(null);
+      Alert.alert('Success', 'Disconnected from Spotify');
+    } catch (err) {
+      console.error('Error during disconnect:', err);
+      setStatus('idle');
+      setAccessToken(null);
+      Alert.alert('Success', 'Disconnected from Spotify');
+    }
+  };
+
+  // Debug function to test Supabase configuration
+  const debugSupabaseConfig = async () => {
+    try {
+      console.log('🔧 [DEBUG] Testing Supabase configuration...');
+
+      // Check current session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      console.log('🔧 [DEBUG] Current session:', session ? 'exists' : 'none');
+      console.log('🔧 [DEBUG] Session error:', sessionError);
+
+      if (session) {
+        console.log('🔧 [DEBUG] User ID:', session.user.id);
+        console.log('🔧 [DEBUG] User email:', session.user.email);
+        console.log(
+          '🔧 [DEBUG] User metadata:',
+          JSON.stringify(session.user.user_metadata, null, 2),
+        );
+        console.log('🔧 [DEBUG] App metadata:', JSON.stringify(session.user.app_metadata, null, 2));
+      }
+
+      // Test OAuth URL generation
+      const redirectUri = AuthSession.makeRedirectUri();
+      console.log('🔧 [DEBUG] Redirect URI:', redirectUri);
+
+      const { data: oauthData, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'spotify',
+        options: {
+          redirectTo: redirectUri,
+        },
+      });
+
+      console.log('🔧 [DEBUG] OAuth URL generation success:', !!oauthData?.url);
+      console.log('🔧 [DEBUG] OAuth error:', oauthError);
+
+      if (oauthData?.url) {
+        console.log('🔧 [DEBUG] OAuth URL:', oauthData.url);
+      }
     } catch (error) {
-      console.error('Error disconnecting from Spotify:', error);
+      console.error('🔧 [DEBUG] Configuration test error:', error);
     }
   };
 
   useEffect(() => {
-    // Check initial connection status
     checkConnection();
 
-    // Listen for auth state changes
+    // Debug configuration on mount
+    debugSupabaseConfig();
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // Check for backend OAuth tokens first
-        const spotifyAccessToken = session.user?.user_metadata?.spotify_access_token;
-        const spotifyTokenExpiry = session.user?.user_metadata?.spotify_token_expiry;
-
-        if (spotifyAccessToken && spotifyTokenExpiry && Date.now() < spotifyTokenExpiry) {
-          setAccessToken(spotifyAccessToken);
-          setStatus('connected');
-        } else {
-          // Fallback: Check for Supabase OAuth provider
-          const spotifyProvider = session.user?.app_metadata?.providers?.spotify;
-          if (spotifyProvider?.access_token) {
-            setAccessToken(spotifyProvider.access_token);
-            setStatus('connected');
-          } else {
-            // Check if we have locally stored tokens to migrate
-            // This would be implemented with SecureStore
-            setStatus('idle');
-          }
-        }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.id);
+      if (event === 'SIGNED_IN') {
+        console.log('🔄 User signed in, checking Spotify connection...');
+        checkConnection();
       } else if (event === 'SIGNED_OUT') {
+        console.log('🔄 User signed out');
         setStatus('idle');
         setAccessToken(null);
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        // Re-check connection status when tokens are refreshed
-        checkConnection();
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  return {
-    status,
-    accessToken,
-    connect,
-    disconnect,
-    checkConnection,
-  };
+  return { status, accessToken, connect, disconnect, checkConnection, debugSupabaseConfig };
 }

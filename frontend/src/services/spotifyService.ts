@@ -1,5 +1,4 @@
 import supabase from '../utils/supabase';
-import * as SecureStore from 'expo-secure-store';
 
 export interface SpotifyTrack {
   id: string;
@@ -26,81 +25,36 @@ class SpotifyService {
   // Get Spotify access token from Supabase session
   private async getAccessToken(): Promise<string | null> {
     try {
-      // Get access token from SecureStore (where we store it during OAuth)
-      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
-      const tokenExpiry = await SecureStore.getItemAsync('spotify_token_expiry');
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!accessToken) {
-        console.log('🔍 [DEBUG] No access token found in SecureStore');
+      if (!session) {
+        console.log('🔍 [DEBUG] No Supabase session found');
         return null;
       }
 
-      // Check if token is expired
-      if (tokenExpiry) {
-        const expiryTime = parseInt(tokenExpiry);
-        const now = Date.now();
-
-        if (now >= expiryTime) {
-          console.log('🔍 [DEBUG] Access token expired, attempting refresh...');
-          const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
-
-          if (refreshToken) {
-            const refreshSuccess = await this.refreshAccessToken(refreshToken);
-            if (refreshSuccess) {
-              return await SecureStore.getItemAsync('spotify_access_token');
-            }
-          }
-
-          console.log('🔍 [DEBUG] Failed to refresh token');
-          return null;
-        }
+      // Check for Spotify provider tokens (Supabase v2)
+      const spotifyProvider = session.user.app_metadata?.providers?.spotify;
+      if (spotifyProvider?.access_token) {
+        console.log('🔍 [DEBUG] Using Spotify provider tokens from Supabase');
+        return spotifyProvider.access_token;
       }
 
-      console.log('🔍 [DEBUG] Using valid access token from SecureStore');
-      return accessToken;
-    } catch (error) {
-      console.error('Error getting Spotify access token:', error);
+      // Fallback: legacy metadata tokens
+      const spotifyAccessToken = session.user.user_metadata?.spotify_access_token;
+      const spotifyExpiry = session.user.user_metadata?.spotify_token_expiry;
+
+      if (spotifyAccessToken && spotifyExpiry && Date.now() < spotifyExpiry) {
+        console.log('🔍 [DEBUG] Using legacy metadata tokens from Supabase');
+        return spotifyAccessToken;
+      }
+
+      console.log('🔍 [DEBUG] No valid Spotify tokens found in Supabase session');
       return null;
-    }
-  }
-
-  private async refreshAccessToken(refreshToken: string): Promise<boolean> {
-    try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization:
-            'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-        }).toString(),
-      });
-
-      const tokenData = await response.json();
-
-      if (tokenData.access_token) {
-        // Store the new tokens
-        await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token);
-        if (tokenData.refresh_token) {
-          await SecureStore.setItemAsync('spotify_refresh_token', tokenData.refresh_token);
-        }
-        await SecureStore.setItemAsync(
-          'spotify_token_expiry',
-          (Date.now() + (tokenData.expires_in || 3600) * 1000).toString(),
-        );
-
-        console.log('✅ Spotify token refreshed successfully');
-        return true;
-      } else {
-        console.error('❌ Failed to refresh Spotify token');
-        return false;
-      }
     } catch (error) {
-      console.error('❌ Error refreshing Spotify token:', error);
-      return false;
+      console.error('Error getting Spotify access token from Supabase:', error);
+      return null;
     }
   }
 
@@ -203,7 +157,6 @@ class SpotifyService {
         }
       };
 
-      // Add to queue and process
       this.requestQueue.push(request);
       this.processQueue();
     });
@@ -343,7 +296,7 @@ class SpotifyService {
       console.log('🎵 [DEBUG] togglePlayPause called');
       const state = await this.getPlaybackState();
       console.log('🎵 [DEBUG] Current playback state:', state);
-      
+
       if (state?.isPlaying) {
         console.log('🎵 [DEBUG] Currently playing, pausing...');
         await this.makeRequest('/me/player/pause', 'PUT');

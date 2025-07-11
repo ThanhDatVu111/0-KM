@@ -46,11 +46,14 @@ export async function createRoomSpotifyTrack(
   supabaseClient?: any,
 ): Promise<RoomSpotifyTrack | null> {
   try {
+    console.log('🎵 [DEBUG] Creating room Spotify track with input:', input);
     const client = supabaseClient || supabase;
 
     // First, delete any existing track for this room
+    console.log('🎵 [DEBUG] Deleting existing track for room:', input.room_id);
     await deleteRoomSpotifyTrackByRoomId(input.room_id, client);
 
+    console.log('🎵 [DEBUG] Inserting new track into database');
     const { data, error } = await client
       .from('room_spotify_tracks')
       .insert({
@@ -67,11 +70,14 @@ export async function createRoomSpotifyTrack(
       .select()
       .single();
 
+    console.log('🎵 [DEBUG] Database insert result:', { data, error });
+
     if (error) {
       console.error('Error creating room Spotify track:', error);
       return null;
     }
 
+    console.log('🎵 [DEBUG] Track created successfully:', data);
     return data;
   } catch (error) {
     console.error('Error in createRoomSpotifyTrack:', error);
@@ -84,6 +90,8 @@ export async function createRoomSpotifyTrack(
  */
 export async function getRoomSpotifyTrack(room_id: string): Promise<RoomSpotifyTrack | null> {
   try {
+    console.log('🎵 [DEBUG] Getting room Spotify track for room:', room_id);
+
     const { data, error } = await supabase
       .from('room_spotify_tracks')
       .select('*')
@@ -92,16 +100,19 @@ export async function getRoomSpotifyTrack(room_id: string): Promise<RoomSpotifyT
       .limit(1)
       .single();
 
+    console.log('🎵 [DEBUG] Track query result:', { data, error });
+
     if (error) {
       if (error.code === 'PGRST116') {
         // No rows returned
+        console.log('🎵 [DEBUG] No track found for room:', room_id);
         return null;
       }
       console.error('Error getting room Spotify track:', error);
       return null;
     }
 
-    console.log('🔍 [DEBUG] Database track data:', JSON.stringify(data, null, 2));
+    console.log('🎵 [DEBUG] Found track for room:', room_id, data);
     return data;
   } catch (error) {
     console.error('Error in getRoomSpotifyTrack:', error);
@@ -150,13 +161,18 @@ export async function updateRoomSpotifyTrack(
  */
 export async function deleteRoomSpotifyTrack(id: string): Promise<boolean> {
   try {
+    console.log('🎵 [DEBUG] Deleting room Spotify track by ID:', id);
+
     const { error } = await supabase.from('room_spotify_tracks').delete().eq('id', id);
+
+    console.log('🎵 [DEBUG] Delete query result:', { error });
 
     if (error) {
       console.error('Error deleting room Spotify track:', error);
       return false;
     }
 
+    console.log('🎵 [DEBUG] Track deleted successfully');
     return true;
   } catch (error) {
     console.error('Error in deleteRoomSpotifyTrack:', error);
@@ -192,6 +208,8 @@ export async function deleteRoomSpotifyTrackByRoomId(
  */
 export async function getRoomIdForUser(user_id: string): Promise<string | null> {
   try {
+    console.log('🎵 [DEBUG] Getting room ID for user:', user_id);
+
     const { data, error } = await supabase
       .from('room')
       .select('room_id')
@@ -199,10 +217,14 @@ export async function getRoomIdForUser(user_id: string): Promise<string | null> 
       .eq('filled', true)
       .single();
 
+    console.log('🎵 [DEBUG] Room query result:', { data, error });
+
     if (error || !data) {
+      console.log('🎵 [DEBUG] No room found for user:', user_id);
       return null;
     }
 
+    console.log('🎵 [DEBUG] Found room ID:', data.room_id);
     return data.room_id;
   } catch (error) {
     console.error('Error in getRoomIdForUser:', error);

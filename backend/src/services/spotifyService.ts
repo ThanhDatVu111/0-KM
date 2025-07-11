@@ -125,7 +125,9 @@ export async function createRoomTrack(
     };
 
     // Create the track
+    console.log('🎵 [DEBUG] Creating room track with input:', input);
     const track = await createRoomSpotifyTrack(input, req.supabase);
+    console.log('🎵 [DEBUG] Track created result:', track);
 
     if (track) {
       // Update the playback state to include the new track
@@ -136,7 +138,9 @@ export async function createRoomTrack(
         controlled_by_user_id: userId,
       };
 
+      console.log('🎵 [DEBUG] Updating playback state:', playbackState);
       await roomService.updatePlaybackState(roomId, playbackState);
+      console.log('🎵 [DEBUG] Playback state updated');
     }
 
     return track;
@@ -154,13 +158,17 @@ export async function getRoomTrack(user_id: string): Promise<RoomSpotifyTrack | 
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(user_id);
     if (!roomId) {
+      logger.spotify.debug('User is not in a room:', user_id);
       return null; // User is not in a room
     }
 
-    return await getRoomSpotifyTrack(roomId);
+    const track = await getRoomSpotifyTrack(roomId);
+    logger.spotify.debug('Retrieved track for room:', { roomId, hasTrack: !!track });
+    return track;
   } catch (error) {
     logger.spotify.error('Error in getRoomTrack service:', error);
-    throw error;
+    // Don't throw error, just return null to indicate no track found
+    return null;
   }
 }
 
@@ -201,19 +209,25 @@ export async function updateRoomTrack(
  */
 export async function deleteRoomTrack(user_id: string): Promise<boolean> {
   try {
+    console.log('🎵 [DEBUG] Deleting room track for user:', user_id);
+
     // Get the room ID for the user
     const roomId = await getRoomIdForUser(user_id);
     if (!roomId) {
-      throw new Error('User is not in a room');
+      console.log('🎵 [DEBUG] User is not in a room');
+      return false; // Return false instead of throwing error
     }
 
     // Get the current track to verify it exists
     const currentTrack = await getRoomSpotifyTrack(roomId);
     if (!currentTrack) {
-      throw new Error('No track found in room');
+      console.log('🎵 [DEBUG] No track found in room:', roomId);
+      return false; // Return false instead of throwing error
     }
 
+    console.log('🎵 [DEBUG] Found track to delete:', currentTrack.id);
     const success = await deleteRoomSpotifyTrack(currentTrack.id);
+    console.log('🎵 [DEBUG] Delete operation result:', success);
 
     if (success) {
       // Clear the playback state when track is removed
@@ -230,7 +244,7 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
     return success;
   } catch (error) {
     logger.spotify.error('Error in deleteRoomTrack service:', error);
-    throw error;
+    return false; // Return false instead of throwing error
   }
 }
 
@@ -239,13 +253,18 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
  */
 export async function deleteRoomTrackByRoomId(room_id: string): Promise<boolean> {
   try {
+    console.log('🎵 [DEBUG] Deleting room track by room ID:', room_id);
+
     // Get the current track to verify it exists
     const currentTrack = await getRoomSpotifyTrack(room_id);
     if (!currentTrack) {
-      throw new Error('No track found in room');
+      console.log('🎵 [DEBUG] No track found in room:', room_id);
+      return false; // Return false instead of throwing error
     }
 
+    console.log('🎵 [DEBUG] Found track to delete:', currentTrack.id);
     const success = await deleteRoomSpotifyTrack(currentTrack.id);
+    console.log('🎵 [DEBUG] Delete operation result:', success);
 
     if (success) {
       // Clear the playback state when track is removed
@@ -262,7 +281,7 @@ export async function deleteRoomTrackByRoomId(room_id: string): Promise<boolean>
     return success;
   } catch (error) {
     logger.spotify.error('Error in deleteRoomTrackByRoomId service:', error);
-    throw error;
+    return false; // Return false instead of throwing error
   }
 }
 
@@ -271,20 +290,35 @@ export async function deleteRoomTrackByRoomId(room_id: string): Promise<boolean>
  */
 export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
   try {
-    // Check if we have access token
-    if (!spotifyApi.getAccessToken()) {
-      console.log('No Spotify access token available, returning mock data');
-      return getMockTracks(query);
+    console.log('🔍 [DEBUG] Starting search for query:', query);
+
+    // Get client credentials token for search
+    let accessToken = spotifyApi.getAccessToken();
+
+    if (!accessToken) {
+      console.log('🔍 [DEBUG] No access token, getting client credentials...');
+      try {
+        const data = await spotifyApi.clientCredentialsGrant();
+        spotifyApi.setAccessToken(data.body.access_token);
+        accessToken = data.body.access_token;
+        console.log('🔍 [DEBUG] Got client credentials token');
+      } catch (error) {
+        console.error('❌ Error getting client credentials:', error);
+        console.log('🔍 [DEBUG] Falling back to mock data');
+        return getMockTracks(query);
+      }
     }
 
     // Search using Spotify API
+    console.log('🔍 [DEBUG] Searching Spotify with query:', query);
     const response = await spotifyApi.searchTracks(query, { limit: 10 });
 
     if (!response.body.tracks) {
+      console.log('🔍 [DEBUG] No tracks found in response');
       return [];
     }
 
-    return response.body.tracks.items.map((track: any) => ({
+    const tracks = response.body.tracks.items.map((track: any) => ({
       id: track.id,
       name: track.name,
       artist: track.artists[0]?.name || 'Unknown Artist',
@@ -293,9 +327,13 @@ export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]
       duration: Math.floor(track.duration_ms / 1000),
       uri: track.uri,
     }));
+
+    console.log('🔍 [DEBUG] Found', tracks.length, 'tracks');
+    return tracks;
   } catch (error) {
-    console.error('Error searching Spotify tracks:', error);
+    console.error('❌ Error searching Spotify tracks:', error);
     // Fallback to mock data
+    console.log('🔍 [DEBUG] Falling back to mock data due to error');
     return getMockTracks(query);
   }
 }

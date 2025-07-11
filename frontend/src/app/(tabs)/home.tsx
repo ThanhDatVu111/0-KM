@@ -108,7 +108,18 @@ const Home = () => {
     track: roomTrack,
     isLoading: spotifyLoading,
     refetch: refetchRoomTrack,
+    clearTrack: clearRoomTrack,
   } = useSharedSpotifyTrack(roomId);
+
+  // Debug: Log when roomId changes
+  useEffect(() => {
+    if (roomId) {
+      // Force a refetch when roomId changes
+      setTimeout(() => {
+        refetchRoomTrack();
+      }, 500);
+    }
+  }, [roomId, refetchRoomTrack]);
 
   // Real Spotify playback controls - only use when connected
   const { playTrack, playbackState } = useSpotifyPlayback();
@@ -147,31 +158,33 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      console.log('📍 Starting location tracking from home screen');
       await locationTrackingService.startTracking(userId);
     } catch (error) {
-      console.error('❌ Failed to start location tracking:', error);
       // Don't show alert - location tracking is optional
     }
   };
 
   const stopLocationTracking = async () => {
     try {
-      console.log('📍 Stopping location tracking from home screen');
       await locationTrackingService.stopTracking();
     } catch (error) {
-      console.error('❌ Failed to stop location tracking:', error);
+      // Don't show alert - location tracking is optional
     }
   };
 
   const loadUserRoom = async () => {
+    if (!userId) return;
+
     try {
       setIsLoading(true);
-      const roomData = await fetchRoom({ user_id: userId! });
+      const room = await fetchRoom({ user_id: userId });
 
-      if (roomData && roomData.room_id) {
-        setRoomId(roomData.room_id);
-        setIsHost(true);
+      if (room) {
+        setRoomId(room.room_id);
+        setIsHost(room.user_1 === userId);
+      } else {
+        setRoomId(null);
+        setIsHost(false);
       }
     } catch (error) {
       // Handle error silently
@@ -220,7 +233,7 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await createRoomSpotifyTrack(
+      const result = await createRoomSpotifyTrack(
         {
           user_id: userId,
           track_id: trackData.track_id,
@@ -233,7 +246,9 @@ const Home = () => {
         },
         apiClient,
       );
+
       setShowSpotifyInput(false);
+
       // Refetch the room track to update the UI
       await refetchRoomTrack();
 
@@ -242,9 +257,6 @@ const Home = () => {
         await playTrack(trackData.track_uri);
         Alert.alert('Success!', `Now playing: ${trackData.track_name}`);
       } catch (playError: any) {
-        console.error('❌ [DEBUG] Auto-play failed:', playError);
-
-        // Show specific error message based on the error
         let errorMessage = `${trackData.track_name} was added to your room, but couldn't start playing automatically.`;
 
         if (playError.message?.includes('Premium required')) {
@@ -270,10 +282,10 @@ const Home = () => {
     if (!userId) return;
 
     try {
-      await deleteRoomSpotifyTrack(userId, apiClient);
-      refetchRoomTrack();
+      // Use the clearTrack function from the hook
+      await clearRoomTrack();
     } catch (error) {
-      // Handle error silently
+      Alert.alert('Error', 'Failed to remove track. Please try again.');
     }
   };
 
@@ -331,8 +343,8 @@ const Home = () => {
               style={{
                 flex: 1,
                 backgroundColor: 'white',
-                borderBottomLeftRadius: 12,
-                borderBottomRightRadius: 12,
+                borderBottomLeftRadius: 6,
+                borderBottomRightRadius: 6,
                 justifyContent: 'center',
                 alignItems: 'center',
                 padding: 16,
@@ -368,8 +380,8 @@ const Home = () => {
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderBottomLeftRadius: 12,
-                  borderBottomRightRadius: 12,
+                  borderBottomLeftRadius: 6,
+                  borderBottomRightRadius: 6,
                   position: 'absolute',
                   top: 0,
                   left: 0,
@@ -383,8 +395,8 @@ const Home = () => {
                   right: 0,
                   bottom: 0,
                   backgroundColor: 'rgba(255,255,255,0.95)',
-                  borderBottomLeftRadius: 12,
-                  borderBottomRightRadius: 12,
+                  borderBottomLeftRadius: 6,
+                  borderBottomRightRadius: 6,
                   padding: 8,
                 }}
               >
