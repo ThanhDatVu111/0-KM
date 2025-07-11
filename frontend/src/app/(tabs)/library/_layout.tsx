@@ -5,7 +5,8 @@ export default function LibraryLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, // Customize this based on your needs
+        headerShown: false,
+        animation: 'fade', // Use native-stack's built-in fade transition
       }}
     />
   );

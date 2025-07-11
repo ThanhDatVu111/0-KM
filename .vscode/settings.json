@@ -25,5 +25,8 @@
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "lit-html.tags": ["html", "template"],
+  "lit-html.format.enabled": false,
+  "lit-plugin.disable": true
 }

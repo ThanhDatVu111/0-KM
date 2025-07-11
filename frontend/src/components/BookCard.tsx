@@ -3,7 +3,6 @@ import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BOOK_IMAGES, BookColor } from '@/constants/books';
 import type { Book } from '@/types/library';
-import Button from '@/components/Button';
 
 interface BookCardProps {
   isNew?: boolean;
@@ -14,6 +13,7 @@ interface BookCardProps {
   onDeletePress?: (book: Book) => void;
   isDropdownVisible?: boolean;
   onToggleDropdown?: () => void;
+  onPress?: () => void;
 }
 
 export const BookCard: React.FC<BookCardProps> = ({
@@ -25,6 +25,7 @@ export const BookCard: React.FC<BookCardProps> = ({
   onDeletePress,
   isDropdownVisible,
   onToggleDropdown,
+  onPress,
 }) => {
   const getBookImage = (color?: string) => {
     return BOOK_IMAGES[color as BookColor] || BOOK_IMAGES.pink;
@@ -32,15 +33,43 @@ export const BookCard: React.FC<BookCardProps> = ({
 
   if (isNew) {
     return (
-      <View style={{ width: cardWidth }} className="mb-4">
+      <View style={{ width: cardWidth }} className="">
         <TouchableOpacity
-          className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg items-center justify-center"
           onPress={onCreatePress}
+          activeOpacity={0.8}
+          style={{
+            aspectRatio: 1,
+            borderWidth: 3,
+            borderColor: '#000',
+            backgroundColor: '#FAD3E4',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 3, height: 3 },
+            shadowOpacity: 0.4,
+            padding: 12,
+          }}
         >
-          <View className="w-16 h-16 rounded-full bg-pink-100 items-center justify-center">
-            <Text className="text-3xl text-pink-500">+</Text>
-          </View>
-          <Text className="mt-2 text-gray-500 text-lg">new</Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 32,
+              color: '#000',
+              marginBottom: 4,
+            }}
+          >
+            +
+          </Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 10,
+              color: '#000',
+              marginTop: -4,
+            }}
+          >
+            CREATE
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -49,52 +78,99 @@ export const BookCard: React.FC<BookCardProps> = ({
   if (!book) return null;
 
   return (
-    <View style={{ width: cardWidth }} className="mb-4">
-      <Image
-        source={getBookImage(book.color)}
-        style={{
-          width: cardWidth,
-          height: cardWidth * (4 / 3),
-          resizeMode: 'contain',
-        }}
-      />
-      <View className="bg-white mt-1" style={{ position: 'relative', zIndex: 1 }}>
+    <View style={{ width: cardWidth }}>
+      <TouchableOpacity
+        onPress={onPress}
+        onLongPress={() => onToggleDropdown?.()}
+        delayLongPress={1000}
+        className="rounded-lg"
+      >
+        <Image
+          source={getBookImage(book.color)}
+          style={{
+            width: cardWidth,
+            height: cardWidth,
+            resizeMode: 'contain',
+          }}
+        />
+      </TouchableOpacity>
+      <View className="mt-1" style={{ position: 'relative', zIndex: 1 }}>
         <View className="flex-row justify-between items-start pr-0">
           <Text
-            className="flex-1 text-sm font-medium text-gray-800 px-1"
+            className="flex-1 text-sm font-medium text-black px-1 text-center"
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {book.title}
           </Text>
-          <View className="relative" style={{ zIndex: 50 }}>
-            <TouchableOpacity onPress={onToggleDropdown} className="p-1 -mr-1">
-              <MaterialCommunityIcons name="dots-vertical" size={18} color="#666" />
-            </TouchableOpacity>
-            {isDropdownVisible && (
-              <View
-                className="absolute right-0 top-8 bg-white rounded-lg shadow-lg w-24 py-1 border border-gray-200"
-                style={{ zIndex: 999 }}
+
+          {isDropdownVisible && (
+            <View
+              style={{
+                position: 'absolute',
+                right: 10,
+                top: -35,
+                backgroundColor: '#FAD3E4',
+                borderWidth: 3,
+                borderColor: '#000',
+                width: 96,
+                zIndex: 50,
+                shadowColor: '#000',
+                shadowOffset: { width: 3, height: 3 },
+                shadowOpacity: 1,
+                paddingVertical: 4,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => onEditPress?.(book)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                }}
               >
-                <TouchableOpacity
-                  onPress={() => onEditPress?.(book)}
-                  className="flex-row items-center px-3 py-2"
+                <MaterialCommunityIcons name="pencil" size={14} color="#000" />
+                <Text
+                  style={{
+                    marginLeft: 6,
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                    color: '#000',
+                  }}
                 >
-                  <MaterialCommunityIcons name="pencil" size={16} color="#666" />
-                  <Text className="ml-2 text-sm text-gray-600">Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => onDeletePress?.(book)}
-                  className="flex-row items-center px-3 py-2"
+                  Edit
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 2, backgroundColor: '#000' }} />
+
+              <TouchableOpacity
+                onPress={() => onDeletePress?.(book)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                }}
+              >
+                <MaterialCommunityIcons name="delete" size={14} color="red" />
+                <Text
+                  style={{
+                    marginLeft: 6,
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                    color: 'red',
+                  }}
                 >
-                  <MaterialCommunityIcons name="delete" size={16} color="#FF4444" />
-                  <Text className="ml-2 text-sm text-red-500">Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        <Text className="text-xs text-gray-600 mt-0.5 px-1">
+
+        <Text className="text-xs text-black mt-0.5 px-1 text-center">
           {new Date(book.created_at).toLocaleDateString()}
         </Text>
       </View>
