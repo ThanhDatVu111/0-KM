@@ -117,7 +117,15 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
       <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
         <RetroHeader title="TIME" />
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-          <Text className="text-center font-pregular text-sm text-black">Loading...</Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 14,
+            }}
+            className="text-center text-black"
+          >
+            Loading...
+          </Text>
         </View>
       </View>
     );
@@ -128,7 +136,13 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
       <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
         <RetroHeader title="TIME" />
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-          <Text className="text-center font-pregular text-sm text-black">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 14,
+            }}
+            className="text-center text-black"
+          >
             {!hasRoom ? 'No partner connected' : 'Partner data unavailable'}
           </Text>
         </View>
@@ -140,16 +154,44 @@ export function TimeWidget({ className = '', fallbackUserName = 'Partner' }: Tim
     <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
       <RetroHeader title="TIME" />
       <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-        <Text className="text-center font-pregular text-xs text-black mb-2">{userName}'s time</Text>
+        <Text
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 12,
+          }}
+          className="text-center text-black mb-2"
+        >
+          {userName}'s time
+        </Text>
         <View className="items-center">
-          <Text className="font-pbold text-3xl text-black">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 32,
+            }}
+            className="text-black"
+          >
             {formatTime(currentTime, timezone)}
           </Text>
-          <Text className="font-pregular text-xs text-gray-600 mt-1 text-center">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 12,
+            }}
+            className="text-gray-600 mt-1 text-center"
+          >
             {formatDate(currentTime, timezone)}
           </Text>
           {timezone && (
-            <Text className="font-pregular text-xs text-gray-500 mt-1 text-center">{timezone}</Text>
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 12,
+              }}
+              className="text-gray-500 mt-1 text-center"
+            >
+              {timezone}
+            </Text>
           )}
         </View>
       </View>

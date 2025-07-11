@@ -42,7 +42,7 @@ export default function SignInForm() {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace('../(tabs)/home');
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        // Sign-in attempt incomplete
       }
     } catch (err: any) {
       const readableMessage =
@@ -81,9 +81,7 @@ export default function SignInForm() {
         // to handle next steps
       }
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      // Handle Google sign-in error silently
     }
   }, []);
 

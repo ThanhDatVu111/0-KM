@@ -22,7 +22,6 @@ export default function Index() {
             await signOut();
             console.log('✅ Successfully signed out');
           } catch (error) {
-            console.error('❌ Error signing out:', error);
             Alert.alert('Error', 'Failed to sign out. Please try again.');
           }
         },

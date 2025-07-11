@@ -329,7 +329,7 @@ const Home = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: 24, paddingTop: 100, paddingBottom: 120, flexGrow: 1 }}
+        contentContainerStyle={{ padding: 24, paddingTop: 140, paddingBottom: 120, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Enable Location Toggle */}
@@ -351,8 +351,22 @@ const Home = () => {
                 padding: 16,
               }}
             >
-              <Text className="text-center font-pbold text-lg text-black mb-1">Friday 14</Text>
-              <Text className="text-center font-pregular text-sm text-gray-600 px-3">
+              <Text
+                style={{
+                  fontFamily: 'PixelifySans',
+                  fontSize: 18,
+                }}
+                className="text-center text-black mb-1"
+              >
+                Friday 14
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'PixelifySans',
+                  fontSize: 14,
+                }}
+                className="text-center text-gray-600 px-3"
+              >
                 Movie night in 3 days!
               </Text>
             </View>
@@ -378,7 +392,13 @@ const Home = () => {
 
         {/* YouTube Music Widget */}
         <View className="mb-4">
-          <Text className="text-lg text-white font-pmedium mb-3">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 18,
+            }}
+            className="text-white mb-3"
+          >
             {hasRoom ? "What We're Watching" : 'My Music Video'}
           </Text>
           {roomVideo ? (
@@ -397,7 +417,13 @@ const Home = () => {
               <View className="bg-[#FDA3D4] flex-1 rounded-b-md">
                 <View className="px-4 pt-0 pb-2 flex-1 justify-center items-center">
                   <Ionicons name="play-circle" size={24} color="#6536DD" />
-                  <Text className="font-pmedium text-sm text-black mt-2 mb-3 text-center">
+                  <Text
+                    style={{
+                      fontFamily: 'PixelifySans',
+                      fontSize: 14,
+                    }}
+                    className="text-black mt-2 mb-3 text-center"
+                  >
                     {canAddVideo
                       ? 'No video playing'
                       : 'Waiting for your partner to add a video...'}
@@ -416,7 +442,15 @@ const Home = () => {
                     >
                       <View className="bg-[#6536DD] px-4 py-2 flex-row items-center">
                         <Ionicons name="add" size={16} color="white" />
-                        <Text className="text-white font-pmedium text-sm ml-1">ADD VIDEO</Text>
+                        <Text
+                          style={{
+                            fontFamily: 'PixelifySans',
+                            fontSize: 12,
+                          }}
+                          className="text-white ml-1"
+                        >
+                          ADD VIDEO
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   )}
@@ -428,7 +462,13 @@ const Home = () => {
 
         {/* Spotify Widget */}
         <View className="mb-4">
-          <Text className="text-lg text-white font-pmedium mb-3">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 18,
+            }}
+            className="text-white mb-3"
+          >
             {roomId ? "What We're Listening To" : 'My Music'}
           </Text>
 
@@ -454,17 +494,18 @@ const Home = () => {
             className="h-28 mt-4 items-center justify-center rounded-2xl border border-white/20 bg-primary/80 p-4 shadow-md backdrop-blur-lg"
             onPress={() => router.push('/(onboard)/join-room')}
           >
-            <Text className="text-center font-pmedium text-lg text-white">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 16,
+              }}
+              className="text-center text-white"
+            >
               + Join a room to connect with your partner +
             </Text>
           </TouchableOpacity>
         )}
       </ScrollView>
-
-      {/* Sign Out Button - Top Right */}
-      <View className="absolute top-16 right-5 z-50">
-        <SignOutButton />
-      </View>
 
       {/* YouTube Input Modal */}
       <Modal

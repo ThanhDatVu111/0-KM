@@ -123,7 +123,15 @@ export const AnniversaryWidget: React.FC<AnniversaryWidgetProps> = ({
       <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
         <RetroHeader title="MEMORY" />
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-          <Text className="text-center font-pregular text-sm text-black">Loading...</Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 14,
+            }}
+            className="text-center text-black"
+          >
+            Loading...
+          </Text>
         </View>
       </View>
     );
@@ -134,7 +142,13 @@ export const AnniversaryWidget: React.FC<AnniversaryWidgetProps> = ({
       <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
         <RetroHeader title="MEMORY" />
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-          <Text className="text-center font-pregular text-sm text-black">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 14,
+            }}
+            className="text-center text-black"
+          >
             Set your anniversary date in settings to see your relationship milestone
           </Text>
         </View>
@@ -145,38 +159,39 @@ export const AnniversaryWidget: React.FC<AnniversaryWidgetProps> = ({
   return (
     <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
       <RetroHeader title="MEMORY" />
-      <View className="bg-white px-4 py-4 rounded-b-md flex-1 relative">
+      <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center items-center">
+        {/* Heart Icon */}
         <Image
-          source={images.memory}
+          source={images.heart}
           style={{
-            width: '100%',
-            height: '100%',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            borderRadius: 6,
+            width: 48,
+            height: 48,
+            marginBottom: 12,
           }}
-          resizeMode="cover"
+          resizeMode="contain"
         />
-        <View
+
+        {/* Days Count */}
+        <Text
           style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            borderBottomLeftRadius: 6,
-            borderBottomRightRadius: 6,
-            padding: 12,
+            fontFamily: 'PixelifySans',
+            fontSize: 32,
           }}
+          className="text-black text-center mb-1"
         >
-          <Text className="font-pbold text-black text-2xl text-center">
-            {daysTogether}
-          </Text>
-          <Text className="font-pregular text-black text-sm text-center">
-            Days Together
-          </Text>
-        </View>
+          {daysTogether}
+        </Text>
+
+        {/* Label */}
+        <Text
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 14,
+          }}
+          className="text-black text-center"
+        >
+          Days Together
+        </Text>
       </View>
     </View>
   );

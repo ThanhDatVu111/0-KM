@@ -118,7 +118,7 @@ export function SpotifyWidget({
       // Update local state after successful API call
       setIsPlaying(!isPlaying);
     } catch (error) {
-      Alert.alert('Error', 'Failed to control playback');
+      // Silently handle errors without showing alerts
     }
   };
 
@@ -130,7 +130,7 @@ export function SpotifyWidget({
       await clearTrack();
       if (onPress) onPress();
     } catch (error) {
-      Alert.alert('Error', 'Failed to remove track');
+      // Silently handle errors without showing alerts
     }
   };
 
@@ -142,10 +142,22 @@ export function SpotifyWidget({
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
           <View className="items-center">
             <Ionicons name="musical-notes" size={32} color="#6536DD" />
-            <Text className="font-pmedium text-lg text-black mt-2 mb-3 text-center">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 18,
+              }}
+              className="text-black mt-2 mb-3 text-center"
+            >
               Connect to Spotify
             </Text>
-            <Text className="text-black/70 font-pregular text-sm text-center px-4 mb-4">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 14,
+              }}
+              className="text-black/70 text-center px-4 mb-4"
+            >
               Connect your Spotify account to share music with your partner
             </Text>
             <TouchableOpacity
@@ -161,7 +173,13 @@ export function SpotifyWidget({
               }}
             >
               <View className="bg-[#6536DD] px-6 py-3">
-                <Text className="text-white font-pbold text-sm">
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 14,
+                  }}
+                  className="text-white"
+                >
                   {isConnecting ? 'Connecting...' : 'Connect Spotify'}
                 </Text>
               </View>
@@ -183,10 +201,22 @@ export function SpotifyWidget({
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
           <View className="items-center">
             <Ionicons name="musical-notes" size={32} color="#6536DD" />
-            <Text className="font-pmedium text-lg text-black mt-2 mb-3 text-center">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 18,
+              }}
+              className="text-black mt-2 mb-3 text-center"
+            >
               Add a Track
             </Text>
-            <Text className="text-black/70 font-pregular text-sm text-center px-4 mb-4">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 14,
+              }}
+              className="text-black/70 text-center px-4 mb-4"
+            >
               Search for a song to share with your partner
             </Text>
             <TouchableOpacity
@@ -201,7 +231,15 @@ export function SpotifyWidget({
               }}
             >
               <View className="bg-[#6536DD] px-6 py-3">
-                <Text className="text-white font-pbold text-sm">Search Music</Text>
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 14,
+                  }}
+                  className="text-white"
+                >
+                  Search Music
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -272,7 +310,13 @@ export function SpotifyWidget({
         {roomId && (
           <View className="flex-row items-center justify-center mb-2">
             <Ionicons name="radio" size={12} color="#6536DD" />
-            <Text className="text-black font-pregular text-xs ml-1">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 12,
+              }}
+              className="text-black ml-1"
+            >
               {isController ? 'You control' : 'Partner controls'}
             </Text>
           </View>
@@ -397,20 +441,21 @@ const styles = StyleSheet.create({
   trackName: {
     color: 'black',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'PixelifySans',
     textAlign: 'center',
     marginBottom: 4,
   },
   artistName: {
     color: '#6536DD',
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: 'PixelifySans',
     textAlign: 'center',
     marginBottom: 2,
   },
   albumName: {
     color: '#666',
     fontSize: 14,
+    fontFamily: 'PixelifySans',
     textAlign: 'center',
   },
   progressContainer: {
@@ -434,6 +479,7 @@ const styles = StyleSheet.create({
   timeText: {
     color: '#666',
     fontSize: 12,
+    fontFamily: 'PixelifySans',
   },
   controls: {
     flexDirection: 'row',

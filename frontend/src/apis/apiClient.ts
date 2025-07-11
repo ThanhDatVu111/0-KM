@@ -32,7 +32,6 @@ export class ApiClient {
     customHeaders?: Record<string, string>,
   ) {
     const url = `${this.baseURL}${endpoint}`;
-    console.log('🔍 [DEBUG] Making GET request to:', url);
 
     const config: RequestInit = {
       headers: {

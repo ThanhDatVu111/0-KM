@@ -167,7 +167,15 @@ export function WeatherWidget({
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
           <View className="items-center">
             <Ionicons name="refresh" size={24} color="#6536DD" />
-            <Text className="font-pregular text-sm text-black mt-2">Loading weather...</Text>
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 14,
+              }}
+              className="text-black mt-2"
+            >
+              Loading weather...
+            </Text>
           </View>
         </View>
       </View>
@@ -182,7 +190,13 @@ export function WeatherWidget({
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
           <View className="items-center">
             <Ionicons name="location-outline" size={24} color="#6536DD" />
-            <Text className="text-center font-pregular text-sm text-black mt-2">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 14,
+              }}
+              className="text-center text-black mt-2"
+            >
               Enable location to see your partner's weather
             </Text>
           </View>
@@ -196,7 +210,13 @@ export function WeatherWidget({
       <View className={`w-full h-full shadow-2xl border-2 border-black rounded-lg ${className}`}>
         <RetroHeader title="WEATHER" />
         <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
-          <Text className="text-center font-pregular text-sm text-black">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 14,
+            }}
+            className="text-center text-black"
+          >
             {!hasRoom ? 'No partner connected' : 'Partner location unavailable'}
           </Text>
         </View>
@@ -218,21 +238,63 @@ export function WeatherWidget({
           <View className="items-center">
             {isApiKeyMissing ? (
               <>
-                <Text className="font-pregular text-sm text-black mb-2">Demo Mode</Text>
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 14,
+                  }}
+                  className="text-black mb-2"
+                >
+                  Demo Mode
+                </Text>
                 <Ionicons name="sunny" size={32} color="#6536DD" />
-                <Text className="font-pbold text-2xl text-black mt-2">72°F</Text>
-                <Text className="font-pregular text-xs text-gray-600 mt-1">Sunny</Text>
-                <Text className="font-pregular text-xs text-gray-500 mt-1">
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 24,
+                  }}
+                  className="text-black mt-2"
+                >
+                  72°F
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                  }}
+                  className="text-gray-600 mt-1"
+                >
+                  Sunny
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                  }}
+                  className="text-gray-500 mt-1"
+                >
                   {partnerCity}, {partnerCountry}
                 </Text>
-                <Text className="font-pregular text-xs text-gray-400 mt-2 text-center px-2">
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                  }}
+                  className="text-gray-400 mt-2 text-center px-2"
+                >
                   Add EXPO_PUBLIC_WEATHER_API_KEY to .env for real data
                 </Text>
               </>
             ) : (
               <>
                 <Ionicons name="cloud-offline" size={24} color="#6536DD" />
-                <Text className="font-pregular text-sm text-black mt-2 text-center">
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 14,
+                  }}
+                  className="text-black mt-2 text-center"
+                >
                   {error || 'Weather unavailable'}
                 </Text>
                 <TouchableOpacity
@@ -247,7 +309,15 @@ export function WeatherWidget({
                   }}
                 >
                   <View className="bg-[#6536DD] px-3 py-1">
-                    <Text className="text-white font-pbold text-xs">Retry</Text>
+                    <Text
+                      style={{
+                        fontFamily: 'PixelifySans',
+                        fontSize: 12,
+                      }}
+                      className="text-white"
+                    >
+                      Retry
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </>
@@ -264,7 +334,15 @@ export function WeatherWidget({
       <View className="bg-white px-4 py-4 rounded-b-md flex-1 justify-center">
         {/* Header with refresh button */}
         <View className="flex-row justify-between items-center mb-2">
-          <Text className="font-pregular text-xs text-black">{userName}'s weather</Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 12,
+            }}
+            className="text-black"
+          >
+            {userName}'s weather
+          </Text>
           <TouchableOpacity onPress={handleRefresh} className="p-1">
             <Ionicons name="refresh" size={12} color="#6536DD" />
           </TouchableOpacity>
@@ -275,22 +353,48 @@ export function WeatherWidget({
           <Ionicons name={getWeatherIcon(weatherData.icon) as any} size={32} color="#6536DD" />
 
           {/* Temperature */}
-          <Text className="font-pbold text-2xl text-black mt-2">{weatherData.temperature}°F</Text>
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 24,
+            }}
+            className="text-black mt-2"
+          >
+            {weatherData.temperature}°F
+          </Text>
 
           {/* Description */}
-          <Text className="font-pregular text-xs text-gray-600 mt-1 text-center capitalize">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 12,
+            }}
+            className="text-gray-600 mt-1 text-center capitalize"
+          >
             {weatherData.description}
           </Text>
 
           {/* Location */}
-          <Text className="font-pregular text-xs text-gray-500 mt-1 text-center">
+          <Text
+            style={{
+              fontFamily: 'PixelifySans',
+              fontSize: 12,
+            }}
+            className="text-gray-500 mt-1 text-center"
+          >
             {weatherData.city}, {weatherData.country}
           </Text>
 
           {/* Additional info */}
           <View className="flex-row items-center mt-2">
             <Ionicons name="thermometer" size={10} color="#6536DD" />
-            <Text className="font-pregular text-xs text-gray-600 ml-1">
+            <Text
+              style={{
+                fontFamily: 'PixelifySans',
+                fontSize: 12,
+              }}
+              className="text-gray-600 ml-1"
+            >
               Feels like {weatherData.feelsLike}°F
             </Text>
           </View>

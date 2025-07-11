@@ -457,6 +457,34 @@ function AnniversaryStep({
           </View>
         )}
 
+        {/* Show selected date confirmation */}
+        {!showPicker && (
+          <View className="mb-6 items-center">
+            <View className="bg-gray-50 border-2 border-[#6536DD] rounded-lg p-4 w-full">
+              <Text className="text-center font-bold mb-2" style={{ fontFamily: 'Poppins-Bold' }}>
+                📅 Your Anniversary Date
+              </Text>
+              <Text
+                className="text-center text-lg text-[#6536DD] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                {anniversaryDate.toLocaleDateString()}
+              </Text>
+              <Text
+                className="text-center text-sm text-gray-600 mt-2"
+                style={{ fontFamily: 'Poppins-Regular' }}
+              >
+                {anniversaryDate.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View className="flex-row justify-between w-full gap-4">
           <TouchableOpacity
             onPress={onPrevious}

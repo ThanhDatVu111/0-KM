@@ -21,6 +21,7 @@ import googleCalendar from '@/assets/images/googleCalendar.png';
 import profileBg from '@/assets/images/profileBg.png';
 import widget from '@/assets/images/widget.png';
 import framer from '@/assets/images/framer.png';
+import heart from '@/assets/images/heart.png';
 
 export default {
   polaroid,
@@ -46,4 +47,5 @@ export default {
   entryCardBg,
   loadingScreen,
   googleCalendar,
+  heart,
 };
