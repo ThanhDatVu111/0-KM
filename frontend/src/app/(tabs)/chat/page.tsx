@@ -26,6 +26,8 @@ export default function Chat() {
   const [partnerAvatar, setPartnerAvatar] = useState<string>('');
   const [userAvatar, setUserAvatar] = useState<string>('');
   const [partnerOnline, setPartnerOnline] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -131,10 +133,28 @@ export default function Chat() {
             userAvatar={userAvatar}
             partnerAvatar={partnerAvatar}
             userId={userId!}
+            onEditMessage={(messageId: string, text: string) => {
+              setEditingMessageId(messageId);
+              setEditingText(text);
+            }}
           />
 
           {/* Chat Input */}
-          <ChatInput room_id={roomId} sender_id={userId!} message_id={`${userId}-${Date.now()}`} />
+          <ChatInput
+            room_id={roomId}
+            sender_id={userId!}
+            editingMessageId={editingMessageId}
+            editingText={editingText}
+            onCancelEdit={() => {
+              setEditingMessageId(null);
+              setEditingText('');
+            }}
+            onSaveEdit={(messageId: string, newText: string) => {
+              socket?.emit('edit-message', { messageId, newText });
+              setEditingText('');
+              setEditingMessageId(null);
+            }}
+          />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>

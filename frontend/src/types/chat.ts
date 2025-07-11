@@ -42,7 +42,7 @@ export interface SendMessage {
 export interface EditMessage {
   message_id: string;
   content: string;
-  is_edited: true;
+  room_id: string;
 }
 
 export interface DeleteMessage {
@@ -54,4 +54,3 @@ export interface ReactToMessage {
   message_id: string;
   reaction: string;
 }
-

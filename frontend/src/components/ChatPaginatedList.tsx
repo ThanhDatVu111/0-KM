@@ -13,6 +13,7 @@ interface ChatPaginatedListProps {
   userAvatar?: string;
   partnerAvatar?: string;
   userId: string;
+  onEditMessage: (messageId: string, text: string) => void;
 }
 
 export default function ChatPaginatedList({
@@ -25,7 +26,7 @@ export default function ChatPaginatedList({
   userAvatar,
   partnerAvatar,
   userId,
-  
+  onEditMessage,
 }: ChatPaginatedListProps) {
   const renderMessage = ({ item }: { item: Message }) => {
     const isSender = item.sender_id === userId;
@@ -47,7 +48,7 @@ export default function ChatPaginatedList({
         reaction={item.reaction}
         isSent={item.is_sent ?? true}
         createdAt={item.created_at}
-        isSelected={false}
+        onEditPress={onEditMessage}
       />
     );
   };

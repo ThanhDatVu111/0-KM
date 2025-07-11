@@ -20,7 +20,8 @@ interface ChatBubbleProps {
   reaction?: string;
   isSent: boolean;
   createdAt: string;
-  isSelected: boolean;
+  deleted?: boolean;
+  onEditPress: (messageId: string, text: string) => void;
 }
 
 const Divider = () => <View className="h-[0.75px] my-1 bg-[#8150E0]" />;
@@ -76,9 +77,13 @@ export default function ChatBubble({
   reaction,
   isSent,
   createdAt,
-  isSelected,
+  deleted,
+  onEditPress,
 }: ChatBubbleProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const handleEditPress = () => {
+    onEditPress(message_id, content!);
+  };
 
   const formattedTimestamp = new Date(createdAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -173,15 +178,19 @@ export default function ChatBubble({
                 backgroundColor: 'white',
               }}
             >
-              <MenuItem
-                label="REPLY"
-                icon={<Octicons name="reply" size={18} color="#8150E0" />}
-                onPress={() => {
-                  setShowMenu(false);
-                  console.log('User replying');
-                }}
-              />
-              <Divider />
+              {!isSender && (
+                <>
+                  <MenuItem
+                    label="REPLY"
+                    icon={<Octicons name="reply" size={18} color="#8150E0" />}
+                    onPress={() => {
+                      setShowMenu(false);
+                      console.log('User replying');
+                    }}
+                  />
+                  <Divider />
+                </>
+              )}
               <MenuItem
                 label="COPY"
                 icon={<Feather name="copy" size={18} color="#8150E0" />}
@@ -192,24 +201,29 @@ export default function ChatBubble({
                 }}
               />
               <Divider />
-              <MenuItem
-                label="EDIT"
-                icon={<Feather name="edit-2" size={18} color="#8150E0" />}
-                onPress={() => {
-                  setShowMenu(false);
-                  handleEditMessage(message_id, content ?? '');
-                }}
-              />
-              <Divider />
+
               {isSender ? (
-                <MenuItem
-                  label="UNSEND"
-                  icon={<Ionicons name="trash-outline" size={18} color="#DC2626" />}
-                  onPress={() => {
-                    setShowMenu(false);
-                    handleDeleteMessage(message_id);
-                  }}
-                />
+                <>
+                  <MenuItem
+                    label="EDIT"
+                    icon={<Feather name="edit-2" size={18} color="#8150E0" />}
+                    onPress={() => {
+                      console.log(`Edit message ${message_id} with content ${content}`);
+                      setShowMenu(false);
+                      handleEditPress();
+                      
+                    }}
+                  />
+                  <Divider />
+                  <MenuItem
+                    label="UNSEND"
+                    icon={<Ionicons name="trash-outline" size={18} color="#DC2626" />}
+                    onPress={() => {
+                      setShowMenu(false);
+                      handleDeleteMessage(message_id);
+                    }}
+                  />
+                </>
               ) : (
                 <MenuItem
                   label="DELETE"

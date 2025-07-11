@@ -36,7 +36,7 @@ export async function getMessageById(
   try {
     const { message_id } = req.params;
     if (!message_id) {
-      res.status(400).json({ error: 'RMissing field/params: message_id' });
+      res.status(400).json({ error: 'Missing field/params: message_id' });
       return;
     }
 
@@ -62,7 +62,7 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       reaction,
     } = req.body;
     if (!room_id || (!content && !media_paths)) {
-      res.status(400).json({ error: 'RMissing field/params: room_id or content or media_paths' });
+      res.status(400).json({ error: 'Missing field/params: room_id or content or media_paths' });
       return;
     }
 

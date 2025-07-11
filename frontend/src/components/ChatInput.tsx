@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Pressable } from 'react-native';
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { sendMessage } from '@/apis/chat';
 import { useSocket } from '../utils/SocketProvider';
 import uuid from 'react-native-uuid';
 import { useChatSocket } from '@/hooks/useSocketChat';
@@ -19,25 +18,57 @@ export type MediaItem = {
 export interface ChatInputProps {
   room_id: string | null;
   sender_id: string | null;
-  message_id: string; // Fetched using Socket ID
+  message_id?: string; // Fetched using Socket ID
   initialMedia?: MediaItem[]; // Thumbnails of selected media
   saving?: boolean;
-  // socket: typeof Socket | null;
+  editingMessageId: string | null;
+  editingText: string;
+  onCancelEdit: () => void;
+  onSaveEdit: (messageId: string, newText: string) => void;
 }
 
-export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
+export default function ChatInput({
+  message_id,
+  room_id,
+  sender_id,
+  editingMessageId,
+  editingText,
+  onCancelEdit,
+  onSaveEdit,
+}: ChatInputProps) {
   const [content, setContent] = useState<string>('');
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [editing, setEditing] = useState(false);
   const socket = useSocket();
-  const { handleSendMessage } = useChatSocket({
+  const textInputRef = useRef<TextInput>(null);
+  const { handleSendMessage, handleEditMessage } = useChatSocket({
     room_id: room_id!,
     user_id: sender_id!,
   });
 
   const MAX_MEDIA = 10; // Max number
   // const MAX_WORDS
+
+  // Auto-focus and set text when editing starts
+  useEffect(() => {
+    socket?.on('editing-message', ({ message_id, content }) => {
+      setEditing(true);
+    });
+    if (editingMessageId) {
+      setContent(editingText);
+      setEditing(true);
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
+    } else {
+      setContent('');
+    }
+
+    return setEditing(false);
+  }, [editingMessageId, editingText]);
 
   // Camera - Take Photo
   const handleTakePhoto = async () => {
@@ -150,6 +181,19 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
       console.error('Error sending message:', error);
     }
     setSaving(false);
+  };
+
+  const handleEditPress = async () => {
+    if (!socket || !editingMessageId) return;
+    console.log('handleEditPress called');
+
+    setSaving(true);
+
+    await handleEditMessage({ message_id: editingMessageId, content: content, room_id: room_id! });
+    socket.emit('message-edited', { message_id, content });
+    setContent('');
+    setEditing(false);
+    setSaving(false); // Don't forget to reset saving state
   };
 
   return (
@@ -307,9 +351,10 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
         >
           {/* Text Input */}
           <TextInput
+            ref={textInputRef}
             value={content}
             onChangeText={setContent}
-            placeholder="Type a message..."
+            placeholder={editing ? 'Editing message...' : 'Type a message...'}
             multiline
             className="flex-1"
             style={{
@@ -347,7 +392,7 @@ export default function ChatInput({ room_id, sender_id }: ChatInputProps) {
 
         {/* Send Button */}
         <TouchableOpacity
-          onPress={handleSendPress}
+          onPress={editing ? handleEditPress : handleSendPress}
           disabled={!content.trim() && !selectedMedia.length}
           style={{
             backgroundColor: !content.trim() && !selectedMedia.length ? '#D1D5DB' : '#F24187',

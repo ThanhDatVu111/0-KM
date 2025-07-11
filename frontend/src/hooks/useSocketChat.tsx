@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../utils/SocketProvider';
-import type { Message, SendMessage } from '@/types/chat';
+import type { EditMessage, Message, SendMessage } from '@/types/chat';
 import { sendMessage, editMessage, deleteMessage, fetchMessages } from '@/apis/chat';
 
 export type ChatSocketProps = {
@@ -26,9 +26,14 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
       setMessages((prev) => [message, ...prev]);
     });
 
-    socket.on('message-edited', (message: Message) => {
+    socket.on('message-edited', ({ messageId, newContent }) => {
+      console.log('Listened to message-edited');
       setMessages((prev) =>
-        prev.map((msg) => (msg.message_id === message.message_id ? message : msg)),
+        prev.map((msg) =>
+          msg.message_id === messageId
+            ? { ...msg, content: newContent, is_edited: true } // Only update the content field
+            : msg,
+        ),
       );
     });
 
@@ -61,13 +66,30 @@ export const useChatSocket = ({ room_id, user_id }: ChatSocketProps) => {
     // }
   };
 
-  const handleEditMessage = async (messageId: string, newContent: string) => {
+  const handleEditMessage = async (newMessage: EditMessage) => {
     try {
-      const updatedMessage = await editMessage({ message_id: messageId, content: newContent });
-      socket?.emit('edit-message', { roomId: room_id, message: updatedMessage });
-      setMessages((prev) =>
-        prev.map((msg) => (msg.message_id === messageId ? updatedMessage : msg)),
-      );
+      console.log('Editing', newMessage.message_id);
+
+      // Fix: Use the correct parameter names from the newMessage object
+      //   const updatedMessage = await editMessage({
+      //     message_id: newMessage.messageId,
+      //     content: newMessage.newContent,
+      //   });
+
+      // Fix: Use correct parameter names and include room_id
+      socket?.emit('edit-message', {
+        message_id: newMessage.message_id, // Server expects message_id, not messageId
+        newInput: newMessage.content, // Server expects newInput, not newContent
+        room_id: newMessage.room_id,
+      });
+
+      //   setMessages((prev) =>
+      //     prev.map((msg) =>
+      //       msg.message_id === newMessage.message_id
+      //         ? { ...msg, content: newMessage.content }
+      //         : msg,
+      //     ),
+      //   );
     } catch (error) {
       console.error('Error editing message:', error);
     }

@@ -93,14 +93,11 @@ export default function socketHandler(io: Server) {
         io.to(room_id).emit('receive-message', messageData);
         console.log(`✅ Message sent successfully in room ${room_id}`);
 
-        // Generate unique message_id
-        const message_id = `${Date.now()}-${sender_id}-${Math.random().toString(36).substr(2, 9)}`;
-
         console.log(`📝 Sending message in room ${room_id} by user ${sender_id}`);
 
         // Save message to database
         const savedMessage = await chatService.sendMessage({
-          message_id,
+          message_id: messageData.message_id,
           room_id,
           content,
           sender_id,
@@ -124,31 +121,35 @@ export default function socketHandler(io: Server) {
 
     // Handle message editing
     socket.on('edit-message', async (data) => {
+      console.log('🔍 RAW DATA RECEIVED:', data);
+      console.log('🔍 DATA TYPE:', typeof data);
+      console.log('🔍 DATA KEYS:', Object.keys(data || {}));
+
       try {
         const { message_id, newInput, room_id } = data;
 
+        console.log('📋 EXTRACTED VALUES:');
+        console.log('  message_id:', message_id, '(type:', typeof message_id, ')');
+        console.log('  newInput:', newInput, '(type:', typeof newInput, ')');
+
         if (!message_id || !newInput) {
+          console.log('❌ VALIDATION FAILED: missing message_id or newInput');
           socket.emit('error', { message: 'message_id and newInput are required' });
           return;
         }
 
         if (!room_id) {
+          console.log('❌ VALIDATION FAILED: missing room_id');
           socket.emit('error', { message: 'room_id is required' });
           return;
         }
 
-        console.log(`✏️ Editing message ${message_id} in room ${room_id}`);
-
-        // Update message in database
         const updatedMessage = await chatService.editMessage({ message_id, newInput });
 
-        // Broadcast edited message to all users in the room
-        io.to(room_id).emit('message-edited', {
-          ...updatedMessage,
-          timestamp: new Date().toISOString(),
-        });
+        console.log(`✏️ Editing message ${message_id} in room ${room_id}`);
+        io.to(room_id).emit('message-edited', data);
 
-        console.log(`✅ Message ${message_id} edited successfully`);
+        // Rest of your code...
       } catch (error) {
         console.error('❌ Error editing message:', error);
         socket.emit('error', {
