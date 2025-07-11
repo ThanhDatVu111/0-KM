@@ -12,6 +12,7 @@ import {
   Platform,
   ImageBackground,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import icons from '@/constants/icons';
@@ -108,15 +109,21 @@ function GGCalendar() {
         const room = await fetchRoomByUserId({ user_id: userId });
         setRoomId(room.room_id);
         setOtherUserId(room.other_user_id);
-
-        const user = await fetchUser(userId);
-        setUserEmail(user.email);
-
-        const partner = await fetchUser(other_user_id);
-        setPartnerEmail(partner.email);
       } catch (err) {}
     })();
-  }, [userId]);
+  }, [userId, room_id]);
+
+  useEffect(() => {
+    if (!other_user_id) return;
+    (async () => {
+      try {
+        const partner = await fetchUser(other_user_id);
+        setPartnerEmail(partner.email);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [other_user_id]);
 
   // 2) Check if partner is synced
   useEffect(() => {
@@ -441,27 +448,33 @@ function GGCalendar() {
   // If user isn’t synced, show Connect UI
   if (!syncWithCalendar) {
     return (
-      <View className="tab-screen" style={{ padding: 20 }}>
-        <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>Connect to</Text>
-        <Image
-          source={icons.googleCalendar}
-          style={{ width: '100%', height: 100 }}
-          resizeMode="contain"
-        />
-        <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>
-          to see mutual availability and
-        </Text>
-        <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14 }}>
-          schedule your next virtual date
-        </Text>
-        <TouchableOpacity
-          onPress={connectCalendar}
-          className="bg-calendarButton h-10 w-40 rounded-lg items-center mt-12 justify-center"
-          style={{ alignSelf: 'center' }}
-        >
-          <Text style={{ color: 'white', fontFamily: 'Poppins-SemiBold' }}>Connect</Text>
-        </TouchableOpacity>
-      </View>
+      <ImageBackground source={images.profileBg} style={{ flex: 1 }} resizeMode="cover">
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14, textAlign: 'center' }}>
+              Connect to
+            </Text>
+            <Image
+              source={images.googleCalendar}
+              style={{ width: 200, height: 100, marginVertical: 20 }}
+              resizeMode="contain"
+            />
+            <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14, textAlign: 'center' }}>
+              to see mutual availability and
+            </Text>
+            <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14, textAlign: 'center' }}>
+              schedule your next virtual date
+            </Text>
+            <TouchableOpacity
+              onPress={connectCalendar}
+              className="bg-calendarButton h-10 w-40 rounded-lg items-center mt-12 justify-center"
+              style={{ alignSelf: 'center' }}
+            >
+              <Text style={{ color: 'white', fontFamily: 'Poppins-SemiBold' }}>Connect</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
