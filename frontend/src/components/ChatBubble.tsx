@@ -211,7 +211,7 @@ export default function ChatBubble({
                       console.log(`Edit message ${message_id} with content ${content}`);
                       setShowMenu(false);
                       handleEditPress();
-                      
+                      onEditPress(message_id, content ?? '');
                     }}
                   />
                   <Divider />

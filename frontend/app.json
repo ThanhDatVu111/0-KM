@@ -39,6 +39,12 @@
       ],
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+        }
+      ],
       "expo-web-browser",
       [
         "react-native-capture-protection",

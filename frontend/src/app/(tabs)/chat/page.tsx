@@ -16,6 +16,7 @@ import {
   useCaptureProtection,
   CaptureEventType,
 } from 'react-native-capture-protection';
+import AudioRecorder from '@/components/AudioRecorder';
 
 export default function Chat() {
   const socket = useSocket();

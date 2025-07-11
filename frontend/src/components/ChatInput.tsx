@@ -8,6 +8,7 @@ import { useSocket } from '../utils/SocketProvider';
 import uuid from 'react-native-uuid';
 import { useChatSocket } from '@/hooks/useSocketChat';
 import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
+import AudioRecorder from './AudioRecorder';
 
 export type MediaItem = {
   uri: string;
@@ -66,8 +67,6 @@ export default function ChatInput({
     } else {
       setContent('');
     }
-
-    return setEditing(false);
   }, [editingMessageId, editingText]);
 
   // Camera - Take Photo
@@ -192,12 +191,15 @@ export default function ChatInput({
     await handleEditMessage({ message_id: editingMessageId, content: content, room_id: room_id! });
     socket.emit('message-edited', { message_id, content });
     setContent('');
+    onCancelEdit();
     setEditing(false);
     setSaving(false); // Don't forget to reset saving state
   };
 
   return (
     <View className="px-3 py-2">
+      <AudioRecorder />
+
       {/* Media Picker - Simple Icons */}
       {showMediaPicker && (
         <View className="flex-row justify-center mb-2 space-x-4 gap-3">
