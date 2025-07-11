@@ -19,6 +19,7 @@ export interface OnboardRequest {
   location_longitude?: number;
   location_city?: string;
   location_country?: string;
+  anniversary_date?: string;
 }
 
 export interface OnboardResponse {
@@ -38,5 +39,6 @@ export interface FetchedUserResponse {
   location_longitude?: number;
   location_city?: string;
   location_country?: string;
+  anniversary_date?: string;
   created_at: string;
 }

@@ -55,7 +55,7 @@ class LocationTrackingService {
       this.isTracking = true;
       console.log('✅ Location tracking started successfully');
     } catch (error) {
-      console.error('❌ Failed to start location tracking:', error);
+      // Silently handle location tracking errors since it's optional
       throw error;
     }
   }

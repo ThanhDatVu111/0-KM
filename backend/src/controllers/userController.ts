@@ -40,6 +40,7 @@ export async function onboard(
       location_longitude,
       location_city,
       location_country,
+      anniversary_date,
     } = req.body;
 
     if (!user_id || !name || !birthdate || !photo_url) {
@@ -57,6 +58,7 @@ export async function onboard(
       location_longitude,
       location_city,
       location_country,
+      anniversary_date,
     });
 
     res.status(201).json({ data: updatedUser });
@@ -110,6 +112,7 @@ export async function updateProfile(
       location_longitude,
       location_city,
       location_country,
+      anniversary_date,
     } = req.body;
 
     const updated = await userService.updateUserProfile({
@@ -122,6 +125,7 @@ export async function updateProfile(
       ...(location_longitude !== undefined && { location_longitude }),
       ...(location_city !== undefined && { location_city }),
       ...(location_country !== undefined && { location_country }),
+      ...(anniversary_date !== undefined && { anniversary_date }),
     });
     res.status(200).json({ data: updated });
   } catch (err) {

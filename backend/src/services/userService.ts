@@ -17,6 +17,7 @@ interface OnboardUserInput {
   location_longitude?: number;
   location_city?: string;
   location_country?: string;
+  anniversary_date?: string;
 }
 
 interface FetchUserInput {
@@ -41,6 +42,7 @@ export function onboardUser(input: OnboardUserInput) {
     location_longitude: input.location_longitude,
     location_city: input.location_city,
     location_country: input.location_country,
+    anniversary_date: input.anniversary_date,
   });
 }
 
@@ -53,6 +55,12 @@ export function updateUserProfile(input: {
   username?: string;
   birthdate?: string;
   photo_url?: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
+  anniversary_date?: string;
 }) {
   return userModel.updateUserProfile(input);
 }

@@ -32,6 +32,7 @@ import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
 import { SpotifyWidget } from '@/components/music/SpotifyWidget';
 import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
+import { AnniversaryWidget } from '@/components/AnniversaryWidget';
 import { Ionicons } from '@expo/vector-icons';
 import { locationTrackingService } from '@/services/locationTracking';
 import { updateUserLocation } from '@/apis/user';
@@ -371,40 +372,8 @@ const Home = () => {
             isLocationEnabled={isLocationEnabled}
           />
 
-          {/* Image/Memory Widget */}
-          <WidgetCard className="flex-1 min-w-[140px] h-48 overflow-hidden" noPadding>
-            <RetroHeader title="MEMORY" />
-            <View style={{ flex: 1, position: 'relative' }}>
-              <Image
-                source={images.memory}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderBottomLeftRadius: 6,
-                  borderBottomRightRadius: 6,
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                }}
-                resizeMode="cover"
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: 'rgba(255,255,255,0.95)',
-                  borderBottomLeftRadius: 6,
-                  borderBottomRightRadius: 6,
-                  padding: 8,
-                }}
-              >
-                <Text className="font-pregular text-black text-sm">April 14th, 2025</Text>
-                <Text className="font-plight text-black text-xs">Sunset view</Text>
-              </View>
-            </View>
-          </WidgetCard>
+          {/* Anniversary Widget */}
+          <AnniversaryWidget className="flex-1 min-w-[140px] h-48" fallbackUserName="Partner" />
         </View>
 
         {/* YouTube Music Widget */}

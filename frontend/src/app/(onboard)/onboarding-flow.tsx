@@ -333,7 +333,7 @@ function PhotoStep({
         )}
 
         <TouchableOpacity
-          onPress={onNext || onFinish}
+          onPress={onNext}
           className="w-full bg-[#6536DD] border-4 border-black"
           style={{
             shadowColor: '#000',
@@ -348,7 +348,7 @@ function PhotoStep({
               className="text-white text-center text-[16px] font-bold"
               style={{ fontFamily: 'Poppins-Bold' }}
             >
-              {onNext ? 'NEXT' : 'FINISH ONBOARDING'}
+              NEXT
             </Text>
           </View>
         </TouchableOpacity>
@@ -357,7 +357,133 @@ function PhotoStep({
   );
 }
 
-/** --- Step 4: LocationStep --- */
+/** --- Step 4: AnniversaryStep --- */
+function AnniversaryStep({
+  anniversaryDate,
+  setAnniversaryDate,
+  showPicker,
+  setShowPicker,
+  onNext,
+  onPrevious,
+}: {
+  anniversaryDate: Date;
+  setAnniversaryDate: (d: Date) => void;
+  showPicker: boolean;
+  setShowPicker: (b: boolean) => void;
+  onNext: () => void;
+  onPrevious: () => void;
+}) {
+  // Hides the Android date-picker once user pick (or cancel) and, if
+  // user actually picked a date, updates your anniversary date state.
+  const handleChange = (_: any, selected?: Date) => {
+    if (Platform.OS === 'android') setShowPicker(false);
+    if (selected) setAnniversaryDate(selected);
+  };
+
+  return (
+    <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
+      {/* Purple Header Section */}
+      <RetroHeader title="Onboarding" />
+
+      {/* White Form Section */}
+      <View className="bg-white px-8 py-8 rounded-b-md">
+        <View className="mb-6 items-center">
+          <Ionicons name="heart" size={48} color="#6536DD" />
+          <Text
+            className="text-center text-lg font-bold mt-2"
+            style={{ fontFamily: 'Poppins-Bold' }}
+          >
+            When did you start dating?
+          </Text>
+          <Text
+            className="text-center text-sm text-gray-600 mt-2"
+            style={{ fontFamily: 'Poppins-Regular' }}
+          >
+            This will help us track your relationship milestones
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setShowPicker(true)}
+          className="w-full mb-6 bg-[#6536DD] border-4 border-black"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+            elevation: 8,
+          }}
+        >
+          <View className="bg-[#6536DD] px-4 py-3">
+            <Text
+              className="text-white text-center text-[16px] font-bold"
+              style={{ fontFamily: 'Poppins-Bold' }}
+            >
+              {anniversaryDate.toLocaleDateString()}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {showPicker && (
+          <View className="mb-6">
+            <DateTimePicker
+              value={anniversaryDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleChange}
+            />
+          </View>
+        )}
+
+        <View className="flex-row justify-between w-full gap-4">
+          <TouchableOpacity
+            onPress={onPrevious}
+            className="flex-1 bg-gray-400 border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-gray-400 px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                PREVIOUS
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onNext}
+            className="flex-1 bg-[#6536DD] border-4 border-black"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 4, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-[#6536DD] px-4 py-3">
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                NEXT
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** --- Step 5: LocationStep --- */
 function LocationStep({
   location,
   setLocation,
@@ -584,6 +710,8 @@ const OnboardingFlow = () => {
   const [birthdate, setBirthdate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [anniversaryDate, setAnniversaryDate] = useState(new Date());
+  const [showAnniversaryPicker, setShowAnniversaryPicker] = useState(false);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -602,6 +730,7 @@ const OnboardingFlow = () => {
       console.log('📍 Onboarding finish - location_longitude:', location?.longitude);
       console.log('📍 Onboarding finish - location_city:', location?.city);
       console.log('📍 Onboarding finish - location_country:', location?.country);
+      console.log('📍 Onboarding finish - anniversary_date:', anniversaryDate.toISOString());
 
       const user = await onboardUser({
         user_id: user_id as string,
@@ -613,6 +742,7 @@ const OnboardingFlow = () => {
         location_longitude: location?.longitude || undefined,
         location_city: location?.city || undefined,
         location_country: location?.country || undefined,
+        anniversary_date: anniversaryDate.toISOString(),
       });
       console.log('✅ User updated (onboard) in database:', user);
       router.push('/(onboard)/join-room');
@@ -639,13 +769,22 @@ const OnboardingFlow = () => {
       onPrevious={() => setStep(1)}
       onNext={() => setStep(3)}
     />,
-    <LocationStep
+    <AnniversaryStep
       key="4"
+      anniversaryDate={anniversaryDate}
+      setAnniversaryDate={setAnniversaryDate}
+      showPicker={showAnniversaryPicker}
+      setShowPicker={setShowAnniversaryPicker}
+      onPrevious={() => setStep(2)}
+      onNext={() => setStep(4)}
+    />,
+    <LocationStep
+      key="5"
       location={location}
       setLocation={setLocation}
       timezone={timezone}
       setTimezone={setTimezone}
-      onPrevious={() => setStep(2)}
+      onPrevious={() => setStep(3)}
       onFinish={() => handleFinish()}
     />,
   ];

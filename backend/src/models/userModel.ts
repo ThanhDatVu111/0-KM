@@ -71,6 +71,7 @@ export async function updateUserProfile(attrs: {
   location_longitude?: number;
   location_city?: string;
   location_country?: string;
+  anniversary_date?: string;
 }) {
   console.log('📝 Updating user profile with attrs:', attrs);
 
@@ -85,6 +86,7 @@ export async function updateUserProfile(attrs: {
     updateFields.location_longitude = attrs.location_longitude;
   if (attrs.location_city !== undefined) updateFields.location_city = attrs.location_city;
   if (attrs.location_country !== undefined) updateFields.location_country = attrs.location_country;
+  if (attrs.anniversary_date !== undefined) updateFields.anniversary_date = attrs.anniversary_date;
 
   console.log('📝 Update fields to be applied:', updateFields);
 

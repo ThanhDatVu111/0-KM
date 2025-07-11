@@ -13,6 +13,7 @@ export interface OnboardBody {
   location_longitude?: number;
   location_city?: string;
   location_country?: string;
+  anniversary_date?: string;
 }
 
 export interface FetchUserQuery {
