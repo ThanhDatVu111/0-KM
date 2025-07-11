@@ -57,7 +57,16 @@ export class ApiClient {
 
       return response;
     } catch (error) {
-      console.error('API request failed:', error);
+      // Only log non-400 and non-404 errors to reduce noise from expected client errors
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        error.status !== 400 &&
+        error.status !== 404
+      ) {
+        console.error('API request failed:', error);
+      }
       throw error;
     }
   }

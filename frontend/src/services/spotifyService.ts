@@ -30,14 +30,12 @@ class SpotifyService {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        console.log('🔍 [DEBUG] No Supabase session found');
         return null;
       }
 
       // Check for Spotify provider tokens (Supabase v2)
       const spotifyProvider = session.user.app_metadata?.providers?.spotify;
       if (spotifyProvider?.access_token) {
-        console.log('🔍 [DEBUG] Using Spotify provider tokens from Supabase');
         return spotifyProvider.access_token;
       }
 
@@ -46,11 +44,9 @@ class SpotifyService {
       const spotifyExpiry = session.user.user_metadata?.spotify_token_expiry;
 
       if (spotifyAccessToken && spotifyExpiry && Date.now() < spotifyExpiry) {
-        console.log('🔍 [DEBUG] Using legacy metadata tokens from Supabase');
         return spotifyAccessToken;
       }
 
-      console.log('🔍 [DEBUG] No valid Spotify tokens found in Supabase session');
       return null;
     } catch (error) {
       console.error('Error getting Spotify access token from Supabase:', error);
@@ -93,7 +89,6 @@ class SpotifyService {
             // Rate limited - wait and retry
             const retryAfter = response.headers.get('Retry-After');
             const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
-            console.log(`🔄 Rate limited, waiting ${waitTime}ms before retry`);
             await new Promise((resolve) => setTimeout(resolve, waitTime));
 
             // Retry the request
@@ -129,6 +124,16 @@ class SpotifyService {
           if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
               throw new Error('TOKEN_EXPIRED');
+            }
+            if (response.status === 400) {
+              // Try to get more specific error information
+              try {
+                const errorData = await response.json();
+                const errorMessage = errorData?.error?.message || 'Bad request';
+                throw new Error(`Spotify API error: ${errorMessage}`);
+              } catch {
+                throw new Error('Spotify API error: Bad request (400)');
+              }
             }
             throw new Error(`Spotify API error: ${response.status}`);
           }
@@ -249,7 +254,6 @@ class SpotifyService {
     try {
       // First check if there are any available devices
       const devices = await this.getDevices();
-      console.log('🔍 [DEBUG] Available Spotify devices:', devices);
 
       if (devices.length === 0) {
         throw new Error(
@@ -260,14 +264,12 @@ class SpotifyService {
       // Check if any device is active
       const activeDevice = devices.find((device) => device.is_active);
       if (!activeDevice) {
-        console.log('🔍 [DEBUG] No active device, using first available device');
         // Use the first available device
         await this.makeRequest('/me/player/play', 'PUT', {
           uris: [trackUri],
           device_id: devices[0].id,
         });
       } else {
-        console.log('🔍 [DEBUG] Using active device:', activeDevice.name);
         await this.makeRequest('/me/player/play', 'PUT', {
           uris: [trackUri],
         });

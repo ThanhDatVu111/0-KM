@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Switch,
+  Pressable,
 } from 'react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -33,9 +34,10 @@ import { SpotifyWidget } from '@/components/music/SpotifyWidget';
 import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { AnniversaryWidget } from '@/components/AnniversaryWidget';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { locationTrackingService } from '@/services/locationTracking';
 import { updateUserLocation } from '@/apis/user';
+import Profile from '@/screens/Profile';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -102,6 +104,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showYouTubeInput, setShowYouTubeInput] = useState(false);
   const [showSpotifyInput, setShowSpotifyInput] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const isLocationEnabled = true;
 
   const { roomVideo, hasRoom, isLoading: videoLoading, refetchRoomVideo } = useRoomYouTubeVideo();
@@ -328,6 +331,31 @@ const Home = () => {
         />
       </View>
 
+      {/* Profile Button in the absolute top right corner */}
+      <Pressable
+        onPress={() => setShowProfile(true)}
+        style={{
+          position: 'absolute',
+          top: 80,
+          right: 24,
+          backgroundColor: '#F24187',
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: '#6536DD',
+          padding: 8,
+          shadowColor: '#6536DD',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+          elevation: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+        }}
+      >
+        <FontAwesome name="user" size={32} color="#fff" />
+      </Pressable>
+
       <ScrollView
         contentContainerStyle={{ padding: 24, paddingTop: 140, paddingBottom: 120, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
@@ -548,6 +576,41 @@ const Home = () => {
             onCancel={() => setShowSpotifyInput(false)}
             onReconnect={handleSpotifyReconnect}
           />
+        </View>
+      </Modal>
+
+      {/* Profile Modal */}
+      <Modal
+        visible={showProfile}
+        animationType="slide"
+        onRequestClose={() => setShowProfile(false)}
+      >
+        <View style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => setShowProfile(false)}
+            style={{
+              position: 'absolute',
+              top: 70,
+              right: 30,
+              width: 48,
+              height: 48,
+              backgroundColor: '#F24187',
+              borderRadius: 8,
+              borderWidth: 2,
+              borderColor: '#6536DD',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#6536DD',
+              shadowOffset: { width: 3, height: 3 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 8,
+              zIndex: 10,
+            }}
+          >
+            <Text style={{ color: '#fff', fontFamily: 'PressStart2P', fontSize: 20 }}>X</Text>
+          </Pressable>
+          <Profile />
         </View>
       </Modal>
     </LinearGradient>

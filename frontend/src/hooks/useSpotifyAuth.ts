@@ -17,18 +17,9 @@ export function useSpotifyAuth() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      console.log('🔍 [DEBUG] Checking connection - Session exists:', !!session);
-      console.log('🔍 [DEBUG] Session user:', session?.user?.id);
-      console.log(
-        '🔍 [DEBUG] User metadata:',
-        JSON.stringify(session?.user?.user_metadata, null, 2),
-      );
-      console.log('🔍 [DEBUG] App metadata:', JSON.stringify(session?.user?.app_metadata, null, 2));
-
       // Spotify provider tokens (Supabase v2)
       const spotifyProvider = session?.user.app_metadata?.providers?.spotify;
       if (spotifyProvider?.access_token) {
-        console.log('🔗 Spotify OAuth tokens found in Supabase:', spotifyProvider);
         setAccessToken(spotifyProvider.access_token);
         setStatus('connected');
         return true;
@@ -38,13 +29,11 @@ export function useSpotifyAuth() {
       const spotifyAccessToken = session?.user.user_metadata?.spotify_access_token;
       const spotifyExpiry = session?.user.user_metadata?.spotify_token_expiry;
       if (spotifyAccessToken && spotifyExpiry && Date.now() < spotifyExpiry) {
-        console.log('🔗 Legacy OAuth tokens found in metadata');
         setAccessToken(spotifyAccessToken);
         setStatus('connected');
         return true;
       }
 
-      console.log('🔗 No Spotify tokens found');
       setStatus('idle');
       return false;
     } catch (err) {
