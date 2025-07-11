@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   assetBundlePatterns: ['**/*'],
   ios: {
+    bundleIdentifier: 'com.chtran.x0km',
     supportsTablet: true,
   },
   android: {
@@ -24,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: './src/assets/images/logo.png',
       backgroundColor: '#ffffff',
     },
+    package: 'com.chtran.x0km',
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

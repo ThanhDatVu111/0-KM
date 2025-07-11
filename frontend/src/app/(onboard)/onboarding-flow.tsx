@@ -9,6 +9,7 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
+  ActivityIndicator,
   Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,6 +20,7 @@ import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useLocalSearchParams } from 'expo-router';
 import { onboardUser } from '@/apis/user';
+import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
 
 function RetroHeader({ title }: { title: string }) {
   return (
@@ -244,13 +246,13 @@ function PhotoStep({
   setPhoto,
   onFinish,
   onPrevious,
-  onNext,
+  uploading,
 }: {
   photo: string | null;
   setPhoto: (uri: string) => void;
   onFinish?: () => void;
   onPrevious?: () => void;
-  onNext?: () => void;
+  uploading: boolean;
 }) {
   return (
     <View className="w-11/12 max-w-md shadow-2xl border-4 border-black rounded-lg">
@@ -267,6 +269,7 @@ function PhotoStep({
             />
             <TouchableOpacity
               onPress={() => pickImage(setPhoto)}
+              disabled={uploading}
               className="mt-4 bg-white border-4 border-[#6536DD]"
               style={{
                 shadowColor: '#6536DD',
@@ -274,6 +277,7 @@ function PhotoStep({
                 shadowOpacity: 1,
                 shadowRadius: 0,
                 elevation: 8,
+                opacity: uploading ? 0.5 : 1,
               }}
             >
               <View className="bg-white px-4 py-2">
@@ -289,6 +293,7 @@ function PhotoStep({
         ) : (
           <TouchableOpacity
             onPress={() => pickImage(setPhoto)}
+            disabled={uploading}
             className="w-full mb-6 bg-[#6536DD] border-4 border-black"
             style={{
               shadowColor: '#000',
@@ -296,6 +301,7 @@ function PhotoStep({
               shadowOpacity: 1,
               shadowRadius: 0,
               elevation: 8,
+              opacity: uploading ? 0.5 : 1,
             }}
           >
             <View className="bg-[#6536DD] px-4 py-3">
@@ -312,6 +318,7 @@ function PhotoStep({
         {onPrevious && (
           <TouchableOpacity
             onPress={onPrevious}
+            disabled={uploading}
             className="w-full mb-4 bg-gray-400 border-4 border-black"
             style={{
               shadowColor: '#000',
@@ -319,6 +326,7 @@ function PhotoStep({
               shadowOpacity: 1,
               shadowRadius: 0,
               elevation: 8,
+              opacity: uploading ? 0.5 : 1,
             }}
           >
             <View className="bg-gray-400 px-4 py-3">
@@ -333,7 +341,8 @@ function PhotoStep({
         )}
 
         <TouchableOpacity
-          onPress={onNext}
+          onPress={onFinish}
+          disabled={uploading}
           className="w-full bg-[#6536DD] border-4 border-black"
           style={{
             shadowColor: '#000',
@@ -341,15 +350,28 @@ function PhotoStep({
             shadowOpacity: 1,
             shadowRadius: 0,
             elevation: 8,
+            opacity: uploading ? 0.5 : 1,
           }}
         >
           <View className="bg-[#6536DD] px-4 py-3">
-            <Text
-              className="text-white text-center text-[16px] font-bold"
-              style={{ fontFamily: 'Poppins-Bold' }}
-            >
-              NEXT
-            </Text>
+            {uploading ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                <Text
+                  className="text-white text-center text-[14px] font-bold"
+                  style={{ fontFamily: 'Poppins-Bold' }}
+                >
+                  UPLOADING...
+                </Text>
+              </View>
+            ) : (
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                NEXT
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -491,6 +513,7 @@ function LocationStep({
   setTimezone,
   onFinish,
   onPrevious,
+  uploading,
 }: {
   location: {
     latitude: number;
@@ -510,6 +533,7 @@ function LocationStep({
   setTimezone: (tz: string) => void;
   onFinish: () => void;
   onPrevious: () => void;
+  uploading: boolean;
 }) {
   const [isDetecting, setIsDetecting] = useState(false);
 
@@ -680,6 +704,7 @@ function LocationStep({
 
         <TouchableOpacity
           onPress={onFinish}
+          disabled={uploading}
           className="w-full bg-[#6536DD] border-4 border-black"
           style={{
             shadowColor: '#000',
@@ -687,15 +712,28 @@ function LocationStep({
             shadowOpacity: 1,
             shadowRadius: 0,
             elevation: 8,
+            opacity: uploading ? 0.5 : 1,
           }}
         >
           <View className="bg-[#6536DD] px-4 py-3">
-            <Text
-              className="text-white text-center text-[16px] font-bold"
-              style={{ fontFamily: 'Poppins-Bold' }}
-            >
-              {location ? 'FINISH ONBOARDING' : 'SKIP & FINISH'}
-            </Text>
+            {uploading ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+                <Text
+                  className="text-white text-center text-[14px] font-bold"
+                  style={{ fontFamily: 'Poppins-Bold' }}
+                >
+                  UPLOADING...
+                </Text>
+              </View>
+            ) : (
+              <Text
+                className="text-white text-center text-[16px] font-bold"
+                style={{ fontFamily: 'Poppins-Bold' }}
+              >
+                {location ? 'FINISH ONBOARDING' : 'SKIP & FINISH'}
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -719,10 +757,12 @@ const OnboardingFlow = () => {
     country: string;
   } | null>(null);
   const [timezone, setTimezone] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
   const { user_id } = useLocalSearchParams();
   const router = useRouter();
 
   const handleFinish = async () => {
+    setUploading(true);
     try {
       console.log('📍 Onboarding finish - location data:', location);
       console.log('📍 Onboarding finish - timezone:', timezone);
@@ -732,11 +772,27 @@ const OnboardingFlow = () => {
       console.log('📍 Onboarding finish - location_country:', location?.country);
       console.log('📍 Onboarding finish - anniversary_date:', anniversaryDate.toISOString());
 
+      let photoUrl = '';
+
+      // Upload photo to Cloudinary if one was selected
+      if (photo) {
+        try {
+          console.log('🔄 Uploading onboarding photo to Cloudinary...');
+          photoUrl = await uploadToCloudinary(photo, 'image');
+          console.log('✅ Onboarding photo uploaded to:', photoUrl);
+        } catch (uploadErr: any) {
+          console.error('❌ Failed to upload onboarding photo:', uploadErr);
+          Alert.alert('Upload Error', 'Failed to upload profile photo. Please try again.');
+          setUploading(false);
+          return;
+        }
+      }
+
       const user = await onboardUser({
         user_id: user_id as string,
         name: name,
         birthdate: birthdate.toISOString(),
-        photo_url: photo || '',
+        photo_url: photoUrl,
         timezone: timezone || undefined,
         location_latitude: location?.latitude || undefined,
         location_longitude: location?.longitude || undefined,
@@ -748,6 +804,9 @@ const OnboardingFlow = () => {
       router.push('/(onboard)/join-room');
     } catch (err) {
       console.error('❌ Error onboarding user or creating room:', err);
+      Alert.alert('Error', 'Failed to complete onboarding. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -767,7 +826,8 @@ const OnboardingFlow = () => {
       photo={photo}
       setPhoto={setPhoto}
       onPrevious={() => setStep(1)}
-      onNext={() => setStep(3)}
+      onFinish={() => setStep(3)}
+      uploading={uploading}
     />,
     <AnniversaryStep
       key="4"
@@ -786,6 +846,7 @@ const OnboardingFlow = () => {
       setTimezone={setTimezone}
       onPrevious={() => setStep(3)}
       onFinish={() => handleFinish()}
+      uploading={uploading}
     />,
   ];
 

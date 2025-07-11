@@ -28,7 +28,7 @@ export async function createEntries(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const {id, book_id, title, body, location, pin, media_paths, created_at } = req.body;
+    const { id, book_id, title, body, location, pin, media_paths, created_at } = req.body;
 
     // Validate required fields
     if (!book_id || !title || !media_paths) {
@@ -83,7 +83,7 @@ export async function updateEntries(
 ): Promise<void> {
   try {
     const { book_id, entry_id } = req.params;
-    const { title, body, location, pin, media, updated_at } = req.body;
+    const { title, body, location, pin, media_paths, updated_at } = req.body;
 
     // Validate required fields
     if (!book_id || !entry_id || !title) {
@@ -97,7 +97,7 @@ export async function updateEntries(
       title,
       body,
       location,
-      media,
+      media_paths,
       updated_at,
     });
 

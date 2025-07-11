@@ -5,29 +5,27 @@ import {
   Text,
   TextInput,
   Pressable,
-  KeyboardAvoidingView,
-  Platform,
   Image,
   ActivityIndicator,
-  Modal,
   ScrollView,
-  Alert,
-  Linking,
+  ImageBackground,
+  TouchableOpacity,
+  Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import Button from '@/components/Button';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_API_KEY = process.env.EXPO_PUBLIC_CLOUDINARY_API_KEY;
-const CLOUDINARY_SIGN_URL = process.env.EXPO_PUBLIC_CLOUDINARY_SIGN_URL;
+import images from '@/constants/images';
+import icons from '@/constants/icons';
+import { router } from 'expo-router';
+import MapPickerWebView from './MapPickerWebView';
+import { Video, ResizeMode } from 'expo-av';
+import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
 
 // ─── MediaItem type ──────────────────────────────────────────────────────────────────────────────────────────────
 export type MediaItem = {
   uri: string;
+  cloudinaryUrl?: string;
   type: 'image' | 'video';
-  thumbnail?: string | null; // only for videos if you generate a thumbnail
 };
 
 export interface EntryFormProps {
@@ -43,9 +41,9 @@ export interface EntryFormProps {
   initialMedia?: MediaItem[];
   initialLocation?: string;
   initialCreatedAt?: string;
+  initialUpdatedAt?: string;
 
-  /** True while the parent is saving; form’s “Done” button will disable if true */
-  saving: boolean;
+  saving?: boolean;
 
   onSubmit: (entryData: {
     id: string;
@@ -68,7 +66,7 @@ export default function EntryForm({
   initialMedia = [],
   initialLocation = '',
   initialCreatedAt,
-  saving,
+  initialUpdatedAt,
   onSubmit,
 }: EntryFormProps) {
   // ─── Form state ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -76,26 +74,36 @@ export default function EntryForm({
   const [body, setBody] = useState<string>(initialBody);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>(initialMedia);
   const [locationAddress, setLocationAddress] = useState<string>(initialLocation);
+  const [saving, setSaving] = useState(false);
+  const [showWebPicker, setShowWebPicker] = useState(false);
+  const [_, setPickedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [bgLoaded, setBgLoaded] = React.useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-  // For location modal
-  const [tempAddress, setTempAddress] = useState<string>('');
-  const [showLocationModal, setShowLocationModal] = useState<boolean>(false);
-  const [locationLoading, setLocationLoading] = useState<boolean>(false);
+  React.useEffect(() => {
+    if (bgLoaded) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400, // Adjust for smoother/slower fade
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [bgLoaded]);
 
-  const MAX_MEDIA = 16; // Maximum number of media items allowed
+  const MAX_MEDIA = 32; // Maximum number of media items allowed
+  const MAX_WORDS = 500;
 
+  // ─── Pick Image ─────────────────────────────────────────────────────────────────────────────────────────────────
   const handlePickImage = async () => {
     if (selectedMedia.length >= MAX_MEDIA) {
       alert(`You can only select up to ${MAX_MEDIA} images.`);
       return;
     }
-
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       alert('Permission to access photos is required!');
       return;
     }
-
     const remainingSlots = MAX_MEDIA - selectedMedia.length;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -104,84 +112,14 @@ export default function EntryForm({
       quality: 1,
       selectionLimit: remainingSlots,
     });
-
     if (!result.canceled && result.assets.length > 0) {
-      const remainingSlots = MAX_MEDIA - selectedMedia.length;
       const newAssets = result.assets.slice(0, remainingSlots);
-
-      const newMedia = newAssets.map((asset) => ({
-        uri: asset.uri,
-        type: 'image' as const,
-      }));
-
+      const newMedia = newAssets.map((asset) => ({ uri: asset.uri, type: 'image' as const }));
       setSelectedMedia((prev) => [...prev, ...newMedia]);
     }
   };
-  // ─── Validation ─────────────────────────────────────────────────────────────────────────────────────────────────
-  async function uploadToCloudinary(uri: string): Promise<string> {
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_SIGN_URL) {
-      throw new Error(
-        'Define EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME, EXPO_PUBLIC_CLOUDINARY_API_KEY & EXPO_PUBLIC_CLOUDINARY_SIGN_URL in .env',
-      );
-    }
-    // 1) Get the signature + timestamp
-    let signature: string, timestamp: number;
-    try {
-      const sigRes = await fetch(CLOUDINARY_SIGN_URL);
-      const sigJson = await sigRes.json();
-      signature = sigJson.signature;
-      timestamp = sigJson.timestamp;
-    } catch (err: any) {
-      console.error('❌ Error fetching signature', err);
-      throw err;
-    }
 
-    // 2) Build the multipart/form-data
-    const form = new FormData();
-    form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
-    form.append('api_key', CLOUDINARY_API_KEY);
-    form.append('timestamp', timestamp.toString());
-    form.append('signature', signature);
-
-    // 3) Upload to Cloudinary
-    let uploadRes: Response, uploadJson: any;
-    try {
-      uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: form },
-      );
-      uploadJson = await uploadRes.json();
-    } catch (err: any) {
-      console.error('❌ Network error uploading to Cloudinary', err);
-      throw err;
-    }
-    if (!uploadRes.ok) {
-      console.error('❌ Cloudinary returned an error', uploadJson.error);
-      throw new Error(uploadJson.error?.message || 'Cloudinary upload failed');
-    }
-    console.log('✅ Image uploaded to Cloudinary secure_url =', uploadJson.secure_url);
-    return uploadJson.secure_url;
-  }
-
-  // ─── Format date ─────────────────────────────────────────────────────────────────────────────────────────────────
-  const now = new Date();
-  const formattedDate = initialCreatedAt
-    ? new Date(initialCreatedAt).toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      })
-    : now.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      });
-
-  // ─── Camera Pickers ────────────────────────────────────────────────────────────────────────────────────────────────
+  // ─── Camera Picker ────────────────────────────────────────────────────────────────────────────────────────────────
   const handleCameraPicker = async () => {
     const { granted } = await ImagePicker.requestCameraPermissionsAsync();
     if (!granted) {
@@ -210,63 +148,57 @@ export default function EntryForm({
     }
   };
 
-  // ─── Location Picker ──────────────────────────────────────────────────────────────────────────────────────────────
-  const handleLocationPicker = async () => {
-    setLocationLoading(true);
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Location Permission',
-        'We need your permission to read your location. Please enable it in Settings.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => setLocationLoading(false) },
-          {
-            text: 'Open Settings',
-            onPress: () => {
-              setLocationLoading(false);
-              Linking.openSettings();
-            },
-          },
-        ],
-      );
+  // ─── Pick Video ─────────────────────────────────────────────────────────────────────────────────────────────────
+  const handlePickVideo = async () => {
+    if (selectedMedia.length >= MAX_MEDIA) {
+      alert(`You can only select up to ${MAX_MEDIA} items.`);
       return;
     }
-    try {
-      const { coords } = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
-      });
-      const [rev] = await Location.reverseGeocodeAsync({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-      });
-      let formatted = '';
-      if (rev.name) formatted += rev.name;
-      if (rev.street) formatted += (formatted ? ', ' : '') + rev.street;
-      if (rev.city) formatted += (formatted ? ', ' : '') + rev.city;
-      if (rev.region) formatted += (formatted ? ', ' : '') + rev.region;
-      if (rev.postalCode) formatted += ' ' + rev.postalCode;
-      if (rev.country) formatted += (formatted ? ', ' : '') + rev.country;
-
-      setTempAddress(formatted); //use a temporary address for confirmation
-      setShowLocationModal(true);
-    } catch (err) {
-      console.error('Reverse geocode error:', err);
-      alert('Unable to get location. Try again.');
-      setLocationLoading(false);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access videos is required!');
+      return;
+    }
+    const remainingSlots = MAX_MEDIA - selectedMedia.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      quality: 1,
+      selectionLimit: remainingSlots,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const newAssets = result.assets.slice(0, remainingSlots);
+      const newMedia = newAssets.map((asset) => ({ uri: asset.uri, type: 'video' as const }));
+      setSelectedMedia((prev) => [...prev, ...newMedia]);
     }
   };
 
-  const onSaveLocation = () => {
-    setLocationAddress(tempAddress.trim());
-    setShowLocationModal(false);
-    setLocationLoading(false);
-  };
-  const onCancelLocation = () => {
-    setTempAddress('');
-    setLocationAddress('');
-    setShowLocationModal(false);
-    setLocationLoading(false);
-  };
+  // ─── Date/word helpers ───────────────────────────────────────────────────────────────────────────────────────────
+  const now = new Date();
+  let footerDateLabel = '';
+  let footerDateValue = '';
+  if (initialUpdatedAt && initialUpdatedAt !== initialCreatedAt) {
+    footerDateLabel = 'Updated at';
+    footerDateValue = new Date(initialUpdatedAt ?? '').toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } else {
+    footerDateLabel = 'Created at';
+    footerDateValue = new Date(initialCreatedAt ?? '').toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  const countWords = (text: string) =>
+    text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
 
   // ─── When “Done” is pressed ────────────────────────────────────────────────────────────────────────────────────────
   const handleDonePress = async () => {
@@ -274,162 +206,414 @@ export default function EntryForm({
       alert('Title is required!');
       return;
     }
-
+    setSaving(true);
     try {
-      const uploadedUrls = await Promise.all(selectedMedia.map((m) => uploadToCloudinary(m.uri)));
-      const entryData: {
-        id: string;
-        book_id: string;
-        title: string;
-        body: string | null;
-        location: { address: string } | null;
-        pin: boolean;
-        media_paths: string[];
-        created_at?: string;
-        updated_at?: string;
-      } = {
-        id: entryId || '', // if editing, entryId is set; if creating, parent will choose a new ID
+      const updatedMedia = await Promise.all(
+        selectedMedia.map(async (media) => {
+          if (media.cloudinaryUrl) return media;
+          const url = await uploadToCloudinary(media.uri, media.type);
+          return { ...media, cloudinaryUrl: url };
+        }),
+      );
+      setSelectedMedia(updatedMedia);
+      const entryData = {
+        id: entryId || '',
         book_id: bookId,
         title: title.trim(),
         body: body.trim() || null,
         location: locationAddress ? { address: locationAddress } : null,
         pin: false,
-        media_paths: uploadedUrls,
+        media_paths: updatedMedia.map((m) => m.cloudinaryUrl!).filter(Boolean),
+        ...(entryId
+          ? { updated_at: new Date().toISOString() }
+          : { created_at: new Date().toISOString() }),
       };
-      if (entryId) {
-        entryData.updated_at = new Date().toISOString();
-      } else {
-        entryData.created_at = new Date().toISOString();
-      }
-      await onSubmit(entryData); // Send the entry data to the backend
+      await onSubmit(entryData);
     } catch (err: any) {
       console.error('Error uploading media or submitting entry:', err);
+      alert('Failed to upload media. Please try again.');
     }
+    setSaving(false);
   };
+
+  type FooterRowProps = {
+    icon: any;
+    text: string;
+    textColor?: string;
+    onClear?: () => void;
+  };
+
+  function FooterRow({ icon, text, textColor = '#666', onClear }: FooterRowProps) {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginVertical: 4,
+          gap: 6,
+        }}
+      >
+        <Image
+          source={icon}
+          style={{ width: 18, height: 18, marginRight: 4 }}
+          resizeMode="contain"
+        />
+        <Text
+          style={{
+            fontFamily: 'PixelifySans',
+            fontSize: 13,
+            color: textColor,
+            flex: 1,
+            flexWrap: 'wrap',
+            lineHeight: 18,
+          }}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {text}
+        </Text>
+        {onClear && (
+          <Pressable
+            onPress={onClear}
+            style={{
+              marginLeft: 8,
+              padding: 2,
+              borderRadius: 10,
+              backgroundColor: '#eee',
+            }}
+          >
+            <Text style={{ color: '#888', fontSize: 14 }}>✕</Text>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
+
+  function setMapPickerVisible(visible: boolean): void {
+    setShowWebPicker(visible);
+  }
 
   return (
     <View className="flex-1">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ImageBackground
+        source={images.entryFormBg}
+        resizeMode={ResizeMode.COVER}
         className="flex-1"
+        onLoadEnd={() => setBgLoaded(true)}
       >
-        {/* ─── Main Form ─── */}
-        <ScrollView className="flex-1 px-6 pt-4" keyboardShouldPersistTaps="handled">
-          {/* ─── Title Input ─── */}
-          <Text className="text-base font-medium text-gray-700 mb-1">Memory title</Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Enter memory title"
-            className="border border-gray-300 rounded-md px-3 py-2 mb-4"
-          />
-
-          {/* ─── Read‐only Date ─── */}
-          <Text className="text-sm text-gray-500 mb-6">{formattedDate}</Text>
-
-          {/* ─── Body Input ─── */}
-          <Text className="text-base font-medium text-gray-700 mb-1">
-            Write a few words about your memory here
-          </Text>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder="Start typing..."
-            className="border border-gray-300 rounded-md px-3 py-2 mb-4 h-80 text-gray-800"
-            multiline
-          />
-
-          {/* ─── Pickers Row ─── */}
-          <View className="flex-row items-center mb-4">
-            <Pressable onPress={handleCameraPicker} className="mr-6">
-              <Ionicons name="camera-outline" size={28} color="#4B5563" />
-            </Pressable>
-
-            <Pressable onPress={handlePickImage} className="mr-6">
-              <Ionicons name="image-outline" size={28} color="#4B5563" />
-            </Pressable>
-
-            <Pressable onPress={handleLocationPicker} className="mr-40" disabled={locationLoading}>
-              {locationLoading ? (
-                <ActivityIndicator size="small" color="#4B5563" />
-              ) : (
-                <Ionicons name="location-outline" size={28} color="#4B5563" />
-              )}
-            </Pressable>
-
-            {/* “Done” button */}
-            <View className="right-4 mt-2">
-              <Button
-                label={saving ? 'Saving…' : 'Done'}
-                size="px-4 py-2"
-                color="bg-accent"
-                textClassName="text-white text-base font-medium text-center"
-                onPress={handleDonePress}
-                disabled={saving}
-              />
+        {!bgLoaded ? (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+            }}
+          >
+            <ActivityIndicator size="large" color="#A270E6" />
+          </View>
+        ) : (
+          <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+            {/* ─── route back button ─── */}
+            <View
+              className="absolute z-10 mt-12 ml-6"
+              style={{
+                // Pixel shadow
+                shadowColor: '#000',
+                shadowOffset: { width: 3, height: 3 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+                className="w-11 h-11 bg-[#FAD3E4] border-2 border-black rounded-lg justify-center items-center mt-10"
+              >
+                <Text
+                  style={{
+                    fontFamily: 'PixelifySans',
+                    fontSize: 24,
+                    color: '#000',
+                    lineHeight: 28,
+                  }}
+                >
+                  ←
+                </Text>
+              </TouchableOpacity>
             </View>
-          </View>
 
-          {/* ─── Show Selected Location ─── */}
-          <View className="mb-4">
-            <Text className="text-base font-medium text-gray-700">Selected Location:</Text>
-            <Text className="text-sm text-gray-500">
-              {locationAddress || 'No location selected'}
-            </Text>
-          </View>
-
-          {/* ─── Location Confirmation Modal ─── */}
-          <Modal visible={showLocationModal} transparent animationType="fade">
-            <BlurView intensity={50} tint="dark" className="flex-1 justify-center items-center">
-              <View className="bg-white p-6 rounded-md w-80 shadow-lg">
-                <Text className="text-lg font-medium text-gray-700 mb-4">Confirm Location</Text>
-                <Text className="text-sm text-gray-500 mb-6">{tempAddress}</Text>
-                <View className="flex-row justify-between">
-                  <Pressable
-                    onPress={onCancelLocation}
-                    className="bg-gray-300 py-2 px-4 rounded-md"
+            {/* ─── Main Form ─── */}
+            <View className="flex-1 px-6 py-60">
+              {/* ─── Retro Memory Card ─── */}
+              <View
+                style={{
+                  backgroundColor: '#FAD3E4',
+                  borderWidth: 3,
+                  borderColor: '#000',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 6, height: 6 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                }}
+                className="pb-2"
+              >
+                <ScrollView
+                  contentContainerStyle={{ paddingVertical: 14 }}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* ─── Title Input ─── */}
+                  <Text
+                    className="text-lg mb-1 px-3 py-1"
+                    style={{ fontFamily: 'PixelifySans', color: '#333' }}
                   >
-                    <Text className="text-gray-700 font-medium">Cancel</Text>
-                  </Pressable>
-                  <Pressable onPress={onSaveLocation} className="bg-accent py-2 px-4 rounded-md">
-                    <Text className="text-white font-medium">Save</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </BlurView>
-          </Modal>
-
-          {/* ─── Media Thumbnails ─── */}
-          {selectedMedia.length > 0 && (
-            <View className="mt-4">
-              <Text className="text-base font-medium text-gray-700 mb-2">
-                Selected Photos & Videos:
-              </Text>
-              <View className="flex-row flex-wrap justify-start">
-                {selectedMedia.map((item, index) => (
-                  <View
-                    key={index}
-                    className="relative w-24 h-24 m-1 border border-gray-300 overflow-hidden rounded-2xl"
+                    Memory title
+                  </Text>
+                  <TextInput
+                    value={title}
+                    onChangeText={setTitle}
+                    placeholder="Enter memory title"
+                    placeholderTextColor="#aaa"
+                    className="mb-2 mx-3 px-3 py-2 text-sm"
+                    style={{
+                      backgroundColor: '#FFF',
+                      borderWidth: 1,
+                      borderColor: '#000',
+                      fontFamily: 'PixelifySans',
+                    }}
+                  />
+                  {/* ─── Body Input ─── */}
+                  <Text
+                    className="text-lg mb-1 px-3 py-2"
+                    style={{ fontFamily: 'PixelifySans', color: '#333' }}
                   >
-                    <Image
-                      source={{ uri: item.uri }}
-                      className="w-full h-full"
-                      resizeMode="cover"
+                    Write a few words about your memory here
+                  </Text>
+                  <View style={{ position: 'relative' }}>
+                    <TextInput
+                      value={body}
+                      onChangeText={setBody}
+                      placeholder="Start typing..."
+                      placeholderTextColor="#aaa"
+                      multiline
+                      className="mb-4 mx-3 px-3 py-2 text-sm"
+                      style={{
+                        minHeight: 60,
+                        backgroundColor: '#FFF',
+                        borderWidth: 1,
+                        borderColor: '#000',
+                        fontFamily: 'PixelifySans',
+                        color: '#444',
+                        paddingBottom: 24,
+                      }}
                     />
-                    {/* ❌ Remove Button */}
-                    <Pressable
-                      onPress={() => setSelectedMedia((prev) => prev.filter((_, i) => i !== index))}
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full items-center justify-center z-10"
+                    <Text
+                      style={{
+                        position: 'absolute',
+                        right: 24,
+                        bottom: 20,
+                        fontFamily: 'PixelifySans',
+                        fontSize: 12,
+                        color: countWords(body) >= MAX_WORDS ? 'red' : '#888',
+                        backgroundColor: 'rgba(255,255,255,0.8)',
+                        paddingHorizontal: 4,
+                        borderRadius: 4,
+                      }}
                     >
-                      <Text className="text-white text-xs font-bold">✕</Text>
-                    </Pressable>
+                      {countWords(body)} / {MAX_WORDS} words
+                    </Text>
                   </View>
-                ))}
+
+                  {/* ─── Pickers Row ─── */}
+                  <View className="flex-row items-center justify-between px-3 mb-4">
+                    <View className="flex-row gap-6">
+                      <Pressable onPress={handleCameraPicker}>
+                        <Image source={icons.camera} style={{ width: 26, height: 26 }} />
+                      </Pressable>
+
+                      <Pressable onPress={handlePickImage}>
+                        <Image source={icons.photo} style={{ width: 24, height: 24 }} />
+                      </Pressable>
+
+                      {/* Temp video icon button */}
+                      <Pressable onPress={handlePickVideo}>
+                        <Image source={icons.video} style={{ width: 24, height: 24 }} />
+                      </Pressable>
+
+                      <Pressable onPress={() => setMapPickerVisible(true)}>
+                        <Image source={icons.location} style={{ width: 24, height: 24 }} />
+                      </Pressable>
+                    </View>
+                    {/* ─── Done Button ─── */}
+                    <TouchableOpacity
+                      onPress={handleDonePress}
+                      activeOpacity={0.8}
+                      disabled={saving}
+                      style={{
+                        alignSelf: 'center',
+                        backgroundColor: '#E1D9FF',
+                        paddingHorizontal: 24,
+                        paddingVertical: 10,
+                        borderColor: '#000',
+                        borderWidth: 1,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 3, height: 3 },
+                        shadowOpacity: 1,
+                        opacity: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 90,
+                        height: 40,
+                      }}
+                    >
+                      {saving ? (
+                        <ActivityIndicator size="small" color="#000" />
+                      ) : (
+                        <Text
+                          style={{
+                            fontFamily: 'PixelifySans',
+                            fontSize: 14,
+                            color: '#000',
+                          }}
+                        >
+                          Done
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                  {/* ─── Media Thumbnails ─── */}
+                  {selectedMedia.length > 0 && (
+                    <View className="px-3 mb-2">
+                      <Text
+                        style={{
+                          fontFamily: 'PixelifySans',
+                          fontSize: 15,
+                          color: '#333',
+                          marginBottom: 8,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        Selected Media ({selectedMedia.length}/{MAX_MEDIA})
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                        {selectedMedia.map((item, index) => (
+                          <View
+                            key={index}
+                            style={{
+                              width: 82,
+                              height: 82,
+                              marginRight: 8,
+                              marginBottom: 8,
+                              borderWidth: 1,
+                              borderColor: '#000',
+                              borderRadius: 8,
+                              overflow: 'hidden',
+                              position: 'relative',
+                              backgroundColor: '#fff',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {item.type === 'image' ? (
+                              <Image
+                                source={{ uri: item.uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <Video
+                                source={{ uri: item.uri }}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode={ResizeMode.COVER}
+                                isMuted
+                                shouldPlay={false}
+                                useNativeControls={false}
+                              />
+                            )}
+                            <Pressable
+                              onPress={() =>
+                                setSelectedMedia((prev) => prev.filter((_, i) => i !== index))
+                              }
+                              style={{
+                                position: 'absolute',
+                                top: 4,
+                                right: 4,
+                                width: 22,
+                                height: 22,
+                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                borderRadius: 11,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 10,
+                              }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>
+                                ✕
+                              </Text>
+                            </Pressable>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </ScrollView>
+              </View>
+              {/* ─── Footer ─── */}
+              <View
+                style={{
+                  backgroundColor: '#E1D9FF',
+                  borderWidth: 3,
+                  borderTopWidth: 0,
+                  borderColor: '#000',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 6, height: 6 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                }}
+                className="py-2 px-4"
+              >
+                <FooterRow
+                  icon={icons.time}
+                  text={`${footerDateLabel}: ${footerDateValue}`}
+                  textColor="black"
+                />
+                {locationAddress ? (
+                  <FooterRow
+                    icon={icons.location2}
+                    text={locationAddress}
+                    textColor="black"
+                    onClear={() => setLocationAddress('')}
+                  />
+                ) : null}
               </View>
             </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </Animated.View>
+        )}
+      </ImageBackground>
+
+      <MapPickerWebView
+        visible={showWebPicker}
+        onClose={() => setShowWebPicker(false)}
+        onSelect={(lat, lng) => {
+          setPickedCoords({ latitude: lat, longitude: lng });
+          (async () => {
+            const [rev] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+            const formatted = [
+              rev.name,
+              rev.street,
+              rev.city,
+              rev.region,
+              rev.postalCode,
+              rev.country,
+            ]
+              .filter(Boolean)
+              .join(', ');
+            setLocationAddress(formatted);
+          })();
+        }}
+      />
     </View>
   );
 }

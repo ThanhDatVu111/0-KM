@@ -7,6 +7,7 @@
     "orientation": "portrait",
     "icon": "./src/assets/images/logo.png",
     "scheme": "0km-app",
+    "scheme": "com.googleusercontent.apps.152482242112-2c1othbu00qpt0725oki6u782hoppagj",
     "assets": ["./assets/fonts"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -41,7 +42,13 @@
       ],
       "expo-secure-store",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-capture-protection",
+        {
+          "captureType": "fullMediaCapture"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

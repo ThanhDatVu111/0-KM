@@ -5,19 +5,48 @@ import supabase from '../utils/supabase';
 import { authMiddleware } from './middleware/auth';
 import UserRouter from './routes/userRoutes';
 import RoomRouter from './routes/roomRoutes';
+import CalendarRouter from './routes/calendarRoutes';
 import LibraryRouter from './routes/libraryRoutes';
 import EntriesRouter from './routes/entriesRoutes';
 import YouTubeRouter from './routes/youtubeRoutes';
 import SpotifyRouter from './routes/spotifyRoutes';
 import PlaybackCommandRouter from './routes/playbackCommandRoutes';
+import ChatRouter from './routes/chatRoutes';
 import { v2 as cloudinary } from 'cloudinary';
+import http from 'http';
+import { Server } from 'socket.io';
+import socketHandler from './socket';
+import {
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketMessageData,
+} from './types/socket';
 
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app); //Lets backend serve HTTP routes + WebSocket (real-time) on the same server.
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
 const LOCAL_URL = process.env.LOCAL_URL;
 const PUBLIC_URL = process.env.PUBLIC_URL;
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketMessageData
+>(httpServer, {
+  cors: {
+    origin: PUBLIC_URL,
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  },
+  transports: ['websocket', 'polling'], // Allow both WebSocket and polling for ngrok compatibility
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  pingTimeout: 60000, // Increase ping timeout for ngrok
+  pingInterval: 25000, // Increase ping interval for ngrok
+});
 
 app.use(express.json({ limit: '20mb' })); // For JSON payloads
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
@@ -33,10 +62,12 @@ app.use('/spotify', SpotifyRouter);
 // Apply auth middleware to protected routes
 app.use('/users', authMiddleware, UserRouter);
 app.use('/rooms', authMiddleware, RoomRouter);
+app.use('/calendar', CalendarRouter);
 app.use('/library', authMiddleware, LibraryRouter);
 app.use('/entries', authMiddleware, EntriesRouter);
 app.use('/youtube', authMiddleware, YouTubeRouter);
 app.use('/rooms', authMiddleware, PlaybackCommandRouter);
+app.use('/chat', ChatRouter);
 app.get('/cloudinary-sign', (_req, res) => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
@@ -95,15 +126,17 @@ const startServer = async () => {
     if (!PORT) {
       throw new Error('🚨 PORT is not defined or invalid.');
     }
-    app.listen(PORT, '0.0.0.0', () => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
       console.log('✅ Server listening on port', PORT);
       console.log('✅ Local endpoint:', LOCAL_URL);
       console.log('✅ Public endpoint:', PUBLIC_URL);
+      console.log('✅ Socket.IO server initialized');
+      console.log('✅ Ngrok-compatible WebSocket configuration active');
     });
   } catch (err: any) {
     console.error('🚨 Failed to start server:', err.message || err);
     process.exit(1);
   }
 };
-
 startServer();
+socketHandler(io);

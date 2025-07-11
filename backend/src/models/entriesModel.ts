@@ -12,7 +12,6 @@ export async function getEntries(book_id: string) {
     throw error;
   }
 
-  console.log('✅ Entries fetched:', data);
   return data;
 }
 
@@ -37,7 +36,6 @@ export async function insertEntries(attrs: {
     throw error;
   }
 
-  console.log('✅ Entry created:', data);
   return data;
 }
 
@@ -52,7 +50,6 @@ export async function deleteEntries(book_id: string, entry_id: string): Promise<
     console.error('❌ Error deleting entry:', error.message);
     throw error;
   }
-  console.log(`✅ Entry with ID ${entry_id} deleted successfully`);
 }
 
 export async function updateEntries(attrs: {
@@ -61,7 +58,7 @@ export async function updateEntries(attrs: {
   title: string;
   body?: string | null;
   location?: object | null;
-  media: object[];
+  media_paths: string[];
   updated_at: string;
 }) {
   const { data, error } = await supabase
@@ -70,7 +67,7 @@ export async function updateEntries(attrs: {
       title: attrs.title,
       body: attrs.body,
       location: attrs.location,
-      media: attrs.media,
+      media_paths: attrs.media_paths,
       updated_at: attrs.updated_at,
     })
     .eq('id', attrs.id)
@@ -83,6 +80,5 @@ export async function updateEntries(attrs: {
     throw error;
   }
 
-  console.log('✅ Entry updated:', data);
   return data;
 }

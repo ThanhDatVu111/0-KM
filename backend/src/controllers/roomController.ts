@@ -2,6 +2,7 @@ import * as roomService from '../services/roomService';
 import { Request, Response, NextFunction } from 'express';
 import { PostgresErrorCodes } from '../constants/postgresErrorCodes';
 import { CreateRoomBody, CheckRoomBody, JoinRoomBody, DeleteRoomParams } from '../types/rooms';
+import { error } from 'console';
 
 // Create Room
 export async function createRoom(
@@ -133,6 +134,19 @@ export async function fetchRoom(
     });
   } catch (err: any) {
     next(err);
+  }
+}
+
+export async function fetchRoomByUserId(req: any, res: any) {
+  try {
+    const user_id = req.query.user_id;
+    if (!user_id) {
+      return res.status(400).json({ error: 'missing required fields' });
+    }
+    const response = await roomService.fetchRoomByUserId({ user_id });
+    res.status(200).json({ data: response });
+  } catch (error) {
+    return res.status(400).json({ error: error });
   }
 }
 

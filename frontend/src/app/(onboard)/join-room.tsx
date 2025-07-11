@@ -190,11 +190,14 @@ const JoinRoom = () => {
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [roomId, setRoomId] = useState<string>(uuid.v4() as string);
+  const [roomId, setRoomId] = useState<string>('');
   const { userId } = useAuth();
 
+  // Single useEffect to handle room creation/fetching
   useEffect(() => {
-    const createRoomFunction = async () => {
+    if (!userId) return;
+
+    const initializeRoom = async () => {
       try {
         console.log('🏠 Checking for existing room for user:', userId);
         const existingRoom = await fetchRoom({ user_id: userId ?? '' });
@@ -215,17 +218,75 @@ const JoinRoom = () => {
         console.log('🏠 Error checking existing room:', err.message);
         if (err.message && err.message.includes('Room not found')) {
           console.log('🏠 Creating new room with ID:', roomId);
+          const newRoomId = uuid.v4() as string;
           const room = await createRoom({
-            room_id: roomId,
-            user_1: userId ?? '',
+            room_id: newRoomId,
+            user_1: userId,
           });
+          console.log('✅ Room created:', room.room_id);
           setRoomId(room.room_id);
           console.log('✅ Room created successfully:', room);
+        } else {
+          console.error('❌ Error checking for room:', err);
         }
       }
     };
-    createRoomFunction();
-  }, [userId]);
+
+    initializeRoom();
+  }, [userId]); // Only depend on userId
+
+  // Realtime subscription to detect when someone joins this user's room
+  useEffect(() => {
+    if (!roomId || !userId) return;
+
+    console.log('🔴 SETTING UP JOIN-ROOM SUBSCRIPTION for room:', roomId);
+    console.log('🔴 User:', userId);
+
+    const channel = supabase
+      .channel(`join-room-${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload: any) => {
+          console.log('🟢 JOIN-ROOM: Realtime event received:', payload);
+
+          if (payload.eventType === 'UPDATE') {
+            const updated = payload.new;
+            const users = [updated.user_1, updated.user_2].filter(Boolean);
+
+            console.log('🟢 JOIN-ROOM: Users in room after update:', users);
+            console.log('🟢 JOIN-ROOM: Room is now filled?', users.length === 2);
+
+            // If room now has 2 users and current user is one of them, navigate to home
+            if (users.length === 2 && users.includes(userId)) {
+              console.log('🟢 JOIN-ROOM: Room is full! Navigating to home...');
+              Alert.alert('Success', 'You have been paired with your partner!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    router.push({ pathname: '/(tabs)/home', params: { userId } });
+                  },
+                },
+              ]);
+            }
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log('🔵 JOIN-ROOM SUBSCRIPTION STATUS:', status);
+        console.log('🔵 JOIN-ROOM: User:', userId, 'subscribed to room:', roomId);
+      });
+
+    return () => {
+      console.log('🔴 JOIN-ROOM: Unsubscribing from room:', roomId);
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, userId]);
 
   // Real-time subscription to detect when room becomes filled
   useEffect(() => {
