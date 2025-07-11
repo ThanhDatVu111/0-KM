@@ -1,0 +1,207 @@
+/* eslint-disable */
+import * as Router from 'expo-router';
+
+export * from 'expo-router';
+
+declare module 'expo-router' {
+  export namespace ExpoRouter {
+    export interface __routes<T extends string | object = string> {
+      hrefInputParams:
+        | { pathname: Router.RelativePathString; params?: Router.UnknownInputParams }
+        | { pathname: Router.ExternalPathString; params?: Router.UnknownInputParams }
+        | { pathname: `/`; params?: Router.UnknownInputParams }
+        | { pathname: `/_sitemap`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(auth)'}/authscreen` | `/authscreen`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(auth)'}/forgot-password` | `/forgot-password`;
+            params?: Router.UnknownInputParams;
+          }
+        | { pathname: `${'/(auth)'}/signin` | `/signin`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(auth)'}/signup` | `/signup`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(auth)'}/verify-email` | `/verify-email`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/join-room` | `/join-room`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/onboarding-flow` | `/onboarding-flow`;
+            params?: Router.UnknownInputParams;
+          }
+        | { pathname: `${'/(tabs)'}/calendar` | `/calendar`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(tabs)'}/home` | `/home`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(tabs)'}/chat/page` | `/chat/page`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(tabs)'}/chat/settings` | `/chat/settings`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/page` | `/library/page`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/create-entry`
+              | `/library/[bookId]/create-entry`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/[bookId]/page` | `/library/[bookId]/page`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          }
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/update-entry`
+              | `/library/[bookId]/update-entry`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          };
+      hrefOutputParams:
+        | { pathname: Router.RelativePathString; params?: Router.UnknownOutputParams }
+        | { pathname: Router.ExternalPathString; params?: Router.UnknownOutputParams }
+        | { pathname: `/`; params?: Router.UnknownOutputParams }
+        | { pathname: `/_sitemap`; params?: Router.UnknownOutputParams }
+        | {
+            pathname: `${'/(auth)'}/authscreen` | `/authscreen`;
+            params?: Router.UnknownOutputParams;
+          }
+        | {
+            pathname: `${'/(auth)'}/forgot-password` | `/forgot-password`;
+            params?: Router.UnknownOutputParams;
+          }
+        | { pathname: `${'/(auth)'}/signin` | `/signin`; params?: Router.UnknownOutputParams }
+        | { pathname: `${'/(auth)'}/signup` | `/signup`; params?: Router.UnknownOutputParams }
+        | {
+            pathname: `${'/(auth)'}/verify-email` | `/verify-email`;
+            params?: Router.UnknownOutputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/join-room` | `/join-room`;
+            params?: Router.UnknownOutputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/onboarding-flow` | `/onboarding-flow`;
+            params?: Router.UnknownOutputParams;
+          }
+        | { pathname: `${'/(tabs)'}/calendar` | `/calendar`; params?: Router.UnknownOutputParams }
+        | { pathname: `${'/(tabs)'}/home` | `/home`; params?: Router.UnknownOutputParams }
+        | { pathname: `${'/(tabs)'}/chat/page` | `/chat/page`; params?: Router.UnknownOutputParams }
+        | {
+            pathname: `${'/(tabs)'}/chat/settings` | `/chat/settings`;
+            params?: Router.UnknownOutputParams;
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/page` | `/library/page`;
+            params?: Router.UnknownOutputParams;
+          }
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/create-entry`
+              | `/library/[bookId]/create-entry`;
+            params: Router.UnknownOutputParams & { bookId: string };
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/[bookId]/page` | `/library/[bookId]/page`;
+            params: Router.UnknownOutputParams & { bookId: string };
+          }
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/update-entry`
+              | `/library/[bookId]/update-entry`;
+            params: Router.UnknownOutputParams & { bookId: string };
+          };
+      href:
+        | Router.RelativePathString
+        | Router.ExternalPathString
+        | `/${`?${string}` | `#${string}` | ''}`
+        | `/_sitemap${`?${string}` | `#${string}` | ''}`
+        | `${'/(auth)'}/authscreen${`?${string}` | `#${string}` | ''}`
+        | `/authscreen${`?${string}` | `#${string}` | ''}`
+        | `${'/(auth)'}/forgot-password${`?${string}` | `#${string}` | ''}`
+        | `/forgot-password${`?${string}` | `#${string}` | ''}`
+        | `${'/(auth)'}/signin${`?${string}` | `#${string}` | ''}`
+        | `/signin${`?${string}` | `#${string}` | ''}`
+        | `${'/(auth)'}/signup${`?${string}` | `#${string}` | ''}`
+        | `/signup${`?${string}` | `#${string}` | ''}`
+        | `${'/(auth)'}/verify-email${`?${string}` | `#${string}` | ''}`
+        | `/verify-email${`?${string}` | `#${string}` | ''}`
+        | `${'/(onboard)'}/join-room${`?${string}` | `#${string}` | ''}`
+        | `/join-room${`?${string}` | `#${string}` | ''}`
+        | `${'/(onboard)'}/onboarding-flow${`?${string}` | `#${string}` | ''}`
+        | `/onboarding-flow${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/calendar${`?${string}` | `#${string}` | ''}`
+        | `/calendar${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/home${`?${string}` | `#${string}` | ''}`
+        | `/home${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/chat/page${`?${string}` | `#${string}` | ''}`
+        | `/chat/page${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/chat/settings${`?${string}` | `#${string}` | ''}`
+        | `/chat/settings${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/library/page${`?${string}` | `#${string}` | ''}`
+        | `/library/page${`?${string}` | `#${string}` | ''}`
+        | { pathname: Router.RelativePathString; params?: Router.UnknownInputParams }
+        | { pathname: Router.ExternalPathString; params?: Router.UnknownInputParams }
+        | { pathname: `/`; params?: Router.UnknownInputParams }
+        | { pathname: `/_sitemap`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(auth)'}/authscreen` | `/authscreen`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(auth)'}/forgot-password` | `/forgot-password`;
+            params?: Router.UnknownInputParams;
+          }
+        | { pathname: `${'/(auth)'}/signin` | `/signin`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(auth)'}/signup` | `/signup`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(auth)'}/verify-email` | `/verify-email`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/join-room` | `/join-room`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(onboard)'}/onboarding-flow` | `/onboarding-flow`;
+            params?: Router.UnknownInputParams;
+          }
+        | { pathname: `${'/(tabs)'}/calendar` | `/calendar`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(tabs)'}/home` | `/home`; params?: Router.UnknownInputParams }
+        | { pathname: `${'/(tabs)'}/chat/page` | `/chat/page`; params?: Router.UnknownInputParams }
+        | {
+            pathname: `${'/(tabs)'}/chat/settings` | `/chat/settings`;
+            params?: Router.UnknownInputParams;
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/page` | `/library/page`;
+            params?: Router.UnknownInputParams;
+          }
+        | `${'/(tabs)'}/library/${Router.SingleRoutePart<T>}/create-entry${`?${string}` | `#${string}` | ''}`
+        | `/library/${Router.SingleRoutePart<T>}/create-entry${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/library/${Router.SingleRoutePart<T>}/page${`?${string}` | `#${string}` | ''}`
+        | `/library/${Router.SingleRoutePart<T>}/page${`?${string}` | `#${string}` | ''}`
+        | `${'/(tabs)'}/library/${Router.SingleRoutePart<T>}/update-entry${`?${string}` | `#${string}` | ''}`
+        | `/library/${Router.SingleRoutePart<T>}/update-entry${`?${string}` | `#${string}` | ''}`
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/create-entry`
+              | `/library/[bookId]/create-entry`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          }
+        | {
+            pathname: `${'/(tabs)'}/library/[bookId]/page` | `/library/[bookId]/page`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          }
+        | {
+            pathname:
+              | `${'/(tabs)'}/library/[bookId]/update-entry`
+              | `/library/[bookId]/update-entry`;
+            params: Router.UnknownInputParams & { bookId: string | number };
+          };
+    }
+  }
+}
