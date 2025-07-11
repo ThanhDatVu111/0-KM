@@ -1,6 +1,6 @@
 # Spotify OAuth Setup Guide
 
-This guide will help you set up Spotify OAuth for the 0-KM app. The app supports two OAuth flows: backend-based OAuth (recommended) and Supabase OAuth (fallback).
+This guide will help you set up Spotify OAuth for the 0-KM app. The app now uses the same OAuth pattern as Google OAuth for consistency.
 
 ## Prerequisites
 
@@ -16,11 +16,29 @@ This guide will help you set up Spotify OAuth for the 0-KM app. The app supports
    - **App name**: `0-KM` (or your preferred name)
    - **App description**: `A mobile app for couples to share music`
    - **Website**: `https://your-domain.com` (optional)
-   - **Redirect URI**: `0km-app://` (for mobile app)
+   - **Redirect URI**: `exp://fb4hvyo-anonymous-8081.exp.direct` (for development)
 4. Click "Save"
 5. Note down your **Client ID** and **Client Secret**
 
-## Step 2: Configure Backend Environment Variables
+## Step 2: Get Your Redirect URI
+
+The app uses `AuthSession.makeRedirectUri()` which automatically generates the correct redirect URI for your environment:
+
+- **Development**: `exp://fb4hvyo-anonymous-8081.exp.direct` (or similar)
+- **Production**: `0km-app://` (your app scheme)
+
+To get your exact redirect URI:
+
+1. Run the helper script:
+
+   ```bash
+   cd frontend
+   node get-redirect-uri.js
+   ```
+
+2. Copy the displayed URI and add it to your Spotify App settings
+
+## Step 3: Configure Backend Environment Variables
 
 Create a `.env` file in the `backend` directory with the following variables:
 
@@ -28,7 +46,7 @@ Create a `.env` file in the `backend` directory with the following variables:
 # Spotify OAuth Configuration
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URI=0km-app://
+SPOTIFY_REDIRECT_URI=exp://fb4hvyo-anonymous-8081.exp.direct
 
 # Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
@@ -41,7 +59,7 @@ LOCAL_URL=http://localhost:3001
 PUBLIC_URL=https://your-domain.com
 ```
 
-## Step 3: Configure Frontend Environment Variables
+## Step 4: Configure Frontend Environment Variables
 
 Create a `.env` file in the `frontend` directory with the following variables:
 
@@ -59,17 +77,6 @@ EXPO_PUBLIC_API_PUBLIC_URL=http://localhost:3001
 EXPO_PUBLIC_WEATHER_API_KEY=your_weather_api_key_here
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
-
-## Step 4: Configure Supabase OAuth (Optional - Fallback)
-
-If you want to use Supabase OAuth as a fallback:
-
-1. Go to your Supabase project dashboard
-2. Navigate to **Authentication** > **Providers**
-3. Find **Spotify** and click **Enable**
-4. Enter your Spotify Client ID and Client Secret
-5. Set the Redirect URL to: `0km-app://`
-6. Save the configuration
 
 ## Step 5: Test the Setup
 
@@ -90,33 +97,18 @@ If you want to use Supabase OAuth as a fallback:
    ```
 
 3. In the app, try to connect Spotify:
-   - The app will first try backend OAuth
-   - If that fails, it will fall back to Supabase OAuth
+   - The app will use the same OAuth pattern as Google
    - Use the DEBUG button to check the connection status
 
 ## Troubleshooting
 
-### Backend OAuth Issues
-
-**Error: "Backend OAuth not configured"**
-
-- Check that `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, and `SPOTIFY_REDIRECT_URI` are set in backend `.env`
-- Restart the backend server after adding environment variables
+### OAuth Issues
 
 **Error: "Failed to get authorization code"**
 
-- Check that the redirect URI in Spotify Developer Dashboard matches `0km-app://`
+- Check that the redirect URI in Spotify Developer Dashboard matches the one from `get-redirect-uri.js`
 - Ensure the Spotify app is properly configured
-
-### Supabase OAuth Issues
-
-**Error: "No OAuth URL received from Supabase"**
-
-- Check that Spotify provider is enabled in Supabase
-- Verify the Client ID and Client Secret in Supabase settings
-- Ensure the redirect URL is set correctly
-
-### General Issues
+- Make sure you're using the development redirect URI for testing
 
 **Web browser doesn't open**
 
@@ -127,48 +119,32 @@ If you want to use Supabase OAuth as a fallback:
 **Connection shows as connected but doesn't work**
 
 - Use the DEBUG button to check the connection status
-- Look for Spotify tokens in user metadata
+- Look for Spotify tokens in SecureStore
 - Check the console logs for detailed error messages
 
 ## How It Works
 
-### Backend OAuth Flow (Primary)
+### OAuth Flow (Same as Google)
 
-1. Frontend requests auth URL from backend
-2. Backend generates Spotify OAuth URL
-3. Frontend opens URL in browser
+1. Frontend uses `AuthSession.makeRedirectUri()` to get the correct redirect URI
+2. Frontend creates Spotify OAuth URL with the redirect URI
+3. Frontend opens URL in browser using `WebBrowser.openAuthSessionAsync()`
 4. User authorizes the app
-5. Spotify redirects back with authorization code
-6. Frontend sends code to backend
-7. Backend exchanges code for access/refresh tokens
-8. Tokens are stored in Supabase user metadata
+5. Spotify redirects back to the app with an authorization code
+6. Frontend exchanges the code for access tokens
+7. Tokens are stored securely in Expo SecureStore
 
-### Supabase OAuth Flow (Fallback)
+### Key Differences from Previous Version
 
-1. Frontend requests OAuth URL from Supabase
-2. Supabase generates Spotify OAuth URL
-3. Frontend opens URL in browser
-4. User authorizes the app
-5. Supabase handles the OAuth callback automatically
-6. Spotify provider is added to user's app_metadata
+- Uses `AuthSession.makeRedirectUri()` instead of hardcoded scheme
+- Handles OAuth entirely in the frontend (like Google OAuth)
+- Stores tokens in SecureStore instead of Supabase
+- Uses the same WebBrowser pattern as Google OAuth
 
-## Security Notes
+## Production Deployment
 
-- Access tokens expire after 1 hour
-- Refresh tokens should be used to get new access tokens
-- Store tokens securely (consider using encrypted storage)
-- Never expose client secrets in client-side code
-- Use HTTPS in production
+When deploying to production:
 
-## API Scopes
-
-The app requests the following Spotify scopes:
-
-- `user-read-private`: Read user's private information
-- `user-read-email`: Read user's email address
-- `user-read-playback-state`: Read user's playback state
-- `user-modify-playback-state`: Control user's playback
-- `user-read-currently-playing`: Read currently playing track
-- `streaming`: Control playback on user's devices
-- `playlist-read-private`: Read user's private playlists
-- `playlist-read-collaborative`: Read collaborative playlists
+1. Update the redirect URI in Spotify Developer Dashboard to: `0km-app://`
+2. Update the backend environment variable: `SPOTIFY_REDIRECT_URI=0km-app://`
+3. The app will automatically use the correct redirect URI based on the environment

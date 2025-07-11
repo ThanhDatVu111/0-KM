@@ -111,7 +111,7 @@ const Home = () => {
   } = useSharedSpotifyTrack(roomId);
 
   // Real Spotify playback controls - only use when connected
-  const { playTrack } = useSpotifyPlayback();
+  const { playTrack, playbackState } = useSpotifyPlayback();
 
   useEffect(() => {
     if (userId) {
@@ -241,11 +241,25 @@ const Home = () => {
       try {
         await playTrack(trackData.track_uri);
         Alert.alert('Success!', `Now playing: ${trackData.track_name}`);
-      } catch (playError) {
-        Alert.alert(
-          'Track Added',
-          `${trackData.track_name} was added to your room, but couldn't start playing automatically. Make sure you have Spotify open on another device.`,
-        );
+      } catch (playError: any) {
+        console.error('❌ [DEBUG] Auto-play failed:', playError);
+
+        // Show specific error message based on the error
+        let errorMessage = `${trackData.track_name} was added to your room, but couldn't start playing automatically.`;
+
+        if (playError.message?.includes('Premium required')) {
+          errorMessage =
+            'Spotify Premium is required for playback control. Please upgrade your account.';
+        } else if (playError.message?.includes('No active Spotify devices')) {
+          errorMessage =
+            'Please open Spotify on another device (phone, computer, etc.) to enable playback control.';
+        } else if (playError.message?.includes('No active Spotify device found')) {
+          errorMessage = 'No active Spotify device found. Please open Spotify on another device.';
+        } else {
+          errorMessage = `${trackData.track_name} was added to your room, but couldn't start playing automatically. ${playError.message}`;
+        }
+
+        Alert.alert('Track Added', errorMessage);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to add track to room. Please try again.');
@@ -437,12 +451,16 @@ const Home = () => {
             {roomId ? "What We're Listening To" : 'My Music'}
           </Text>
 
-          <View className="h-60">
+          <View
+            className={roomTrack?.track_uri || playbackState?.currentTrack ? 'h-[420px]' : 'h-60'}
+          >
             <SpotifyWidget
               roomId={roomId || undefined}
               canControl={true}
               onPress={
-                roomTrack?.controlled_by_user_id === userId ? handleRemoveSpotifyTrack : undefined
+                roomTrack?.controlled_by_user_id === userId
+                  ? handleRemoveSpotifyTrack
+                  : () => setShowSpotifyInput(true)
               }
               className="h-full"
             />

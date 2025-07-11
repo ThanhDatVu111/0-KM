@@ -1,4 +1,5 @@
 import supabase from '../utils/supabase';
+import * as SecureStore from 'expo-secure-store';
 
 export interface SpotifyTrack {
   id: string;
@@ -25,14 +26,81 @@ class SpotifyService {
   // Get Spotify access token from Supabase session
   private async getAccessToken(): Promise<string | null> {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const spotifyProvider = session?.user?.app_metadata?.providers?.spotify;
-      return spotifyProvider?.access_token || null;
+      // Get access token from SecureStore (where we store it during OAuth)
+      const accessToken = await SecureStore.getItemAsync('spotify_access_token');
+      const tokenExpiry = await SecureStore.getItemAsync('spotify_token_expiry');
+
+      if (!accessToken) {
+        console.log('🔍 [DEBUG] No access token found in SecureStore');
+        return null;
+      }
+
+      // Check if token is expired
+      if (tokenExpiry) {
+        const expiryTime = parseInt(tokenExpiry);
+        const now = Date.now();
+
+        if (now >= expiryTime) {
+          console.log('🔍 [DEBUG] Access token expired, attempting refresh...');
+          const refreshToken = await SecureStore.getItemAsync('spotify_refresh_token');
+
+          if (refreshToken) {
+            const refreshSuccess = await this.refreshAccessToken(refreshToken);
+            if (refreshSuccess) {
+              return await SecureStore.getItemAsync('spotify_access_token');
+            }
+          }
+
+          console.log('🔍 [DEBUG] Failed to refresh token');
+          return null;
+        }
+      }
+
+      console.log('🔍 [DEBUG] Using valid access token from SecureStore');
+      return accessToken;
     } catch (error) {
       console.error('Error getting Spotify access token:', error);
       return null;
+    }
+  }
+
+  private async refreshAccessToken(refreshToken: string): Promise<boolean> {
+    try {
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization:
+            'Basic ' + btoa('f805d2782059483e801da7782a7e04c8:06b28132afaf4c0b9c1f3224c268c35b'),
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+      });
+
+      const tokenData = await response.json();
+
+      if (tokenData.access_token) {
+        // Store the new tokens
+        await SecureStore.setItemAsync('spotify_access_token', tokenData.access_token);
+        if (tokenData.refresh_token) {
+          await SecureStore.setItemAsync('spotify_refresh_token', tokenData.refresh_token);
+        }
+        await SecureStore.setItemAsync(
+          'spotify_token_expiry',
+          (Date.now() + (tokenData.expires_in || 3600) * 1000).toString(),
+        );
+
+        console.log('✅ Spotify token refreshed successfully');
+        return true;
+      } else {
+        console.error('❌ Failed to refresh Spotify token');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing Spotify token:', error);
+      return false;
     }
   }
 
@@ -226,24 +294,67 @@ class SpotifyService {
   // Play a specific track
   async playTrack(trackUri: string): Promise<void> {
     try {
-      await this.makeRequest('/me/player/play', 'PUT', {
-        uris: [trackUri],
-      });
+      // First check if there are any available devices
+      const devices = await this.getDevices();
+      console.log('🔍 [DEBUG] Available Spotify devices:', devices);
+
+      if (devices.length === 0) {
+        throw new Error(
+          'No active Spotify devices found. Please open Spotify on another device first.',
+        );
+      }
+
+      // Check if any device is active
+      const activeDevice = devices.find((device) => device.is_active);
+      if (!activeDevice) {
+        console.log('🔍 [DEBUG] No active device, using first available device');
+        // Use the first available device
+        await this.makeRequest('/me/player/play', 'PUT', {
+          uris: [trackUri],
+          device_id: devices[0].id,
+        });
+      } else {
+        console.log('🔍 [DEBUG] Using active device:', activeDevice.name);
+        await this.makeRequest('/me/player/play', 'PUT', {
+          uris: [trackUri],
+        });
+      }
     } catch (error) {
-      throw error;
+      console.error('❌ [DEBUG] Error playing track:', error);
+
+      // Provide more specific error messages
+      if (error.message?.includes('403')) {
+        throw new Error(
+          'Spotify Premium required for playback control. Please upgrade your account.',
+        );
+      } else if (error.message?.includes('404')) {
+        throw new Error('No active Spotify device found. Please open Spotify on another device.');
+      } else if (error.message?.includes('No active Spotify devices')) {
+        throw error; // Re-throw our custom error
+      } else {
+        throw new Error(`Playback failed: ${error.message || 'Unknown error'}`);
+      }
     }
   }
 
   // Play/pause current track
   async togglePlayPause(): Promise<void> {
     try {
+      console.log('🎵 [DEBUG] togglePlayPause called');
       const state = await this.getPlaybackState();
+      console.log('🎵 [DEBUG] Current playback state:', state);
+      
       if (state?.isPlaying) {
+        console.log('🎵 [DEBUG] Currently playing, pausing...');
         await this.makeRequest('/me/player/pause', 'PUT');
+        console.log('✅ [DEBUG] Pause request sent');
       } else {
+        console.log('🎵 [DEBUG] Currently paused, playing...');
         await this.makeRequest('/me/player/play', 'PUT');
+        console.log('✅ [DEBUG] Play request sent');
       }
     } catch (error) {
+      console.error('❌ [DEBUG] Error in togglePlayPause:', error);
       throw error;
     }
   }
