@@ -16,6 +16,7 @@ import startButton from '@/assets/images/startButton.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import Background from '@/assets/images/Background.png';
 import Frame from '@/assets/images/Frame.png';
+import googleCalendar from '@/assets/images/googleCalendar.png'
 
 import profileBg from '@/assets/images/profileBg.png';
 
@@ -37,5 +38,6 @@ export default {
   createEntryBg,
   entryFormBg,
   entryCardBg,
-  loadingScreen
+  loadingScreen,
+  googleCalendar
 };

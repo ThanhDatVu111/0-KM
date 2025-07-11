@@ -455,7 +455,7 @@ function GGCalendar() {
               Connect to
             </Text>
             <Image
-              source={icons.googleCalendar}
+              source={images.googleCalendar}
               style={{ width: 200, height: 100, marginVertical: 20 }}
               resizeMode="contain"
             />
