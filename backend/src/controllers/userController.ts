@@ -10,6 +10,7 @@ export async function signUp(
 ): Promise<void> {
   try {
     const { email, user_id } = req.body;
+    console.log('Signing up user with data:', req.body);
 
     if (!email || !user_id) {
       res.status(400).json({ error: 'Missing required fields for signup' });
@@ -31,7 +32,7 @@ export async function onboard(
 ): Promise<void> {
   try {
     const { user_id, name, birthdate, photo_url } = req.body;
-
+    console.log('Onboarding user with data:', req.body);
     if (!user_id || !name || !birthdate || !photo_url) {
       res.status(400).json({ error: 'Missing required fields for onboarding' });
       return;
