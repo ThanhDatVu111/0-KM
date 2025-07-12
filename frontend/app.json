@@ -6,6 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/logo.png",
+    "scheme": "0km-app",
     "scheme": "com.googleusercontent.apps.152482242112-2c1othbu00qpt0725oki6u782hoppagj",
     "assets": ["./assets/fonts"],
     "userInterfaceStyle": "automatic",
@@ -13,7 +14,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to tag your memories."
+        "NSLocationWhenInUseUsageDescription": "We need your location to show your partner your current weather and time.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to continuously update your partner with your current weather and time.",
+        "UIBackgroundModes": ["location", "background-processing"]
       }
     },
     "android": {
@@ -50,6 +53,12 @@
     "experiments": {
       "typedRoutes": true
     },
-    "permissions": ["CAMERA", "MEDIA_LIBRARY"]
+    "permissions": [
+      "CAMERA",
+      "MEDIA_LIBRARY",
+      "LOCATION",
+      "ACCESS_FINE_LOCATION",
+      "ACCESS_COARSE_LOCATION"
+    ]
   }
 }

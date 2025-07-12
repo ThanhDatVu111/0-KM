@@ -30,7 +30,18 @@ export async function onboard(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_id, name, birthdate, photo_url } = req.body;
+    const {
+      user_id,
+      name,
+      birthdate,
+      photo_url,
+      timezone,
+      location_latitude,
+      location_longitude,
+      location_city,
+      location_country,
+      anniversary_date,
+    } = req.body;
 
     if (!user_id || !name || !birthdate || !photo_url) {
       res.status(400).json({ error: 'Missing required fields for onboarding' });
@@ -42,6 +53,12 @@ export async function onboard(
       username: name,
       birthdate,
       photo_url,
+      timezone,
+      location_latitude,
+      location_longitude,
+      location_city,
+      location_country,
+      anniversary_date,
     });
 
     res.status(201).json({ data: updatedUser });
@@ -86,12 +103,29 @@ export async function updateProfile(
   try {
     console.log('req.body in controller:', req.body);
     const { userId } = req.params;
-    const { username, birthdate, photo_url } = req.body;
+    const {
+      username,
+      birthdate,
+      photo_url,
+      timezone,
+      location_latitude,
+      location_longitude,
+      location_city,
+      location_country,
+      anniversary_date,
+    } = req.body;
+
     const updated = await userService.updateUserProfile({
       user_id: userId,
       ...(username !== undefined && { username }),
       ...(birthdate !== undefined && { birthdate }),
       ...(photo_url !== undefined && { photo_url }),
+      ...(timezone !== undefined && { timezone }),
+      ...(location_latitude !== undefined && { location_latitude }),
+      ...(location_longitude !== undefined && { location_longitude }),
+      ...(location_city !== undefined && { location_city }),
+      ...(location_country !== undefined && { location_country }),
+      ...(anniversary_date !== undefined && { anniversary_date }),
     });
     res.status(200).json({ data: updated });
   } catch (err) {

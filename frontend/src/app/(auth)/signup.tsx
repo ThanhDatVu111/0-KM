@@ -1,11 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { Text, View, TouchableOpacity, Image } from 'react-native';
 import { useSignUp, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
@@ -52,7 +47,6 @@ export default function SignUpForm() {
         params: { emailAddress }, // Pass emailAddress to the verification page
       });
     } catch (err: any) {
-      console.error('Sign-up error:', JSON.stringify(err, null, 2));
       const readableMessage =
         err?.errors?.[0]?.shortMessage ||
         err?.errors?.[0]?.longMessage ||
@@ -89,9 +83,7 @@ export default function SignUpForm() {
         // to handle next steps
       }
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      // Handle Google sign-up error silently
     }
   }, []);
 
@@ -147,7 +139,7 @@ export default function SignUpForm() {
 
       {/* Sign up with Google Button */}
       <TouchableOpacity
-        onPress={onSignUpPress}
+        onPress={onGoogleSignUpPress}
         className="w-full mb-4 bg-white border-4 border-[#6536DD]"
         style={{
           shadowColor: '#6536DD',

@@ -58,7 +58,6 @@ export async function joinRoom(
 ): Promise<void> {
   try {
     const { room_id, user_id } = req.body;
-    console.log('joinRoom in controller called with:', { room_id, user_id });
 
     if (!room_id || !user_id) {
       res.status(400).json({ error: 'Missing required fields' });
@@ -162,6 +161,64 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
     const updatedRoom = await roomService.updateRoom(room_id, user_id);
     res.json({ data: updatedRoom });
   } catch (err) {
+    next(err);
+  }
+}
+
+// Update Playback State
+export async function updatePlaybackState(
+  req: Request<{ room_id: string }, {}, { playback_state: any; user_id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { room_id } = req.params;
+    const { playback_state, user_id } = req.body;
+
+    if (!room_id || !playback_state || !user_id) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    // Get the current playback state to compare
+    const currentPlaybackState = await roomService.getPlaybackState(room_id);
+
+    // Only change the controller when a new track is added, not on play/pause
+    const isTrackChange =
+      playback_state.current_track_uri &&
+      (!currentPlaybackState?.current_track_uri ||
+        playback_state.current_track_uri !== currentPlaybackState.current_track_uri);
+
+    const updatedPlaybackState = {
+      ...playback_state,
+      // Only set controller if this is a track change, otherwise keep existing controller
+      controlled_by_user_id: isTrackChange ? user_id : currentPlaybackState?.controlled_by_user_id,
+    };
+
+    const result = await roomService.updatePlaybackState(room_id, updatedPlaybackState);
+    res.json({ data: result });
+  } catch (err: any) {
+    next(err);
+  }
+}
+
+// Get Playback State
+export async function getPlaybackState(
+  req: Request<{ room_id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { room_id } = req.params;
+
+    if (!room_id) {
+      res.status(400).json({ error: 'Missing room_id parameter' });
+      return;
+    }
+
+    const playbackState = await roomService.getPlaybackState(room_id);
+    res.json({ data: playbackState });
+  } catch (err: any) {
     next(err);
   }
 }

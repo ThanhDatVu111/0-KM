@@ -123,3 +123,30 @@ export async function updateUserProfileUnified(
     throw err;
   }
 }
+
+export async function updateUserLocation(data: {
+  user_id: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
+  timezone?: string;
+}) {
+  try {
+    const response = await fetch(`${BASE_URL}/users/${data.user_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to update user location');
+    return result.data;
+  } catch (err: any) {
+    if (err.name === 'TypeError') {
+      throw new Error(
+        `Unable to connect to server at ${BASE_URL}. Please check your network or that the backend is running.`,
+      );
+    }
+    throw err;
+  }
+}

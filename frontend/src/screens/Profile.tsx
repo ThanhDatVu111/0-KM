@@ -20,13 +20,8 @@ import images from '@/constants/images';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { createClient } from '@supabase/supabase-js';
 import { uploadToCloudinary } from '@/utils/cloudinaryUpload';
-
-const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import supabase from '@/utils/supabase';
 
 const Profile = () => {
   const router = useRouter();

@@ -2,8 +2,9 @@ import polaroid from '@/assets/images/0kmPolaroid.png';
 import logo from '@/assets/images/logo.png';
 import polaroid_frame from '@/assets/images/polaroidFrame.png';
 import polaroid_picture from '@/assets/images/polaroidPicture.png';
-import highlight from '@/assets/images/highlight.png';
 import navBarBackground from '@/assets/images/navBarBackground.png';
+import decoration from '@/assets/images/decoration.png';
+import memory from '@/assets/images/memory.png';
 import libraryBg from '@/assets/images/libraryBg.png';
 import libraryTitle from '@/assets/images/libraryTitle.png';
 import sortButtonBg from '@/assets/images/sortButtonBg.png';
@@ -16,9 +17,11 @@ import startButton from '@/assets/images/startButton.png';
 import onboardPairingBg from '@/assets/images/onboardPairingBg.jpg';
 import Background from '@/assets/images/Background.png';
 import Frame from '@/assets/images/Frame.png';
-import googleCalendar from '@/assets/images/googleCalendar.png'
-
+import googleCalendar from '@/assets/images/googleCalendar.png';
 import profileBg from '@/assets/images/profileBg.png';
+import widget from '@/assets/images/widget.png';
+import framer from '@/assets/images/framer.png';
+import heart from '@/assets/images/heart.png';
 
 export default {
   polaroid,
@@ -29,9 +32,13 @@ export default {
   entry,
   startButton,
   onboardPairingBg,
+  profileBg,
+  decoration,
+  memory,
+  widget,
+  framer,
   Background,
   Frame,
-  profileBg,
   libraryBg,
   libraryTitle,
   sortButtonBg,
@@ -39,5 +46,6 @@ export default {
   entryFormBg,
   entryCardBg,
   loadingScreen,
-  googleCalendar
+  googleCalendar,
+  heart,
 };

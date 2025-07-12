@@ -1,6 +1,13 @@
 import supabase from '../../utils/supabase';
 //ROLE: Database access layer
 
+export interface PlaybackState {
+  is_playing: boolean;
+  current_track_uri?: string;
+  progress_ms: number;
+  controlled_by_user_id?: string;
+}
+
 export async function createRoom(attrs: { room_id: string; user_1: string }) {
   const { data, error } = await supabase
     .from('room')
@@ -131,4 +138,36 @@ export async function getRoomById(room_id: string) {
   const { data, error } = await supabase.from('room').select().eq('room_id', room_id).single();
   if (error) throw error;
   return data;
+}
+
+export async function updatePlaybackState(room_id: string, playback_state: PlaybackState) {
+  const { data, error } = await supabase
+    .from('room')
+    .update({
+      playback_state,
+    })
+    .eq('room_id', room_id)
+    .select('playback_state')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getPlaybackState(room_id: string): Promise<PlaybackState | null> {
+  console.log('🔍 Getting playback state for room_id:', room_id);
+
+  const { data, error } = await supabase
+    .from('room')
+    .select('playback_state')
+    .eq('room_id', room_id)
+    .single();
+
+  if (error) {
+    console.error('❌ Database error getting playback state:', error);
+    throw error;
+  }
+
+  console.log('✅ Playback state data:', data);
+  return data?.playback_state || null;
 }

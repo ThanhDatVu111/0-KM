@@ -12,19 +12,13 @@ import {
   Platform,
 } from 'react-native';
 import { pairRoom, deleteRoom } from '@/apis/room';
-import { SignOutButton } from '@/components/SignOutButton';
 import FormInput from '@/components/FormInput';
 import images from '@/constants/images';
 import { useAuth } from '@clerk/clerk-expo';
 import { fetchRoom } from '@/apis/room';
 import { createRoom } from '@/apis/room';
 import uuid from 'react-native-uuid';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import supabase from '@/utils/supabase';
 
 function PairingStep({
   myCode,
@@ -205,13 +199,25 @@ const JoinRoom = () => {
 
     const initializeRoom = async () => {
       try {
-        console.log('🔍 Checking for existing room for user:', userId);
-        const existingRoom = await fetchRoom({ user_id: userId });
-        console.log('🔍 Found existing room:', existingRoom.room_id);
-        setRoomId(existingRoom.room_id);
+        console.log('🏠 Checking for existing room for user:', userId);
+        const existingRoom = await fetchRoom({ user_id: userId ?? '' });
+        if (existingRoom) {
+          console.log('🏠 Found existing room:', existingRoom);
+          setRoomId(existingRoom.room_id);
+
+          // If room is already filled, redirect to home
+          if (existingRoom.filled) {
+            console.log('✅ Room is already filled, redirecting to home');
+            router.push('/(tabs)/home');
+            return;
+          }
+
+          return;
+        }
       } catch (err: any) {
+        console.log('🏠 Error checking existing room:', err.message);
         if (err.message && err.message.includes('Room not found')) {
-          console.log('🔍 No existing room found, creating new room');
+          console.log('🏠 Creating new room with ID:', roomId);
           const newRoomId = uuid.v4() as string;
           const room = await createRoom({
             room_id: newRoomId,
@@ -219,6 +225,7 @@ const JoinRoom = () => {
           });
           console.log('✅ Room created:', room.room_id);
           setRoomId(room.room_id);
+          console.log('✅ Room created successfully:', room);
         } else {
           console.error('❌ Error checking for room:', err);
         }
@@ -281,6 +288,54 @@ const JoinRoom = () => {
     };
   }, [roomId, userId]);
 
+  // Real-time subscription to detect when room becomes filled
+  useEffect(() => {
+    if (!roomId) return;
+
+    console.log('🔔 Setting up real-time subscription for room:', roomId);
+
+    const channel = supabase
+      .channel(`room_${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          console.log('🔔 Room update received:', payload.new);
+          const updatedRoom = payload.new;
+
+          // Check if room is now filled
+          if (updatedRoom.filled) {
+            console.log('✅ Room is now filled! Partner has joined.');
+            Alert.alert('Partner Joined!', 'Your partner has successfully joined the room!', [
+              {
+                text: 'Continue',
+                onPress: () => {
+                  console.log('🚀 Redirecting to home screen');
+                  router.push('/(tabs)/home');
+                },
+              },
+            ]);
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log('🔔 Room subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to room updates for:', roomId);
+        }
+      });
+
+    return () => {
+      console.log('🔔 Cleaning up room subscription for:', roomId);
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
   const roomIdString = Array.isArray(roomId) ? roomId[0] : roomId;
   const connectRoom = async () => {
     if (partnerCode === roomIdString) {
@@ -290,34 +345,25 @@ const JoinRoom = () => {
 
     setLoading(true);
     try {
-      console.log('Moving user:', Array.isArray(userId) ? userId[0] : userId);
-      console.log('Moving to room:', partnerCode);
+      console.log('🏠 Pairing user:', Array.isArray(userId) ? userId[0] : userId);
+      console.log('🏠 Joining room:', partnerCode);
 
       await pairRoom({
         room_id: partnerCode,
         user_id: Array.isArray(userId) ? userId[0] : userId,
       });
 
-      console.log('Deleting room with ID:', roomIdString);
+      console.log('🏠 Deleting old room with ID:', roomIdString);
 
       await deleteRoom({
         room_id: roomIdString,
       });
 
-      console.log('Paired with partner successfully!');
-      
-      // Show alert for the person who joined
-      Alert.alert('Success', 'You have been paired with your partner!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            router.push({ pathname: '/(tabs)/home', params: { userId } });
-          },
-        },
-      ]);
-      
+      console.log('✅ Paired with partner successfully!');
+      Alert.alert('Success', 'You have been paired with your partner!');
+      router.push('/(tabs)/home');
     } catch (err) {
-      console.error('Pairing failed:', err);
+      console.error('❌ Pairing failed:', err);
       setError('Failed to pair with your partner. Please try again.');
     } finally {
       setLoading(false);
@@ -341,9 +387,6 @@ const JoinRoom = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 items-center justify-center px-4 py-8">
-            <View className="absolute top-12 right-4">
-              <SignOutButton />
-            </View>
             <PairingStep
               myCode={roomIdString}
               partnerCode={partnerCode}

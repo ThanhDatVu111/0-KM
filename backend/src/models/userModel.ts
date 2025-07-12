@@ -55,17 +55,42 @@ export async function updateUserProfile(attrs: {
   username?: string;
   birthdate?: string;
   photo_url?: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
+  anniversary_date?: string;
 }) {
+  console.log('📝 Updating user profile with attrs:', attrs);
+
   const updateFields: any = {};
   if (attrs.username !== undefined) updateFields.username = attrs.username;
   if (attrs.birthdate !== undefined) updateFields.birthdate = attrs.birthdate;
   if (attrs.photo_url !== undefined) updateFields.photo_url = attrs.photo_url;
+  if (attrs.timezone !== undefined) updateFields.timezone = attrs.timezone;
+  if (attrs.location_latitude !== undefined)
+    updateFields.location_latitude = attrs.location_latitude;
+  if (attrs.location_longitude !== undefined)
+    updateFields.location_longitude = attrs.location_longitude;
+  if (attrs.location_city !== undefined) updateFields.location_city = attrs.location_city;
+  if (attrs.location_country !== undefined) updateFields.location_country = attrs.location_country;
+  if (attrs.anniversary_date !== undefined) updateFields.anniversary_date = attrs.anniversary_date;
+
+  console.log('📝 Update fields to be applied:', updateFields);
+
   const { data, error } = await supabase
     .from('users')
     .update(updateFields)
     .eq('user_id', attrs.user_id)
     .select()
     .single();
-  if (error) throw error;
+
+  if (error) {
+    console.error('❌ Error updating user profile:', error);
+    throw error;
+  }
+
+  console.log('✅ User profile updated successfully:', data);
   return data;
 }

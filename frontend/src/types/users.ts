@@ -14,6 +14,12 @@ export interface OnboardRequest {
   name: string;
   birthdate: string;
   photo_url?: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
+  anniversary_date?: string;
 }
 
 export interface OnboardResponse {
@@ -28,5 +34,11 @@ export interface FetchedUserResponse {
   username?: string;
   birthdate?: string;
   photo_url?: string;
+  timezone?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_city?: string;
+  location_country?: string;
+  anniversary_date?: string;
   created_at: string;
 }
