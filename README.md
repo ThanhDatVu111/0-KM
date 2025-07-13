@@ -8,7 +8,8 @@
     <a href="https://github.com/ThanhDatVu111/0-KM/issues">Report Bug</a>
     ·
     <a href=https://github.com/ThanhDatVu111/0-KM/pulls>Request Feature</a>
-    
+    ·
+    <a href=https://docs.google.com/document/d/1E3ba1nHL-qGfqNBvUdjnxSWdvm3qw2aWJIT1QpNJqaI/edit?usp=sharing>Design Doc</a>
   </p>
 </div>
 
