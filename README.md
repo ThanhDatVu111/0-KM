@@ -5,10 +5,6 @@
     <img src="frontend/src/assets/images/logo.png" alt="Logo" width="300" height="300">
   </a>
   <p align="center">
-    <a href="https://github.com/ThanhDatVu111/0-KM/issues">Report Bug</a>
-    ·
-    <a href=https://github.com/ThanhDatVu111/0-KM/pulls>Request Feature</a>
-    ·
     <a href=https://docs.google.com/document/d/1E3ba1nHL-qGfqNBvUdjnxSWdvm3qw2aWJIT1QpNJqaI/edit?usp=sharing>Design Doc</a>
   </p>
 </div>
@@ -48,7 +44,7 @@
 
 <!-- ABOUT THE PROJECT -->
 
-## � About The Project
+## About The Project
 
 0-KM is a mobile app designed to help couples stay connected across any distance. Built with modern technologies, it offers a comprehensive platform for relationship building and maintenance.
 
