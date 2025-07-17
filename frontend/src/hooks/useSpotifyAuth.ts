@@ -192,23 +192,23 @@ export function useSpotifyAuth() {
     try {
       console.log('🔧 [DEBUG] Testing Supabase configuration...');
 
-      // Check current session
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      console.log('🔧 [DEBUG] Current session:', session ? 'exists' : 'none');
-      console.log('🔧 [DEBUG] Session error:', sessionError);
+      // // Check current session
+      // const {
+      //   data: { session },
+      //   error: sessionError,
+      // } = await supabase.auth.getSession();
+      // console.log('🔧 [DEBUG] Current session:', session ? 'exists' : 'none');
+      // console.log('🔧 [DEBUG] Session error:', sessionError);
 
-      if (session) {
-        console.log('🔧 [DEBUG] User ID:', session.user.id);
-        console.log('🔧 [DEBUG] User email:', session.user.email);
-        console.log(
-          '🔧 [DEBUG] User metadata:',
-          JSON.stringify(session.user.user_metadata, null, 2),
-        );
-        console.log('🔧 [DEBUG] App metadata:', JSON.stringify(session.user.app_metadata, null, 2));
-      }
+      // if (session) {
+      //   console.log('🔧 [DEBUG] User ID:', session.user.id);
+      //   console.log('🔧 [DEBUG] User email:', session.user.email);
+      //   console.log(
+      //     '🔧 [DEBUG] User metadata:',
+      //     JSON.stringify(session.user.user_metadata, null, 2),
+      //   );
+      //   console.log('🔧 [DEBUG] App metadata:', JSON.stringify(session.user.app_metadata, null, 2));
+      // }
 
       // Test OAuth URL generation
       const redirectUri = AuthSession.makeRedirectUri();

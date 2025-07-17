@@ -101,43 +101,25 @@ export function WeatherWidget({
         return;
       }
 
-      console.log('🌤️ Fetching weather data...');
-      console.log('🌤️ Partner data:', partnerData);
-      console.log('🌤️ Partner location:', partnerData?.location);
-      console.log('🌤️ Partner location latitude:', partnerData?.location?.latitude);
-      console.log('🌤️ Partner location longitude:', partnerData?.location?.longitude);
-      console.log('🌤️ Partner location city:', partnerData?.location?.city);
-      console.log('🌤️ Partner location country:', partnerData?.location?.country);
-
       let data: WeatherData;
 
       // Use partner's location if available, otherwise use partner's city, then default city
       if (partnerData?.location?.latitude && partnerData?.location?.longitude) {
-        console.log(
-          '🌤️ Using partner coordinates:',
-          partnerData.location.latitude,
-          partnerData.location.longitude,
-        );
         // Use exact coordinates for most accurate weather
         data = await fetchWeatherByLocation(
           partnerData.location.latitude,
           partnerData.location.longitude,
         );
       } else if (partnerData?.location?.city) {
-        console.log('🌤️ Using partner city:', partnerData.location.city);
         // Use partner's city name if coordinates not available
         data = await fetchWeatherByCity(partnerData.location.city);
       } else {
-        console.log('🌤️ Using default city:', defaultCity);
-        console.log('🌤️ Partner location data is missing - using fallback');
         // Fallback to default city
         data = await fetchWeatherByCity(defaultCity);
       }
 
-      console.log('🌤️ Weather data received:', data);
       setWeatherData(data);
     } catch (err) {
-      console.error('❌ Error fetching weather:', err);
       setError(
         `Failed to fetch weather data: ${err instanceof Error ? err.message : 'Unknown error'}`,
       );

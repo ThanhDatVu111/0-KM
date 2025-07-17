@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { Text, View, TouchableOpacity, Image } from 'react-native';
-import { useSignUp, useSSO } from '@clerk/clerk-expo';
+import { useSignUp, useSSO, useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import FormInput from '@/components/FormInput';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import icons from '@/constants/icons';
+import { createUser } from '@/apis/user';
 
 const useWarmUpBrowser = () => {
   React.useEffect(() => {
@@ -21,6 +22,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpForm() {
   const { isLoaded, signUp } = useSignUp();
+  const { userId, getToken } = useAuth();
   const router = useRouter();
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -56,7 +58,7 @@ export default function SignUpForm() {
     }
   };
 
-  // ✅ Sign in with Google (OAuth)
+  // ✅ Sign up with Google (OAuth)
   // Handle any pending authentication sessions
   WebBrowser.maybeCompleteAuthSession();
   useWarmUpBrowser();
@@ -74,8 +76,37 @@ export default function SignUpForm() {
 
       // If sign in was successful, set the active session
       if (createdSessionId) {
-        setActive!({ session: createdSessionId });
-        router.replace('/(auth)/authscreen');
+        await setActive!({ session: createdSessionId });
+
+        // Wait for session to be established
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Get the JWT token to extract user info
+        const token = await getToken();
+        if (token) {
+          // Decode JWT to get user info
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const googleUserId = payload.sub; // Clerk user ID
+          const googleEmail = payload.email; // User's email from Google
+
+          console.log('✅ Google user info:', { googleUserId, googleEmail });
+
+          // Create user in database
+          const createdUser = await createUser({
+            email: googleEmail || 'no-email@example.com',
+            user_id: googleUserId,
+          });
+          console.log('✅ New Google user saved to database:', createdUser);
+
+          router.replace({
+            pathname: '/(onboard)/onboarding-flow',
+            params: {
+              user_id: googleUserId,
+            },
+          });
+        } else {
+          console.error('❌ No token available after Google authentication');
+        }
       } else {
         // If there is no `createdSessionId`,
         // there are missing requirements, such as MFA
@@ -85,7 +116,7 @@ export default function SignUpForm() {
     } catch (err) {
       // Handle Google sign-up error silently
     }
-  }, []);
+  }, [getToken]);
 
   return (
     <View className="w-full">

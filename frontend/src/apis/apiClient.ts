@@ -65,7 +65,6 @@ export class ApiClient {
         error.status !== 400 &&
         error.status !== 404
       ) {
-        console.error('API request failed:', error);
       }
       throw error;
     }
