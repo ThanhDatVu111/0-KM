@@ -149,11 +149,12 @@ _Advanced messaging platform for couples_
 
 Advanced messaging platform features:
 
-- Instant messaging
+- Realtime messaging
 - Media sharing (photos, videos)
 - Message history
 - Push notifications
 - Online/offline status
+- Edit / Delete messages
 
 ### Google Calendar Integration
 
@@ -272,6 +273,7 @@ To get a local copy up and running, follow these simple steps.
 ### 🛠️ Installation
 
 1. **Create required accounts and get API keys:**
+
    - [Clerk Account](https://clerk.com) - For authentication
    - [Supabase Account](https://supabase.com) - For database
    - [Google Cloud Console](https://console.cloud.google.com) - For Calendar API
@@ -337,6 +339,7 @@ To get a local copy up and running, follow these simple steps.
    ```
 
 6. **Set up your Supabase database:**
+
    - Create tables for users, rooms, chats, library, etc.
    - Set up authentication policies
    - Configure real-time subscriptions
@@ -453,10 +456,10 @@ Meet the talented team behind 0-KM:
     </td>
     <td align="center">
       <strong>Project Advisor</strong><br>
-      <a href="#">
+      <a href="https://www.linkedin.com/in/vannguyen22/">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
-      <strong>[Advisor Name]</strong><br>
+      <strong>Van Nguyen</strong><br>
       <em>Technical Guidance & Mentorship</em>
     </td>
   </tr>
@@ -470,11 +473,11 @@ Meet the talented team behind 0-KM:
       <a href="#">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
-      <strong>[Engineer 1 Name]</strong><br>
-      <em>Frontend Development</em>
+      <strong>Chau Tran</strong><br>
+      <em>Software Engineer</em>
     </td>
     <td align="center">
-      <a href="#">
+      <a href="https://www.linkedin.com/in/chau-tran-hoangminh/">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
       <strong>[Engineer 2 Name]</strong><br>
