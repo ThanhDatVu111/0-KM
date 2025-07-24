@@ -157,7 +157,7 @@ Advanced messaging platform features:
 
 ### Google Calendar Integration
 
-![Google Calendar]()
+![Google Calendar](0kmRM/Calendar/Calendar.png)
 _Calendar synchronization for couples_
 
 Calendar synchronization includes:
