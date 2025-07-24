@@ -470,8 +470,8 @@ Meet the talented team behind 0-KM:
       <a href="#">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
-      <strong>[Engineer 1 Name]</strong><br>
-      <em>Frontend Development</em>
+      <strong>[Quyen (Quinxie) Doan]</strong><br>
+      <em>Full Stack Development</em>
     </td>
     <td align="center">
       <a href="#">
