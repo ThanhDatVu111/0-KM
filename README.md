@@ -88,14 +88,16 @@ Unique pairing system features:
 ### 🏠 Home Page
 
 ![Home Dashboard]()
-_Main dashboard with relationship milestones and quick access_
 
-The main dashboard provides:
+<img width="1126" height="633" alt="Screen Shot 2025-07-23 at 7 29 29 PM" src="https://github.com/user-attachments/assets/ad5bd78c-757a-47c9-972f-6c1c3b3451ba" />
 
-- Relationship milestones tracking
-- Quick access to all features
-- Personalized content feed
-- Activity overview
+The home provides:
+
+- Weather and time of your partner
+- Anniversary date of the couple
+- Notification for virtual date
+- Share Youtube Video
+- Streamless Spotify music
 
 ### 👤 Profile
 
