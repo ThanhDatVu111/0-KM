@@ -141,7 +141,7 @@ Interactive journaling system:
 - Cloudinary integration for media storage
 - Dynamic photo + video grid
 
-### Real-time Chat
+### 💬 Real-time Chat
 
 ![Real-time Chat](0kmRM/Chat/readmeChat.png)
 _Advanced messaging platform for couples_
@@ -257,14 +257,14 @@ This project is built using modern technologies to ensure performance and scalab
 
 <!-- WHAT WE ACHIEVED-->
 
-## What We Achieved
+## 🏆 What We Achieved
 
-[Demo](0kmRM/Demo.jpeg)
+![Demo](0kmRM/Demo.jpeg)
 _Our team winning the Technical Titan Award at VTMP Demo Day!_
 
-- <emp>Hands-on Experience in Mobile & iOS Development:</emp> We built full-stack, feature-rich, cross-platform mobile application using <emp>React Natve,</emp> with all UI components developed from scratch. The app is integrated with <emp>Supabase</emp> as the backend, allowing for real-time data handling.
-- <emp>Teamwork and Collaboration:</emp> We leveraged tools like <emp>ngrok</emp> to enable seamless cross-platform development with Expo CLI. Our development process involved consistent debugging, version control using Git, and detailed code reviews on pull requests. Beyond technical execution, we significantly improved our soft skills, particularly in clear and efficient team communication.
-- <emp>Award-Winning Execution:</emp> Our commitment to high-quality design, robust functionality, and innovation earned us the <emp>Technical Titan Award</emp>, recognizing our app as a standout in both technical complexity and user experience.
+- <strong>Hands-on Experience in Mobile & iOS Development:</strong> We built full-stack, feature-rich, cross-platform mobile application using <strong>React Natve,</strong> with all UI components developed from scratch. The app is integrated with <strong>Supabase</strong> as the backend, allowing for real-time data handling.
+- <strong>Teamwork and Collaboration:</strong> We leveraged tools like <strong>ngrok</strong> to enable seamless cross-platform development with Expo CLI. Our development process involved consistent debugging, version control using Git, and detailed code reviews on pull requests. Beyond technical execution, we significantly improved our soft skills, particularly in clear and efficient team communication.
+- <strong>Award-Winning Execution:</strong> Our commitment to high-quality design, robust functionality, and innovation earned us the <strong>Technical Titan Award</strong>, recognizing our app as a standout in both technical complexity and user experience.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
