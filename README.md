@@ -4,9 +4,6 @@
   <a href="https://github.com/othneildrew/Best-README-Template">
     <img src="frontend/src/assets/images/logo.png" alt="Logo" width="300" height="300">
   </a>
-  <p align="center">
-    <a href=https://docs.google.com/document/d/1E3ba1nHL-qGfqNBvUdjnxSWdvm3qw2aWJIT1QpNJqaI/edit?usp=sharing>Design Doc</a>
-  </p>
 </div>
 
 <!-- TABLE OF CONTENTS -->
@@ -28,6 +25,7 @@
       </ul>
     </li>
     <li><a href="#%EF%B8%8F-tech-stack">Tech Stack</a></li>
+    <li><a href="#-what-we-achieved">What We Achieved</a></li>
     <li><a href="#-getting-started">Getting Started</a>
       <ul>
         <li><a href="#-prerequisites">Prerequisites</a></li>
@@ -35,6 +33,7 @@
         <li><a href="#-configuration-steps">Configuration Steps</a></li>
       </ul>
     </li>
+    <li><a href="#-resources">Resources</a></li>
     <li><a href="#-contributing">Contributing</a></li>
     <li><a href="#-team">Team</a></li>
     <li><a href="#-license">License</a></li>
@@ -144,7 +143,7 @@ Interactive journaling system:
 
 ### Real-time Chat
 
-![Real-time Chat]()
+![Real-time Chat](0kmRM/Chat/readmeChat.png)
 _Advanced messaging platform for couples_
 
 Advanced messaging platform features:
@@ -155,6 +154,7 @@ Advanced messaging platform features:
 - Push notifications
 - Online/offline status
 - Edit / Delete messages
+- Privacy Settings
 
 ### Google Calendar Integration
 
@@ -252,6 +252,19 @@ This project is built using modern technologies to ensure performance and scalab
 [Expo-av-url]: https://docs.expo.dev/versions/latest/sdk/av/
 [Expo.notifications]: https://img.shields.io/badge/Expo_Notifications-000020?style=for-the-badge&logo=expo&logoColor=white
 [Expo-notifications-url]: https://docs.expo.dev/versions/latest/sdk/notifications/
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- WHAT WE ACHIEVED-->
+
+## What We Achieved
+
+[Demo](0kmRM/Demo.jpeg)
+_Our team winning the Technical Titan Award at VTMP Demo Day!_
+
+- <emp>Hands-on Experience in Mobile & iOS Development:</emp> We built full-stack, feature-rich, cross-platform mobile application using <emp>React Natve,</emp> with all UI components developed from scratch. The app is integrated with <emp>Supabase</emp> as the backend, allowing for real-time data handling.
+- <emp>Teamwork and Collaboration:</emp> We leveraged tools like <emp>ngrok</emp> to enable seamless cross-platform development with Expo CLI. Our development process involved consistent debugging, version control using Git, and detailed code reviews on pull requests. Beyond technical execution, we significantly improved our soft skills, particularly in clear and efficient team communication.
+- <emp>Award-Winning Execution:</emp> Our commitment to high-quality design, robust functionality, and innovation earned us the <emp>Technical Titan Award</emp>, recognizing our app as a standout in both technical complexity and user experience.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -436,6 +449,18 @@ Don't forget to give the project a star! Thanks again!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- RESOURCES -->
+
+## 📚 Resources
+
+Aggregated list of resources and assets, documenting our development process.
+
+1. <a href="https://docs.google.com/document/d/1E3ba1nHL-qGfqNBvUdjnxSWdvm3qw2aWJIT1QpNJqaI/edit?usp=sharing">Design Doc</a>
+2. <a href="https://www.figma.com/design/nCpusfVWL9IAvWLzqwtFZe/0km--Demo-?node-id=0-1&t=LAiOCqGW29ASrv0c-1">Figma Design</a>
+3. <a href="https://docs.google.com/presentation/d/1fKZ8jpl9Muavus6wgzozu2WDE0Tjvsx3SY9PM5kN2os/edit?usp=sharing">Project Demo Presentation</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- TEAM -->
 
 ## 👥 Team
@@ -470,25 +495,25 @@ Meet the talented team behind 0-KM:
 <table>
   <tr>
     <td align="center">
-      <a href="#">
+      <a href="https://www.linkedin.com/in/chau-tran-hoangminh/">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
       <strong>Chau Tran</strong><br>
       <em>Software Engineer</em>
     </td>
     <td align="center">
-      <a href="https://www.linkedin.com/in/chau-tran-hoangminh/">
+      <a href="https://www.linkedin.com/in/ngo-tuananh/">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
-      <strong>[Engineer 2 Name]</strong><br>
-      <em>Backend Development</em>
+      <strong>Tuan-Anh Ngo</strong><br>
+      <em>Software Engineer</em>
     </td>
     <td align="center">
-      <a href="#">
+      <a href="https://www.linkedin.com/in/quyendoan51/">
         <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
       </a><br>
-      <strong>[Engineer 3 Name]</strong><br>
-      <em>Mobile Development</em>
+      <strong>Quinxie Doan</strong><br>
+      <em>Software Engineer</em>
     </td>
   </tr>
 </table>
