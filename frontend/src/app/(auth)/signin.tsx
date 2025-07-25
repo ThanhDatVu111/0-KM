@@ -26,7 +26,7 @@ export default function SignInForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useWarmUpBrowser();
+  // useWarmUpBrowser();
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
