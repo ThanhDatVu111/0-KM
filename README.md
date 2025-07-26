@@ -86,7 +86,7 @@ Unique pairing system features:
 
 ### 🏠 Home Page
 
-![Home Dashboard]()
+![Home Dashboard](0kmRM/Home/readmeHome.png)
 _Main dashboard with relationship milestones and quick access_
 
 The main dashboard provides:
