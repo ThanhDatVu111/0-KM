@@ -97,6 +97,8 @@ The main dashboard provides:
 - Sharing and watching YouTube together
 - Stream music on Spotify and control music of your partner
 
+<strong>Note:</strong> Remember to keep your Spotify active (go to your Spotify, play a song and pause, navigate back to the app) before searching up a song in Spotify widget in 0km.
+
 ### 👤 Profile
 
 ![User Profile](0kmRM/Profile/readmeProfile.png)
