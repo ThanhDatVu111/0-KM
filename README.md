@@ -91,10 +91,11 @@ _Main dashboard with relationship milestones and quick access_
 
 The main dashboard provides:
 
-- Relationship milestones tracking
-- Quick access to all features
-- Personalized content feed
-- Activity overview
+- Real Time widgets updating your partner’s weather and time zone
+- Notification on calendar booking
+- Real Time Anniversary date
+- Sharing and watching YouTube together
+- Stream music on Spotify and control music of your partner
 
 ### 👤 Profile
 
