@@ -16,7 +16,6 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "dotenv": "^16.5.0",
-    "expo": "^53.0.19",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-capture-protection": "^2.1.1",
