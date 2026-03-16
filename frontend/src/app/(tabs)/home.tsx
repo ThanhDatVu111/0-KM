@@ -29,7 +29,6 @@ import {
 } from '@/apis/spotify';
 import { useApiClient } from '@/hooks/useApiClient';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSpotifyPlayback } from '@/hooks/useSpotifyPlayback';
 import { SpotifyWidget } from '@/components/music/SpotifyWidget';
 import { TimeWidget } from '@/components/TimeWidget';
 import { WeatherWidget } from '@/components/WeatherWidget';
@@ -38,6 +37,7 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { locationTrackingService } from '@/services/locationTracking';
 import { updateUserLocation } from '@/apis/user';
 import Profile from '@/screens/Profile';
+import { sendPlayTrackCommand } from '@/services/playbackCommands';
 
 // WidgetCard component
 const WidgetCard = ({
@@ -124,9 +124,6 @@ const Home = () => {
       }, 500);
     }
   }, [roomId, refetchRoomTrack]);
-
-  // Real Spotify playback controls - only use when connected
-  const { playTrack, playbackState } = useSpotifyPlayback();
 
   useEffect(() => {
     if (userId) {
@@ -256,9 +253,13 @@ const Home = () => {
       // Refetch the room track to update the UI
       await refetchRoomTrack();
 
-      // Automatically play the track when added
+      // Automatically play via room command relay so there is one control path.
       try {
-        await playTrack(trackData.track_uri);
+        if (!roomId) {
+          throw new Error('Room not available for playback command');
+        }
+
+        await sendPlayTrackCommand(roomId, trackData.track_uri, userId);
         Alert.alert('Success!', `Now playing: ${trackData.track_name}`);
       } catch (playError: any) {
         let errorMessage = `${trackData.track_name} was added to your room, but couldn't start playing automatically.`;
@@ -311,6 +312,8 @@ const Home = () => {
   };
 
   const canAddVideo = hasRoom && (!roomVideo || roomVideo.added_by_user_id === userId);
+  const controllerId = roomTrack?.controlled_by_user_id;
+  const canControlSpotify = !roomId || controllerId === userId || (!controllerId && isHost);
 
   if (isLoading) {
     return (
@@ -501,15 +504,18 @@ const Home = () => {
           </Text>
 
           <View
-            className={roomTrack?.track_uri || playbackState?.currentTrack ? 'h-[420px]' : 'h-60'}
+            className={roomTrack?.track_uri ? 'h-[420px]' : 'h-60'}
           >
             <SpotifyWidget
               roomId={roomId || undefined}
-              canControl={true}
+              canControl={canControlSpotify}
+              canSwitchController={!!roomId && isHost}
               onPress={
-                roomTrack?.controlled_by_user_id === userId
-                  ? handleRemoveSpotifyTrack
-                  : () => setShowSpotifyInput(true)
+                canControlSpotify
+                  ? roomTrack?.controlled_by_user_id === userId
+                    ? handleRemoveSpotifyTrack
+                    : () => setShowSpotifyInput(true)
+                  : undefined
               }
               className="h-full"
             />

@@ -57,6 +57,48 @@ export interface SpotifyTrack {
   uri: string;
 }
 
+async function assertUserIsControllerForOwnRoom(userId: string): Promise<string> {
+  const roomId = await getRoomIdForUser(userId);
+  if (!roomId) {
+    throw new Error('User is not in a room');
+  }
+
+  const room = await roomService.getRoomById(roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  const controllerId = room.playback_state?.controlled_by_user_id || room.user_1;
+  if (controllerId !== userId) {
+    throw new Error('FORBIDDEN_CONTROLLER_ONLY');
+  }
+
+  return roomId;
+}
+
+async function assertUserIsHostForRoom(userId: string, roomId: string): Promise<void> {
+  const room = await roomService.getRoomById(roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  if (room.user_1 !== userId) {
+    throw new Error('FORBIDDEN_HOST_ONLY');
+  }
+}
+
+async function assertUserIsControllerForRoom(userId: string, roomId: string): Promise<void> {
+  const room = await roomService.getRoomById(roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  const controllerId = room.playback_state?.controlled_by_user_id || room.user_1;
+  if (controllerId !== userId) {
+    throw new Error('FORBIDDEN_CONTROLLER_ONLY');
+  }
+}
+
 /**
  * Get Spotify access token from Supabase user metadata
  */
@@ -99,18 +141,15 @@ export async function createRoomTrack(
   request: CreateRoomSpotifyTrackRequest,
 ): Promise<RoomSpotifyTrack | null> {
   try {
-    // Use the authenticated user's ID from the request
-    const userId = req.user?.id || request.user_id;
+    // Use only the authenticated user's ID from the request
+    const userId = req.user?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');
     }
 
-    // Get the room ID for the user
-    const roomId = await getRoomIdForUser(userId);
-    if (!roomId) {
-      throw new Error('User is not in a room');
-    }
+    // Controller-only writes: only current controller can change shared Spotify state
+    const roomId = await assertUserIsControllerForOwnRoom(userId);
 
     const input: CreateRoomSpotifyTrackInput = {
       room_id: roomId,
@@ -180,11 +219,8 @@ export async function updateRoomTrack(
   request: UpdateRoomSpotifyTrackRequest,
 ): Promise<RoomSpotifyTrack | null> {
   try {
-    // Get the room ID for the user
-    const roomId = await getRoomIdForUser(user_id);
-    if (!roomId) {
-      throw new Error('User is not in a room');
-    }
+    // Controller-only writes: only current controller can change shared Spotify state
+    const roomId = await assertUserIsControllerForOwnRoom(user_id);
 
     // Get the current track to verify it exists
     const currentTrack = await getRoomSpotifyTrack(roomId);
@@ -211,12 +247,8 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
   try {
     console.log('🎵 [DEBUG] Deleting room track for user:', user_id);
 
-    // Get the room ID for the user
-    const roomId = await getRoomIdForUser(user_id);
-    if (!roomId) {
-      console.log('🎵 [DEBUG] User is not in a room');
-      return false; // Return false instead of throwing error
-    }
+    // Controller-only writes: only current controller can change shared Spotify state
+    const roomId = await assertUserIsControllerForOwnRoom(user_id);
 
     // Get the current track to verify it exists
     const currentTrack = await getRoomSpotifyTrack(roomId);
@@ -243,6 +275,9 @@ export async function deleteRoomTrack(user_id: string): Promise<boolean> {
 
     return success;
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      throw error;
+    }
     logger.spotify.error('Error in deleteRoomTrack service:', error);
     return false; // Return false instead of throwing error
   }
@@ -283,6 +318,26 @@ export async function deleteRoomTrackByRoomId(room_id: string): Promise<boolean>
     logger.spotify.error('Error in deleteRoomTrackByRoomId service:', error);
     return false; // Return false instead of throwing error
   }
+}
+
+export async function deleteRoomTrackByRoomIdAsHost(
+  room_id: string,
+  requesterUserId: string,
+): Promise<boolean> {
+  await assertUserIsHostForRoom(requesterUserId, room_id);
+  return deleteRoomTrackByRoomId(room_id);
+}
+
+export async function deleteRoomTrackByRoomIdAsController(
+  room_id: string,
+  requesterUserId: string,
+): Promise<boolean> {
+  await assertUserIsControllerForRoom(requesterUserId, room_id);
+  return deleteRoomTrackByRoomId(room_id);
+}
+
+export async function assertSpotifyControllerUser(userId: string): Promise<void> {
+  await assertUserIsControllerForOwnRoom(userId);
 }
 
 /**

@@ -3,15 +3,18 @@ import { View, StyleSheet, Text, TouchableOpacity, Image, Alert } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/clerk-expo';
 import { useSharedSpotifyTrack, SharedSpotifyTrack } from '../../hooks/useSharedSpotifyTrack';
+import { useSharedPlayback } from '../../hooks/useSharedPlayback';
+import { usePlaybackCommandListener } from '../../hooks/usePlaybackCommandListener';
 import { useSpotifyPlayback } from '../../hooks/useSpotifyPlayback';
 import { useSpotifyAuth } from '../../hooks/useSpotifyAuth';
-import { spotifyService } from '../../services/spotifyService';
+import { sendPlaybackCommand } from '../../services/playbackCommands';
 
 type Props = {
   roomId?: string;
   onPress?: () => void;
   className?: string;
   canControl?: boolean;
+  canSwitchController?: boolean;
   isLoading?: boolean;
 };
 
@@ -59,6 +62,7 @@ export function SpotifyWidget({
   onPress,
   className = '',
   canControl = false,
+  canSwitchController = false,
   isLoading = false,
 }: Props) {
   const { userId } = useAuth();
@@ -68,9 +72,18 @@ export function SpotifyWidget({
     connect: connectSpotify,
     disconnect: disconnectSpotify,
   } = useSpotifyAuth();
-  const { track, updateTrack, clearTrack } = useSharedSpotifyTrack(roomId || null);
+  const { track, updateTrack, clearTrack, switchController } = useSharedSpotifyTrack(
+    roomId || null,
+  );
+  const { sharedPlaybackState } = useSharedPlayback(roomId || null);
   const { playbackState, togglePlayPause, skipToNext, skipToPrevious } = useSpotifyPlayback();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isSwitchingController, setIsSwitchingController] = useState(false);
+
+  // Determine if user is controlling the playback (in room mode)
+  const isController = track?.controlled_by_user_id === userId;
+
+  // Controller listens for room playback commands and executes them on Spotify.
+  usePlaybackCommandListener(roomId || '', !!roomId && !!isController);
 
   // Derive connection state from Supabase auth status
   const isConnected = spotifyStatus === 'connected';
@@ -98,12 +111,9 @@ export function SpotifyWidget({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Update isPlaying state based on Spotify playback state
-  useEffect(() => {
-    if (playbackState) {
-      setIsPlaying(playbackState.isPlaying);
-    }
-  }, [playbackState]);
+  const isPlaying = roomId
+    ? !!sharedPlaybackState?.is_playing
+    : !!playbackState?.isPlaying;
 
   // Handle play/pause
   const handlePlayPause = async () => {
@@ -112,11 +122,46 @@ export function SpotifyWidget({
     }
 
     try {
-      // Always use Spotify API directly for play/pause control
-      await togglePlayPause();
+      // Room mode: relay command so controller executes exactly one playback path.
+      if (roomId) {
+        await sendPlaybackCommand(roomId, isPlaying ? 'pause' : 'play', currentTrack.track_uri, {
+          requested_by_user_id: userId || undefined,
+        });
+        return;
+      }
 
-      // Update local state after successful API call
-      setIsPlaying(!isPlaying);
+      // Solo mode: direct Spotify control.
+      await togglePlayPause();
+    } catch (error) {
+      // Silently handle errors without showing alerts
+    }
+  };
+
+  const handleNext = async () => {
+    try {
+      if (roomId) {
+        await sendPlaybackCommand(roomId, 'next', undefined, {
+          requested_by_user_id: userId || undefined,
+        });
+        return;
+      }
+
+      await skipToNext();
+    } catch (error) {
+      // Silently handle errors without showing alerts
+    }
+  };
+
+  const handlePrevious = async () => {
+    try {
+      if (roomId) {
+        await sendPlaybackCommand(roomId, 'previous', undefined, {
+          requested_by_user_id: userId || undefined,
+        });
+        return;
+      }
+
+      await skipToPrevious();
     } catch (error) {
       // Silently handle errors without showing alerts
     }
@@ -131,6 +176,19 @@ export function SpotifyWidget({
       if (onPress) onPress();
     } catch (error) {
       // Silently handle errors without showing alerts
+    }
+  };
+
+  const handleSwitchController = async () => {
+    if (!roomId || isSwitchingController || !canSwitchController) return;
+
+    try {
+      setIsSwitchingController(true);
+      await switchController();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to switch controller. Please try again.');
+    } finally {
+      setIsSwitchingController(false);
     }
   };
 
@@ -219,29 +277,31 @@ export function SpotifyWidget({
             >
               Search for a song to share with your partner
             </Text>
-            <TouchableOpacity
-              onPress={onPress}
-              className="bg-[#6536DD] border-2 border-black"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 2, height: 2 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
-                elevation: 4,
-              }}
-            >
-              <View className="bg-[#6536DD] px-6 py-3">
-                <Text
-                  style={{
-                    fontFamily: 'PixelifySans',
-                    fontSize: 14,
-                  }}
-                  className="text-white"
-                >
-                  Search Music
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {canControl && onPress && (
+              <TouchableOpacity
+                onPress={onPress}
+                className="bg-[#6536DD] border-2 border-black"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                  elevation: 4,
+                }}
+              >
+                <View className="bg-[#6536DD] px-6 py-3">
+                  <Text
+                    style={{
+                      fontFamily: 'PixelifySans',
+                      fontSize: 14,
+                    }}
+                    className="text-white"
+                  >
+                    Search Music
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -252,9 +312,6 @@ export function SpotifyWidget({
     currentTrack?.duration_ms && currentTrack.duration_ms > 0
       ? ((playbackState?.progress || 0) / currentTrack.duration_ms) * 100
       : 0;
-
-  // Determine if user is controlling the playback
-  const isController = track?.controlled_by_user_id === userId;
 
   return (
     <View
@@ -283,7 +340,7 @@ export function SpotifyWidget({
         </TouchableOpacity>
 
         {/* Delete Button positioned on the right - only show if onPress is provided */}
-        {onPress && (
+        {canControl && onPress && (
           <TouchableOpacity
             onPress={handleRemoveTrack}
             style={[
@@ -308,17 +365,50 @@ export function SpotifyWidget({
       <View className="bg-white px-4 py-4 rounded-b-md flex-1">
         {/* Controller indicator */}
         {roomId && (
-          <View className="flex-row items-center justify-center mb-2">
-            <Ionicons name="radio" size={12} color="#6536DD" />
-            <Text
-              style={{
-                fontFamily: 'PixelifySans',
-                fontSize: 12,
-              }}
-              className="text-black ml-1"
-            >
-              {isController ? 'You control' : 'Partner controls'}
-            </Text>
+          <View className="mb-2">
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="radio" size={12} color="#6536DD" />
+              <Text
+                style={{
+                  fontFamily: 'PixelifySans',
+                  fontSize: 12,
+                }}
+                className="text-black ml-1"
+              >
+                {isController ? 'You control' : 'Partner controls'}
+              </Text>
+            </View>
+            <View className="items-center mt-2">
+              <TouchableOpacity
+                onPress={handleSwitchController}
+                disabled={isSwitchingController || !canSwitchController}
+                className="bg-[#6536DD] border-2 border-black"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                  elevation: 4,
+                  opacity: isSwitchingController || !canSwitchController ? 0.7 : 1,
+                }}
+              >
+                <View className="bg-[#6536DD] px-3 py-1">
+                  <Text
+                    style={{
+                      fontFamily: 'PixelifySans',
+                      fontSize: 12,
+                    }}
+                    className="text-white"
+                  >
+                    {!canSwitchController
+                      ? 'Host Only'
+                      : isSwitchingController
+                        ? 'Switching...'
+                        : 'Switch Controller'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -367,7 +457,7 @@ export function SpotifyWidget({
           {canControl && (
             <View style={styles.controls}>
               <TouchableOpacity
-                onPress={skipToPrevious}
+                onPress={handlePrevious}
                 style={[styles.controlButton, !canControl && styles.disabledButton]}
                 disabled={!canControl}
               >
@@ -389,7 +479,7 @@ export function SpotifyWidget({
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={skipToNext}
+                onPress={handleNext}
                 style={[styles.controlButton, !canControl && styles.disabledButton]}
                 disabled={!canControl}
               >

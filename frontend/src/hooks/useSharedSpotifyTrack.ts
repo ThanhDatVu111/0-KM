@@ -6,7 +6,9 @@ import {
   createRoomSpotifyTrack,
   deleteRoomSpotifyTrackByRoomId,
 } from '../apis/spotify';
+import { switchRoomPlaybackController } from '../services/playbackState';
 import { logger } from '../utils/logger';
+import supabase from '../utils/supabase';
 
 export interface SharedSpotifyTrack {
   track_uri: string | null;
@@ -26,6 +28,32 @@ export function useSharedSpotifyTrack(roomId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const subscriptionRef = useRef<any>(null);
+
+  const syncControllerFromRoomState = useCallback(async () => {
+    if (!roomId) return;
+
+    try {
+      const { data } = await supabase
+        .from('room')
+        .select('playback_state')
+        .eq('room_id', roomId)
+        .single();
+
+      const controllerId = data?.playback_state?.controlled_by_user_id as string | undefined;
+      if (!controllerId) return;
+
+      setTrack((prev: SharedSpotifyTrack | null) =>
+        prev
+          ? {
+              ...prev,
+              controlled_by_user_id: controllerId,
+            }
+          : prev,
+      );
+    } catch (err) {
+      // Keep silent to avoid impacting existing Spotify behavior.
+    }
+  }, [roomId]);
 
   // Fetch initial track data using backend API
   const fetchTrack = useCallback(async () => {
@@ -133,6 +161,25 @@ export function useSharedSpotifyTrack(roomId: string | null) {
     }
   };
 
+  const switchController = async () => {
+    if (!roomId || !userId) return;
+
+    try {
+      const result = await switchRoomPlaybackController(roomId, userId);
+      setTrack((prev: SharedSpotifyTrack | null) =>
+        prev
+          ? {
+              ...prev,
+              controlled_by_user_id: result.controlled_by_user_id,
+            }
+          : prev,
+      );
+    } catch (err) {
+      setError('Failed to switch controller');
+      throw err;
+    }
+  };
+
   // Set up real-time subscription (keep this for now, but we'll rely more on manual refetching)
   useEffect(() => {
     if (!roomId) {
@@ -160,12 +207,48 @@ export function useSharedSpotifyTrack(roomId: string | null) {
     };
   }, [roomId, userId, fetchTrack]);
 
+  useEffect(() => {
+    if (!roomId) return;
+
+    syncControllerFromRoomState();
+
+    const roomChannel = supabase
+      .channel(`room_controller_${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload: any) => {
+          const controllerId = payload.new?.playback_state?.controlled_by_user_id;
+          if (!controllerId) return;
+          setTrack((prev: SharedSpotifyTrack | null) =>
+            prev
+              ? {
+                  ...prev,
+                  controlled_by_user_id: controllerId,
+                }
+              : prev,
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(roomChannel);
+    };
+  }, [roomId, syncControllerFromRoomState]);
+
   return {
     track,
     isLoading,
     error,
     updateTrack,
     clearTrack,
+    switchController,
     refetch: fetchTrack,
   };
 }

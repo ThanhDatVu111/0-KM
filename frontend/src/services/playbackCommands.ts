@@ -1,4 +1,3 @@
-import { ApiClient } from '../apis/apiClient';
 import { logger } from '../utils/logger';
 import supabase from '../utils/supabase';
 
@@ -54,48 +53,52 @@ async function getSpotifyAccessToken(): Promise<string | null> {
   }
 }
 
+type PlaybackCommandType = PlaybackCommand['command'];
+
 /**
- * Send a playback command to the backend
+ * Send a playback command into room relay channel.
+ * This writes to Supabase `playback_commands` table, which controller clients
+ * subscribe to via real-time listener.
  */
 export async function sendPlaybackCommand(
   roomId: string,
-  command: PlaybackCommand,
-  userId: string,
-  apiClient: ApiClient,
+  command: PlaybackCommandType,
+  track_uri?: string,
+  options?: {
+    position_ms?: number;
+    volume?: number;
+    requested_by_user_id?: string;
+  },
 ): Promise<PlaybackCommandResponse> {
   try {
-    logger.spotify.debug('Sending playback command:', { roomId, command, userId });
+    const payload = {
+      room_id: roomId,
+      command,
+      track_uri,
+      position_ms: options?.position_ms,
+      volume: options?.volume,
+      requested_at: new Date().toISOString(),
+      requested_by_user_id: options?.requested_by_user_id,
+    };
 
-    // Get the Spotify access token
-    const accessToken = await getSpotifyAccessToken();
+    logger.spotify.debug('Sending playback command:', payload);
 
-    // Prepare headers with Spotify access token if available
-    const headers: Record<string, string> = {};
-    if (accessToken) {
-      headers['x-spotify-access-token'] = accessToken;
+    const { data, error } = await supabase
+      .from('playback_commands')
+      .insert(payload)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
     }
 
-    // Send the command to the backend
-    const response = await apiClient.post(
-      `/playback-commands`,
-      {
-        room_id: roomId,
-        user_id: userId,
-        command: command.command,
-        track_uri: command.track_uri,
-        position_ms: command.position_ms,
-        volume: command.volume,
-      },
-      undefined, // userToken
-      headers,
-    );
-
-    logger.spotify.debug('Playback command response:', response);
+    logger.spotify.debug('Playback command response:', data);
 
     return {
       success: true,
       message: 'Command sent successfully',
-      data: response,
+      data,
     };
   } catch (error) {
     logger.spotify.error('Error sending playback command:', error);
@@ -107,21 +110,43 @@ export async function sendPlaybackCommand(
 }
 
 /**
+ * Convenience helper to send play command with a required track URI.
+ */
+export async function sendPlayTrackCommand(
+  roomId: string,
+  trackUri: string,
+  requestedByUserId?: string,
+): Promise<PlaybackCommandResponse> {
+  return sendPlaybackCommand(roomId, 'play', trackUri, {
+    position_ms: 0,
+    requested_by_user_id: requestedByUserId,
+  });
+}
+
+/**
  * Get playback commands for a room
  */
 export async function getPlaybackCommands(
   roomId: string,
-  apiClient: ApiClient,
 ): Promise<PlaybackCommandResponse> {
   try {
     logger.spotify.debug('Getting playback commands for room:', roomId);
 
-    const response = await apiClient.get(`/playback-commands?room_id=${roomId}`);
+    const { data, error } = await supabase
+      .from('playback_commands')
+      .select('*')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      throw error;
+    }
 
     return {
       success: true,
       message: 'Commands retrieved successfully',
-      data: response,
+      data,
     };
   } catch (error) {
     logger.spotify.error('Error getting playback commands:', error);
@@ -137,17 +162,20 @@ export async function getPlaybackCommands(
  */
 export async function deletePlaybackCommands(
   roomId: string,
-  apiClient: ApiClient,
 ): Promise<PlaybackCommandResponse> {
   try {
     logger.spotify.debug('Deleting playback commands for room:', roomId);
 
-    const response = await apiClient.delete(`/playback-commands?room_id=${roomId}`);
+    const { error } = await supabase.from('playback_commands').delete().eq('room_id', roomId);
+
+    if (error) {
+      throw error;
+    }
 
     return {
       success: true,
       message: 'Commands deleted successfully',
-      data: response,
+      data: null,
     };
   } catch (error) {
     logger.spotify.error('Error deleting playback commands:', error);

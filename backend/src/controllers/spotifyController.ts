@@ -41,6 +41,13 @@ export async function createRoomTrack(req: AuthenticatedRequest, res: Response):
       });
     }
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can modify Spotify state',
+      });
+      return;
+    }
     logger.spotify.error('Error in createRoomTrack controller:', error);
     res.status(500).json({
       success: false,
@@ -117,6 +124,13 @@ export async function updateRoomTrack(req: AuthenticatedRequest, res: Response):
       });
     }
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can modify Spotify state',
+      });
+      return;
+    }
     logger.spotify.error('Error in updateRoomTrack controller:', error);
     res.status(500).json({
       success: false,
@@ -156,6 +170,13 @@ export async function deleteRoomTrack(req: AuthenticatedRequest, res: Response):
       });
     }
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can modify Spotify state',
+      });
+      return;
+    }
     logger.spotify.error('Error in deleteRoomTrack controller:', error);
     res.status(500).json({
       success: false,
@@ -171,6 +192,15 @@ export async function deleteRoomTrackByRoomId(
   res: Response,
 ): Promise<void> {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
     const roomId = req.params.room_id;
     if (!roomId) {
       res.status(400).json({
@@ -182,7 +212,7 @@ export async function deleteRoomTrackByRoomId(
 
     logger.spotify.info('Deleting room Spotify track for room:', roomId);
 
-    const success = await spotifyService.deleteRoomTrackByRoomId(roomId);
+    const success = await spotifyService.deleteRoomTrackByRoomIdAsController(roomId, userId);
 
     if (success) {
       res.status(200).json({
@@ -196,6 +226,13 @@ export async function deleteRoomTrackByRoomId(
       });
     }
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can modify Spotify state',
+      });
+      return;
+    }
     logger.spotify.error('Error in deleteRoomTrackByRoomId controller:', error);
     res.status(500).json({
       success: false,
@@ -324,6 +361,7 @@ export async function playTrack(req: AuthenticatedRequest, res: Response): Promi
     }
 
     logger.spotify.info('Playing Spotify track:', { userId, track_uri });
+    await spotifyService.assertSpotifyControllerUser(userId);
 
     await spotifyService.playSpotifyTrack(userId, track_uri, accessToken);
 
@@ -332,6 +370,13 @@ export async function playTrack(req: AuthenticatedRequest, res: Response): Promi
       message: 'Track started playing successfully',
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can control playback',
+      });
+      return;
+    }
     logger.spotify.error('Error in playTrack controller:', error);
     res.status(500).json({
       success: false,
@@ -356,6 +401,7 @@ export async function pausePlayback(req: AuthenticatedRequest, res: Response): P
     const accessToken = req.headers['x-spotify-access-token'] as string;
 
     logger.spotify.info('Pausing Spotify playback for user:', userId);
+    await spotifyService.assertSpotifyControllerUser(userId);
 
     await spotifyService.pauseSpotifyPlayback(userId, accessToken);
 
@@ -364,6 +410,13 @@ export async function pausePlayback(req: AuthenticatedRequest, res: Response): P
       message: 'Playback paused successfully',
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can control playback',
+      });
+      return;
+    }
     logger.spotify.error('Error in pausePlayback controller:', error);
     res.status(500).json({
       success: false,
@@ -388,6 +441,7 @@ export async function skipToNext(req: AuthenticatedRequest, res: Response): Prom
     const accessToken = req.headers['x-spotify-access-token'] as string;
 
     logger.spotify.info('Skipping to next track for user:', userId);
+    await spotifyService.assertSpotifyControllerUser(userId);
 
     await spotifyService.skipToNextTrack(userId, accessToken);
 
@@ -396,6 +450,13 @@ export async function skipToNext(req: AuthenticatedRequest, res: Response): Prom
       message: 'Skipped to next track successfully',
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can control playback',
+      });
+      return;
+    }
     logger.spotify.error('Error in skipToNext controller:', error);
     res.status(500).json({
       success: false,
@@ -420,6 +481,7 @@ export async function skipToPrevious(req: AuthenticatedRequest, res: Response): 
     const accessToken = req.headers['x-spotify-access-token'] as string;
 
     logger.spotify.info('Skipping to previous track for user:', userId);
+    await spotifyService.assertSpotifyControllerUser(userId);
 
     await spotifyService.skipToPreviousTrack(userId, accessToken);
 
@@ -428,6 +490,13 @@ export async function skipToPrevious(req: AuthenticatedRequest, res: Response): 
       message: 'Skipped to previous track successfully',
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can control playback',
+      });
+      return;
+    }
     logger.spotify.error('Error in skipToPrevious controller:', error);
     res.status(500).json({
       success: false,
@@ -461,6 +530,7 @@ export async function setVolume(req: AuthenticatedRequest, res: Response): Promi
     }
 
     logger.spotify.info('Setting playback volume for user:', { userId, volume });
+    await spotifyService.assertSpotifyControllerUser(userId);
 
     await spotifyService.setPlaybackVolume(userId, volume, accessToken);
 
@@ -469,6 +539,13 @@ export async function setVolume(req: AuthenticatedRequest, res: Response): Promi
       message: 'Volume set successfully',
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'FORBIDDEN_CONTROLLER_ONLY') {
+      res.status(403).json({
+        success: false,
+        message: 'Only the active controller can control playback',
+      });
+      return;
+    }
     logger.spotify.error('Error in setVolume controller:', error);
     res.status(500).json({
       success: false,

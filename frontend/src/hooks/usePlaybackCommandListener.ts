@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
 import { spotifyService } from '@/services/spotifyService';
 import supabase from '@/utils/supabase';
 import { logger } from '@/utils/logger';
@@ -14,7 +13,6 @@ interface PlaybackCommand {
 }
 
 export function usePlaybackCommandListener(roomId: string, isController: boolean) {
-  const { userId } = useAuth();
   const lastCommandTime = useRef<number>(0);
   const isExecuting = useRef<boolean>(false);
 
@@ -142,17 +140,13 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
           table: 'playback_commands',
           filter: `room_id=eq.${roomId}`,
         },
-        (payload) => {
+        (payload: any) => {
           const command = payload.new as PlaybackCommand;
           logger.spotify.debug('Received playback command:', command);
-
-          // Only execute commands from other users (or anonymous commands)
-          if (!command.requested_by_user_id || command.requested_by_user_id !== userId) {
-            debouncedExecuteCommand(command);
-          }
+          debouncedExecuteCommand(command);
         },
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         logger.spotify.debug('Playback command subscription status:', status);
         if (status === 'SUBSCRIBED') {
           logger.spotify.info('Successfully subscribed to playback commands for room:', roomId);
@@ -163,7 +157,7 @@ export function usePlaybackCommandListener(roomId: string, isController: boolean
       logger.spotify.debug('Cleaning up playback command listener for room:', roomId);
       supabase.removeChannel(channel);
     };
-  }, [roomId, isController, userId, debouncedExecuteCommand]);
+  }, [roomId, isController, debouncedExecuteCommand]);
 
   return {
     isController,
